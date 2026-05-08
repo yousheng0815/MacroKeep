@@ -22,7 +22,7 @@ export function MobileBottomNav() {
               }`}
             >
               <Icon className="size-5" />
-              {item.label === "AI Scanner" ? "Scanner" : item.label}
+              {item.label}
             </Link>
           );
         })}

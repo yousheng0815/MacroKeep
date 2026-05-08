@@ -76,6 +76,13 @@ function normalizeMeal(row: Partial<MealRecord> | null | undefined): MealRecord 
     carbs: Number.isFinite(carbs) ? carbs : 0,
     recordedAt,
   };
+  if (row.isFavorite === true) meal.isFavorite = true;
+  if (
+    typeof row.sourceFavoriteMealId === "string" &&
+    row.sourceFavoriteMealId.trim().length > 0
+  ) {
+    meal.sourceFavoriteMealId = row.sourceFavoriteMealId.trim();
+  }
   if (photoFileId) meal.photoFileId = photoFileId;
   if (thumbnailFileId) meal.thumbnailFileId = thumbnailFileId;
   return meal;

@@ -202,7 +202,7 @@ export function DashboardPage() {
                   BYOK — Gemini API Key
                 </h2>
                 <p className="mt-1 text-xs text-om-muted">
-                  Needed for the AI Scanner. Configure under Settings — saved
+                  Needed for photo meal scanning. Configure under Settings — saved
                   with your Drive diary file.
                 </p>
               </div>

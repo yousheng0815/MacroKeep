@@ -9,6 +9,6 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/history", label: "History", icon: History },
-  { to: "/scanner", label: "AI Scanner", icon: Camera },
+  { to: "/scanner", label: "Add Meal", icon: Camera },
   { to: "/drive", label: "Drive", icon: FolderOpen },
 ];

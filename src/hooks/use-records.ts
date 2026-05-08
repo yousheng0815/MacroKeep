@@ -201,6 +201,10 @@ export function useRecords() {
             carbs: meal.carbs,
             recordedAt,
             photoFileId: options.photoFileId,
+            ...(meal.isFavorite ? { isFavorite: true } : {}),
+            ...(meal.sourceFavoriteMealId
+              ? { sourceFavoriteMealId: meal.sourceFavoriteMealId }
+              : {}),
           };
 
           const nextWithPhoto: RecordsDocument = {
@@ -248,6 +252,10 @@ export function useRecords() {
             carbs: meal.carbs,
             recordedAt,
             photoFileId: uploadedPhotoId,
+            ...(meal.isFavorite ? { isFavorite: true } : {}),
+            ...(meal.sourceFavoriteMealId
+              ? { sourceFavoriteMealId: meal.sourceFavoriteMealId }
+              : {}),
           };
 
           const nextWithPhoto: RecordsDocument = {
@@ -272,6 +280,10 @@ export function useRecords() {
           fats: meal.fats,
           carbs: meal.carbs,
           recordedAt,
+          ...(meal.isFavorite ? { isFavorite: true } : {}),
+          ...(meal.sourceFavoriteMealId
+            ? { sourceFavoriteMealId: meal.sourceFavoriteMealId }
+            : {}),
         };
 
         const next: RecordsDocument = {
@@ -311,8 +323,18 @@ export function useRecords() {
         const token = getAccessToken();
         if (token) {
           try {
-            if (photoId) await deleteDriveFile(token, photoId);
-            if (thumbId) await deleteDriveFile(token, thumbId);
+            const photoStillReferenced =
+              !!photoId &&
+              next.meals.some(
+                (m) => m.photoFileId === photoId || m.thumbnailFileId === photoId,
+              );
+            const thumbStillReferenced =
+              !!thumbId &&
+              next.meals.some(
+                (m) => m.thumbnailFileId === thumbId || m.photoFileId === thumbId,
+              );
+            if (photoId && !photoStillReferenced) await deleteDriveFile(token, photoId);
+            if (thumbId && !thumbStillReferenced) await deleteDriveFile(token, thumbId);
           } catch {
             /* Snapshot may remain orphaned in App Data if delete fails. */
           }
@@ -328,7 +350,14 @@ export function useRecords() {
       patch: Partial<
         Pick<
           MealRecord,
-          "food_name" | "calories" | "protein" | "fats" | "carbs" | "recordedAt"
+          | "food_name"
+          | "calories"
+          | "protein"
+          | "fats"
+          | "carbs"
+          | "recordedAt"
+          | "isFavorite"
+          | "sourceFavoriteMealId"
         >
       >,
     ) => {
