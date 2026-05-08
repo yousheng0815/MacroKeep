@@ -122,6 +122,7 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!clientId || !ready || !isGisOAuthReady()) return;
+    if (document.visibilityState !== "visible") return;
     if (!hasGoogleSession()) return;
     if (hasValidGoogleAccessToken()) return;
     if (!readHasDriveAppDataScope()) return;

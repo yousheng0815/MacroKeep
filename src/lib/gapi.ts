@@ -46,6 +46,9 @@ const PROACTIVE_REFRESH_BEFORE_MS = 120_000;
 /** Timer id (`window.setTimeout`); typed as `number` to avoid Node `Timeout` augmentation clashes. */
 let proactiveRefreshTimer: number | null = null;
 let silentRefreshPromise: Promise<boolean> | null = null;
+let silentRefreshCooldownUntilMs = 0;
+
+const SILENT_REFRESH_RETRY_COOLDOWN_MS = 10 * 60_000;
 
 function clearProactiveRefreshTimer(): void {
   if (proactiveRefreshTimer !== null) {
@@ -64,6 +67,10 @@ function scheduleProactiveAccessTokenRefresh(): void {
   const ms = Math.min(Math.max(delay, 15_000), 86_400_000);
   proactiveRefreshTimer = window.setTimeout(() => {
     proactiveRefreshTimer = null;
+    if (document.visibilityState !== "visible") {
+      scheduleProactiveAccessTokenRefresh();
+      return;
+    }
     void renewGoogleAccessTokenSilentlyProactive(cid).finally(() => {
       /** Timer cleared after fire; reschedule if token still valid but renewal failed or skipped. */
       if (hasValidGoogleAccessToken() && proactiveRefreshTimer === null) {
@@ -129,6 +136,7 @@ function notifyOAuthChanged(): void {
 function applyTokenResponse(resp: GoogleOAuth2TokenResponse): void {
   if (!resp.access_token) return;
   accessToken = resp.access_token;
+  silentRefreshCooldownUntilMs = 0;
   const ttlSec = resp.expires_in ?? 3600;
   accessValidUntilMs = Date.now() + ttlSec * 1000 - EXPIRY_SKEW_MS;
   if (resp.scope && resp.scope.length > 0) lastGrantedScopeRaw = resp.scope;
@@ -369,6 +377,7 @@ export function refreshGoogleAccessTokenSilently(clientId: string): Promise<bool
   if (hasValidGoogleAccessToken()) return Promise.resolve(true);
   const hint = cachedUserEmail ?? cachedUserSub;
   if (!hint) return Promise.resolve(false);
+  if (Date.now() < silentRefreshCooldownUntilMs) return Promise.resolve(false);
   if (silentRefreshPromise) return silentRefreshPromise;
 
   silentRefreshPromise = (async (): Promise<boolean> => {
@@ -377,6 +386,8 @@ export function refreshGoogleAccessTokenSilently(clientId: string): Promise<bool
       await tokenClientSignIn(clientId, { silent: true });
       return hasValidGoogleAccessToken();
     } catch {
+      silentRefreshCooldownUntilMs =
+        Date.now() + SILENT_REFRESH_RETRY_COOLDOWN_MS;
       return false;
     } finally {
       silentRefreshPromise = null;
@@ -397,6 +408,7 @@ function renewGoogleAccessTokenSilentlyProactive(
   if (!accessToken || accessValidUntilMs <= 0) return Promise.resolve(false);
   const hint = cachedUserEmail ?? cachedUserSub;
   if (!hint) return Promise.resolve(false);
+  if (Date.now() < silentRefreshCooldownUntilMs) return Promise.resolve(false);
   if (silentRefreshPromise) return silentRefreshPromise;
 
   silentRefreshPromise = (async (): Promise<boolean> => {
@@ -405,6 +417,8 @@ function renewGoogleAccessTokenSilentlyProactive(
       await tokenClientSignIn(clientId, { silent: true });
       return hasValidGoogleAccessToken();
     } catch {
+      silentRefreshCooldownUntilMs =
+        Date.now() + SILENT_REFRESH_RETRY_COOLDOWN_MS;
       return false;
     } finally {
       silentRefreshPromise = null;
