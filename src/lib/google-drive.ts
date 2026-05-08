@@ -5,7 +5,21 @@ import type {
 } from "@/types/records";
 import { emptyRecords } from "@/types/records";
 
-const RECORDS_NAME = "records.json";
+/** Drive App Data JSON: profile, macro targets, optional Gemini BYOK key (no meal rows). */
+export const CORE_DRIVE_FILE = "core.json";
+
+/** From `pullRecordsCoreFromDrive`: loaded core document and whether Drive already uses `core.json`. */
+export type PullRecordsCoreFromDriveResult = {
+  core: RecordsCoreDocument | null;
+  /** True when authoritative core is `CORE_DRIVE_FILE` (not legacy-only `records.json`). */
+  coreOnPrimaryDriveFile: boolean;
+};
+
+/** Former primary filename; migrated to {@link CORE_DRIVE_FILE} on read or upsert. */
+const PREVIOUS_CORE_DRIVE_FILE = "openmacro-core.json";
+
+const LEGACY_CORE_DRIVE_FILE = "records.json";
+
 const DRIVE_FILES = "https://www.googleapis.com/drive/v3/files";
 const UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3/files";
 
@@ -95,7 +109,6 @@ export function normalizeRecordsCoreDocument(
   if (!parsed || typeof parsed !== "object") {
     return {
       version: empty.version,
-      updatedAt: empty.updatedAt,
       profile: { ...empty.profile },
     };
   }
@@ -105,8 +118,6 @@ export function normalizeRecordsCoreDocument(
       : undefined;
   return {
     version: typeof parsed.version === "number" ? parsed.version : empty.version,
-    updatedAt:
-      typeof parsed.updatedAt === "string" ? parsed.updatedAt : empty.updatedAt,
     profile: { ...empty.profile, ...parsed.profile },
     ...(gemini !== undefined ? { geminiApiKey: gemini } : {}),
   };
@@ -133,7 +144,7 @@ function normalizeMealsShardPayload(parsed: unknown): MealRecord[] {
     .filter(Boolean) as MealRecord[];
 }
 
-/** One file in the user's hidden Drive App Data folder (same space as `records.json`). */
+/** One JSON file under the app's hidden Drive App Data folder. */
 export type AppDataDriveFileListItem = {
   id: string;
   name: string;
@@ -205,10 +216,11 @@ export async function downloadAppDataFileText(
   return res.text();
 }
 
-export async function findRecordsFileId(token: string): Promise<string | null> {
-  const q = encodeURIComponent(
-    `name='${RECORDS_NAME}' and trashed=false`,
-  );
+async function findAppDataJsonFileIdByName(
+  token: string,
+  fileName: string,
+): Promise<string | null> {
+  const q = encodeURIComponent(`name='${fileName}' and trashed=false`);
   const url = `${DRIVE_FILES}?spaces=appDataFolder&q=${q}&fields=files(id,name)`;
   const res = await fetch(url, { headers: authHeaders(token) });
   if (!res.ok) throw new Error(`Drive list failed: ${res.status}`);
@@ -288,13 +300,76 @@ export async function upsertCoreRecordsToDrive(
   core: RecordsCoreDocument,
 ): Promise<void> {
   const normalized = normalizeRecordsCoreDocument(core);
-  const payload = JSON.stringify({
-    ...normalized,
-    updatedAt: new Date().toISOString(),
-  });
-  const existing = await findRecordsFileId(token);
-  if (existing) await updateJsonMedia(token, existing, payload);
-  else await createMultipartJsonAppData(token, RECORDS_NAME, payload);
+  const payload = JSON.stringify(normalized);
+
+  const primaryId = await findAppDataJsonFileIdByName(token, CORE_DRIVE_FILE);
+  const previousPrimaryId = await findAppDataJsonFileIdByName(
+    token,
+    PREVIOUS_CORE_DRIVE_FILE,
+  );
+  const legacyId = await findAppDataJsonFileIdByName(token, LEGACY_CORE_DRIVE_FILE);
+
+  if (primaryId) {
+    await updateJsonMedia(token, primaryId, payload);
+    if (previousPrimaryId && previousPrimaryId !== primaryId) {
+      try {
+        await deleteDriveFile(token, previousPrimaryId);
+      } catch {
+        /* best-effort */
+      }
+    }
+    if (legacyId && legacyId !== primaryId && legacyId !== previousPrimaryId) {
+      try {
+        await deleteDriveFile(token, legacyId);
+      } catch {
+        /* best-effort; user may reconcile from Drive Files */
+      }
+    }
+    return;
+  }
+
+  if (previousPrimaryId) {
+    await createMultipartJsonAppData(token, CORE_DRIVE_FILE, payload);
+    try {
+      await deleteDriveFile(token, previousPrimaryId);
+    } catch {
+      /* best-effort */
+    }
+    if (legacyId && legacyId !== previousPrimaryId) {
+      try {
+        await deleteDriveFile(token, legacyId);
+      } catch {
+        /* best-effort */
+      }
+    }
+    return;
+  }
+
+  if (legacyId) {
+    await createMultipartJsonAppData(token, CORE_DRIVE_FILE, payload);
+    try {
+      await deleteDriveFile(token, legacyId);
+    } catch {
+      /* best-effort */
+    }
+    return;
+  }
+
+  await createMultipartJsonAppData(token, CORE_DRIVE_FILE, payload);
+}
+
+/** Meal-only persists still migrate legacy `records.json` or `openmacro-core.json` → `core.json` once. */
+async function migrateLegacyCoreFileIfNeeded(
+  token: string,
+  core: RecordsCoreDocument,
+): Promise<void> {
+  if (await findAppDataJsonFileIdByName(token, CORE_DRIVE_FILE)) return;
+  if (await findAppDataJsonFileIdByName(token, PREVIOUS_CORE_DRIVE_FILE)) {
+    await upsertCoreRecordsToDrive(token, core);
+    return;
+  }
+  if (!(await findAppDataJsonFileIdByName(token, LEGACY_CORE_DRIVE_FILE))) return;
+  await upsertCoreRecordsToDrive(token, core);
 }
 
 async function findMealsShardFileId(
@@ -308,6 +383,14 @@ async function findMealsShardFileId(
   if (!res.ok) throw new Error(`Drive list shard failed: ${res.status}`);
   const data = (await res.json()) as { files?: { id: string }[] };
   return data.files?.[0]?.id ?? null;
+}
+
+/** `files.list` for `meals-YYYY-MM.json` — overlaps safely with multipart photo upload when prefetched before shard write. */
+export async function resolveMealsShardDriveFileId(
+  token: string,
+  monthKey: string,
+): Promise<string | null> {
+  return findMealsShardFileId(token, monthKey);
 }
 
 export async function listMealShardFiles(
@@ -361,19 +444,58 @@ export function groupMealsByMonthKey(meals: MealRecord[]): Map<string, MealRecor
   return map;
 }
 
+async function deleteMealsShardIfExists(token: string, monthKey: string): Promise<void> {
+  const id = await findMealsShardFileId(token, monthKey);
+  if (!id) return;
+  await deleteDriveFile(token, id);
+}
+
 async function upsertMealsShardToDrive(
   token: string,
   monthKey: string,
   meals: MealRecord[],
+  prefetchedFileId?: string | null,
 ): Promise<void> {
   const fileName = mealsShardFileName(monthKey);
   const payload = JSON.stringify({ meals });
-  const existing = await findMealsShardFileId(token, monthKey);
+  const existing =
+    prefetchedFileId !== undefined
+      ? prefetchedFileId
+      : await findMealsShardFileId(token, monthKey);
   if (existing) await updateJsonMedia(token, existing, payload);
   else await createMultipartJsonAppData(token, fileName, payload);
 }
 
-/** Writes core + reconciles monthly shard files to match `meals`. */
+/**
+ * Upserts or deletes shard files only for `affectedMonthKeys` (fresh `files.list` per month
+ * unless an id was prefetched via `shardFileIdsPrefetched`).
+ */
+export async function syncMealShardsForMonths(
+  token: string,
+  meals: MealRecord[],
+  affectedMonthKeys: Iterable<string>,
+  shardFileIdsPrefetched?: Readonly<Record<string, string | null>>,
+): Promise<void> {
+  const uniqKeys = [...new Set(affectedMonthKeys)];
+  const grouped = groupMealsByMonthKey(meals);
+  for (const mk of uniqKeys) {
+    const monthMeals = grouped.get(mk) ?? [];
+    const prefetched = shardFileIdsPrefetched?.[mk];
+    if (monthMeals.length === 0) {
+      if (prefetched !== undefined) {
+        if (prefetched) await deleteDriveFile(token, prefetched);
+      } else {
+        await deleteMealsShardIfExists(token, mk);
+      }
+    } else if (prefetched !== undefined) {
+      await upsertMealsShardToDrive(token, mk, monthMeals, prefetched);
+    } else {
+      await upsertMealsShardToDrive(token, mk, monthMeals);
+    }
+  }
+}
+
+/** Writes all non-empty shards and deletes orphaned empty-month files (lists all meal shards once). */
 export async function syncMealShardsToDrive(
   token: string,
   meals: MealRecord[],
@@ -392,31 +514,89 @@ export async function syncMealShardsToDrive(
   }
 }
 
+export type PersistRecordsToDriveOptions = {
+  coreOnly?: boolean;
+  mealsOnly?: boolean;
+  /**
+   * With `mealsOnly`, writes only these `YYYY-MM` shards from `doc.meals` (no global shard listing).
+   * If omitted while `mealsOnly` is set, falls back to full reconcile.
+   */
+  mealMonthKeysToSync?: string[];
+  /**
+   * Meal-only persist: skip probing for legacy `records.json` / `openmacro-core.json` when the app already
+   * loaded core from `CORE_DRIVE_FILE` (avoids a `files.list` every meal).
+   */
+  skipLegacyCoreMigration?: boolean;
+  /**
+   * Skip per-month `files.list` when resolving shard ids — use prefetched ids from a parallel probe
+   * (keys are `YYYY-MM`, values are Drive file ids or `null` if absent).
+   */
+  shardFileIdsPrefetched?: Readonly<Record<string, string | null>>;
+};
+
 export async function persistRecordsToDrive(
   token: string,
   doc: RecordsDocument,
-  options?: { coreOnly?: boolean },
+  options?: PersistRecordsToDriveOptions,
 ): Promise<void> {
+  if (options?.coreOnly && options?.mealsOnly) {
+    throw new Error("persistRecordsToDrive: coreOnly and mealsOnly cannot both be set");
+  }
   const normalized = normalizeRecordsDocument(doc);
   const core: RecordsCoreDocument = {
     version: normalized.version,
-    updatedAt: normalized.updatedAt,
     profile: normalized.profile,
     ...(normalized.geminiApiKey ? { geminiApiKey: normalized.geminiApiKey } : {}),
   };
-  await upsertCoreRecordsToDrive(token, core);
+  if (!options?.mealsOnly) {
+    await upsertCoreRecordsToDrive(token, core);
+  } else if (options.skipLegacyCoreMigration !== true) {
+    await migrateLegacyCoreFileIfNeeded(token, core);
+  }
   if (!options?.coreOnly) {
-    await syncMealShardsToDrive(token, normalized.meals);
+    const monthKeys = options?.mealMonthKeysToSync;
+    if (options?.mealsOnly && monthKeys && monthKeys.length > 0) {
+      await syncMealShardsForMonths(
+        token,
+        normalized.meals,
+        [...new Set(monthKeys)],
+        options.shardFileIdsPrefetched,
+      );
+    } else {
+      await syncMealShardsToDrive(token, normalized.meals);
+    }
   }
 }
 
-/** Loads only `records.json` (profile, targets, Gemini key metadata). */
+/** Loads core from `CORE_DRIVE_FILE`, else migrates `openmacro-core.json`, else legacy `records.json`. */
 export async function pullRecordsCoreFromDrive(
   token: string,
-): Promise<RecordsCoreDocument | null> {
-  const id = await findRecordsFileId(token);
-  if (!id) return null;
-  return downloadCoreRecords(token, id);
+): Promise<PullRecordsCoreFromDriveResult> {
+  const primaryId = await findAppDataJsonFileIdByName(token, CORE_DRIVE_FILE);
+  if (primaryId) {
+    return {
+      core: await downloadCoreRecords(token, primaryId),
+      coreOnPrimaryDriveFile: true,
+    };
+  }
+  const previousPrimaryId = await findAppDataJsonFileIdByName(
+    token,
+    PREVIOUS_CORE_DRIVE_FILE,
+  );
+  if (previousPrimaryId) {
+    const core = await downloadCoreRecords(token, previousPrimaryId);
+    await upsertCoreRecordsToDrive(token, core);
+    return {
+      core,
+      coreOnPrimaryDriveFile: true,
+    };
+  }
+  const legacyId = await findAppDataJsonFileIdByName(token, LEGACY_CORE_DRIVE_FILE);
+  if (!legacyId) return { core: null, coreOnPrimaryDriveFile: false };
+  return {
+    core: await downloadCoreRecords(token, legacyId),
+    coreOnPrimaryDriveFile: false,
+  };
 }
 
 /** Loads and merges all `meals-YYYY-MM.json` shards under App Data. */
@@ -436,7 +616,7 @@ export async function pullMealsFromDriveShards(
 export async function pullRecordsFromDrive(
   token: string,
 ): Promise<RecordsDocument | null> {
-  const core = await pullRecordsCoreFromDrive(token);
+  const { core } = await pullRecordsCoreFromDrive(token);
   if (!core) return null;
   const meals = await pullMealsFromDriveShards(token);
   return normalizeRecordsDocument({ ...core, meals });
@@ -448,10 +628,9 @@ export async function uploadMealPhotoToAppData(
   mealId: string,
   base64: string,
   mimeType: string,
-  variant: "full" | "thumb" = "full",
 ): Promise<string> {
   const ext = extensionForMime(mimeType || "image/jpeg");
-  const fileName = `openmacro-meal-${mealId}-${variant}.${ext}`;
+  const fileName = `meal-${mealId}.${ext}`;
   const bytes = base64ToUint8Array(base64);
   const boundary = `boundary_${crypto.randomUUID?.() ?? String(Date.now())}`;
   const partBreak = `\r\n--${boundary}\r\n`;
@@ -506,4 +685,29 @@ export async function deleteDriveFile(token: string, fileId: string): Promise<vo
   if (!res.ok && res.status !== 404) {
     throw new Error(`Drive delete failed: ${res.status}`);
   }
+}
+
+/**
+ * Deletes every file in this app's Drive App Data folder for the authorized user.
+ * Does not revoke Google sign-in; the next load creates fresh `core.json` etc.
+ */
+export async function deleteAllAppDataFiles(
+  token: string,
+  signal?: AbortSignal,
+): Promise<{ deleted: number; failures: { name: string; message: string }[] }> {
+  const files = await listAllAppDataFiles(token, signal);
+  const failures: { name: string; message: string }[] = [];
+  let deleted = 0;
+  for (const f of files) {
+    try {
+      await deleteDriveFile(token, f.id);
+      deleted++;
+    } catch (e) {
+      failures.push({
+        name: f.name,
+        message: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+  return { deleted, failures };
 }

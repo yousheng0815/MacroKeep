@@ -1,10 +1,10 @@
-/** Longest side (px) after resize — enough for thumbnails/history without huge uploads. */
+/**
+ * Longest side (px) after resize — one pass for Gemini vision, confirm UI, and Drive.
+ */
 export const MEAL_PHOTO_MAX_EDGE_PX = 1024;
 
-/** Target upper bound for encoded JPEG bytes (before upload). */
+/** Target upper bound for encoded JPEG bytes (upload + API). */
 export const MEAL_PHOTO_MAX_BYTES = 512 * 1024;
-export const MEAL_THUMB_MAX_EDGE_PX = 320;
-export const MEAL_THUMB_MAX_BYTES = 40 * 1024;
 
 function approxDecodedBytesFromBase64(base64: string): number {
   const len = base64.length;
@@ -132,8 +132,8 @@ async function encodeBitmapAsJpegWithinBudget(
 }
 
 /**
- * Downscales and re-encodes as JPEG so the payload stays under {@link MEAL_PHOTO_MAX_BYTES}
- * when possible. Output is always `image/jpeg` for predictable size.
+ * Single resize + JPEG encode for meal scans: Gemini, confirmation UI, and Drive use this blob.
+ * Output is always `image/jpeg`.
  */
 export async function prepareMealPhotoForUpload(
   base64: string,
@@ -162,36 +162,6 @@ export async function prepareMealPhotoForUpload(
       MEAL_PHOTO_MAX_EDGE_PX,
       MEAL_PHOTO_MAX_BYTES,
     );
-  } finally {
-    bitmap?.close();
-  }
-}
-
-export async function prepareMealPhotoPairForUpload(
-  base64: string,
-  mimeType: string,
-): Promise<{ full: PreparedPhoto; thumb: PreparedPhoto }> {
-  let bitmap: ImageBitmap | undefined;
-  try {
-    bitmap = await decodeToBitmap(base64, mimeType);
-  } catch {
-    const full = await prepareMealPhotoForUpload(base64, mimeType);
-    const thumb = full;
-    return { full, thumb };
-  }
-
-  try {
-    const full = await encodeBitmapAsJpegWithinBudget(
-      bitmap,
-      MEAL_PHOTO_MAX_EDGE_PX,
-      MEAL_PHOTO_MAX_BYTES,
-    );
-    const thumb = await encodeBitmapAsJpegWithinBudget(
-      bitmap,
-      MEAL_THUMB_MAX_EDGE_PX,
-      MEAL_THUMB_MAX_BYTES,
-    );
-    return { full, thumb };
   } finally {
     bitmap?.close();
   }

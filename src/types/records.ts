@@ -6,9 +6,9 @@ export type MealRecord = {
   fats: number;
   carbs: number;
   recordedAt: string;
-  /** Google Drive file id (App Data folder) for the saved meal photo snapshot. */
+  /** Google Drive file id (App Data folder) for the meal photo. */
   photoFileId?: string;
-  /** Google Drive file id (App Data folder) for the small list thumbnail snapshot. */
+  /** @deprecated Legacy second file; new saves only set {@link photoFileId}. */
   thumbnailFileId?: string;
 };
 
@@ -22,12 +22,11 @@ export type UserProfile = {
   carbsTargetG: number;
 };
 
-/** Persisted in Drive as `records.json` (no `meals`; those live in `meals-YYYY-MM.json`). */
+/** Persisted in Drive as `core.json` (profile + optional Gemini key; no meal rows in this file). */
 export type RecordsCoreDocument = {
   version: number;
-  updatedAt: string;
   profile: UserProfile;
-  /** BYOK Gemini key — stored only in Drive `records.json`, not in browser storage. */
+  /** BYOK Gemini key — stored only in Drive app-data `core.json`, not in browser storage. */
   geminiApiKey?: string;
 };
 
@@ -54,7 +53,6 @@ export const DEFAULT_PROFILE: UserProfile = {
 export function emptyRecords(): RecordsDocument {
   return {
     version: 1,
-    updatedAt: new Date().toISOString(),
     profile: { ...DEFAULT_PROFILE },
     meals: [],
   };

@@ -1,14 +1,17 @@
 import { canSyncToDriveAppData, getAccessToken, getGoogleUserId } from "@/lib/gapi";
 import {
+  deleteAllAppDataFiles,
   deleteDriveFile,
+  monthKeyFromRecordedAt,
   normalizeRecordsDocument,
   persistRecordsToDrive,
   pullMealsFromDriveShards,
   pullRecordsCoreFromDrive,
+  resolveMealsShardDriveFileId,
   uploadMealPhotoToAppData,
 } from "@/lib/google-drive";
-import { prepareMealPhotoPairForUpload } from "@/lib/meal-photo-compress";
-import type { PreparedMealPhotoPair } from "@/types/meal-scan";
+import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
+import type { PreparedMealPhoto } from "@/types/meal-scan";
 import type {
   MealRecord,
   RecordsCoreDocument,
@@ -35,6 +38,11 @@ function splitNormalized(doc: RecordsDocument): {
   return { core, meals };
 }
 
+type RecordsCoreQueryData = {
+  core: RecordsCoreDocument;
+  coreOnPrimaryDriveFile: boolean;
+};
+
 export function useRecords() {
   const qc = useQueryClient();
   const [mealWriteBusy, setMealWriteBusy] = useState(false);
@@ -45,17 +53,23 @@ export function useRecords() {
     queryKey: ["records-core", userId],
     enabled: !!userId,
     staleTime: 60_000,
-    queryFn: async (): Promise<RecordsCoreDocument> => {
+    queryFn: async (): Promise<RecordsCoreQueryData> => {
       const token = getAccessToken();
       if (!token) throw new Error("Missing Google access token");
 
-      const remote = await pullRecordsCoreFromDrive(token);
-      if (!remote) {
+      const pulled = await pullRecordsCoreFromDrive(token);
+      if (!pulled.core) {
         const initial = emptyRecords();
         await persistRecordsToDrive(token, initial);
-        return splitNormalized(initial).core;
+        return {
+          core: splitNormalized(initial).core,
+          coreOnPrimaryDriveFile: true,
+        };
       }
-      return remote;
+      return {
+        core: pulled.core,
+        coreOnPrimaryDriveFile: pulled.coreOnPrimaryDriveFile,
+      };
     },
   });
 
@@ -74,14 +88,24 @@ export function useRecords() {
     mutationFn: async (payload: {
       next: RecordsDocument;
       coreOnly?: boolean;
+      mealsOnly?: boolean;
+      mealMonthKeysToSync?: string[];
+      shardFileIdsPrefetched?: Readonly<Record<string, string | null>>;
     }) => {
       if (!canSyncToDriveAppData()) {
         throw new Error("Not signed in or Drive scope unavailable");
       }
       const token = getAccessToken();
       if (!token) throw new Error("Missing access token");
+      const uid = getGoogleUserId() ?? "";
+      const boot = qc.getQueryData<RecordsCoreQueryData>(["records-core", uid]);
       await persistRecordsToDrive(token, payload.next, {
         coreOnly: payload.coreOnly,
+        mealsOnly: payload.mealsOnly,
+        mealMonthKeysToSync: payload.mealMonthKeysToSync,
+        skipLegacyCoreMigration:
+          !!(payload.mealsOnly && boot?.coreOnPrimaryDriveFile),
+        shardFileIdsPrefetched: payload.shardFileIdsPrefetched,
       });
       return payload.next;
     },
@@ -93,27 +117,30 @@ export function useRecords() {
       const uid = getGoogleUserId();
       if (!uid) return;
       const { core, meals } = splitNormalized(doc);
-      qc.setQueryData(["records-core", uid], core);
+      qc.setQueryData<RecordsCoreQueryData>(["records-core", uid], {
+        core,
+        coreOnPrimaryDriveFile: true,
+      });
       qc.setQueryData(["records-meals", uid], meals);
     },
   });
 
   const records = useMemo((): RecordsDocument => {
-    const core = coreQuery.data;
-    if (!core) return emptyRecords();
+    const boot = coreQuery.data;
+    if (!boot) return emptyRecords();
     const meals = mealsQuery.data ?? [];
-    return normalizeRecordsDocument({ ...core, meals });
+    return normalizeRecordsDocument({ ...boot.core, meals });
   }, [coreQuery.data, mealsQuery.data]);
 
-  const geminiKey = coreQuery.data?.geminiApiKey ?? "";
+  const geminiKey = coreQuery.data?.core.geminiApiKey ?? "";
 
   const getCurrentRecords = useCallback((): RecordsDocument => {
     const uid = getGoogleUserId();
     if (!uid) return emptyRecords();
-    const core = qc.getQueryData<RecordsCoreDocument>(["records-core", uid]);
+    const boot = qc.getQueryData<RecordsCoreQueryData>(["records-core", uid]);
+    if (!boot?.core) return emptyRecords();
     const meals = qc.getQueryData<MealRecord[]>(["records-meals", uid]);
-    if (!core) return emptyRecords();
-    return normalizeRecordsDocument({ ...core, meals: meals ?? [] });
+    return normalizeRecordsDocument({ ...boot.core, meals: meals ?? [] });
   }, [qc]);
 
   const updateGeminiKey = useCallback(
@@ -138,8 +165,8 @@ export function useRecords() {
       },
       options?: {
         photo?: { base64: string; mimeType: string };
-        /** When set, skips compression — uploads these blobs only (see meal scan flow). */
-        preparedPhotos?: PreparedMealPhotoPair;
+        /** Skips re-encoding when the scan flow already ran {@link prepareMealPhotoForUpload}. */
+        preparedPhoto?: PreparedMealPhoto;
       },
     ) => {
       setMealWriteBusy(true);
@@ -147,35 +174,54 @@ export function useRecords() {
       try {
         const prev = getCurrentRecords();
         const id = crypto.randomUUID?.() ?? String(Date.now());
+        const recordedAt = meal.recordedAt ?? new Date().toISOString();
+        const mealMonthKey = monthKeyFromRecordedAt(recordedAt);
 
-        let photoFileId: string | undefined;
-        let thumbnailFileId: string | undefined;
-        if (options?.preparedPhotos || options?.photo) {
+        if (options?.preparedPhoto || options?.photo) {
           if (!canSyncToDriveAppData()) {
             throw new Error("Not signed in or Drive scope unavailable");
           }
           const token = getAccessToken();
           if (!token) throw new Error("Missing access token");
-          const prepared = options.preparedPhotos
-            ? options.preparedPhotos
-            : await prepareMealPhotoPairForUpload(
+          const prepared = options.preparedPhoto
+            ? options.preparedPhoto
+            : await prepareMealPhotoForUpload(
                 options.photo!.base64,
                 options.photo!.mimeType,
               );
-          photoFileId = await uploadMealPhotoToAppData(
-            token,
+          const [uploadedPhotoId, shardDriveId] = await Promise.all([
+            uploadMealPhotoToAppData(
+              token,
+              id,
+              prepared.base64,
+              prepared.mimeType,
+            ),
+            resolveMealsShardDriveFileId(token, mealMonthKey),
+          ]);
+
+          const rowWithPhoto: MealRecord = {
             id,
-            prepared.full.base64,
-            prepared.full.mimeType,
-            "full",
-          );
-          thumbnailFileId = await uploadMealPhotoToAppData(
-            token,
-            id,
-            prepared.thumb.base64,
-            prepared.thumb.mimeType,
-            "thumb",
-          );
+            food_name: meal.food_name,
+            calories: meal.calories,
+            protein: meal.protein,
+            fats: meal.fats,
+            carbs: meal.carbs,
+            recordedAt,
+            photoFileId: uploadedPhotoId,
+          };
+
+          const nextWithPhoto: RecordsDocument = {
+            ...prev,
+            meals: [rowWithPhoto, ...prev.meals],
+          };
+
+          await replaceMutation.mutateAsync({
+            next: nextWithPhoto,
+            mealsOnly: true,
+            mealMonthKeysToSync: [mealMonthKey],
+            shardFileIdsPrefetched: { [mealMonthKey]: shardDriveId },
+          });
+          return;
         }
 
         const row: MealRecord = {
@@ -185,16 +231,18 @@ export function useRecords() {
           protein: meal.protein,
           fats: meal.fats,
           carbs: meal.carbs,
-          recordedAt: meal.recordedAt ?? new Date().toISOString(),
+          recordedAt,
         };
-        if (photoFileId) row.photoFileId = photoFileId;
-        if (thumbnailFileId) row.thumbnailFileId = thumbnailFileId;
 
         const next: RecordsDocument = {
           ...prev,
           meals: [row, ...prev.meals],
         };
-        await replaceMutation.mutateAsync({ next });
+        await replaceMutation.mutateAsync({
+          next,
+          mealsOnly: true,
+          mealMonthKeysToSync: [mealMonthKey],
+        });
       } finally {
         setMealWriteBusy(false);
       }
@@ -206,13 +254,18 @@ export function useRecords() {
     async (id: string) => {
       const prev = getCurrentRecords();
       const removed = prev.meals.find((m) => m.id === id);
-      const photoId = removed?.photoFileId;
-      const thumbId = removed?.thumbnailFileId;
+      if (!removed) throw new Error("Meal not found");
+      const photoId = removed.photoFileId;
+      const thumbId = removed.thumbnailFileId;
       const next: RecordsDocument = {
         ...prev,
         meals: prev.meals.filter((m) => m.id !== id),
       };
-      await replaceMutation.mutateAsync({ next });
+      await replaceMutation.mutateAsync({
+        next,
+        mealsOnly: true,
+        mealMonthKeysToSync: [monthKeyFromRecordedAt(removed.recordedAt)],
+      });
       if ((photoId || thumbId) && canSyncToDriveAppData()) {
         const token = getAccessToken();
         if (token) {
@@ -241,11 +294,26 @@ export function useRecords() {
       const prev = getCurrentRecords();
       const hasTarget = prev.meals.some((m) => m.id === id);
       if (!hasTarget) throw new Error("Meal not found");
+      const prevMeal = prev.meals.find((m) => m.id === id)!;
+      const monthKeys = new Set<string>();
+      monthKeys.add(
+        monthKeyFromRecordedAt(patch.recordedAt ?? prevMeal.recordedAt),
+      );
+      if (
+        patch.recordedAt !== undefined &&
+        patch.recordedAt !== prevMeal.recordedAt
+      ) {
+        monthKeys.add(monthKeyFromRecordedAt(prevMeal.recordedAt));
+      }
       const next: RecordsDocument = {
         ...prev,
         meals: prev.meals.map((m) => (m.id === id ? { ...m, ...patch } : m)),
       };
-      await replaceMutation.mutateAsync({ next });
+      await replaceMutation.mutateAsync({
+        next,
+        mealsOnly: true,
+        mealMonthKeysToSync: [...monthKeys],
+      });
     },
     [getCurrentRecords, replaceMutation],
   );
@@ -271,6 +339,26 @@ export function useRecords() {
     await replaceMutation.mutateAsync({ next: fresh });
   }, [getCurrentRecords, replaceMutation]);
 
+  const wipeAllRemoteData = useCallback(async () => {
+    if (!canSyncToDriveAppData()) {
+      throw new Error("Not signed in or Drive scope unavailable");
+    }
+    const token = getAccessToken();
+    if (!token) throw new Error("Missing access token");
+    const { deleted, failures } = await deleteAllAppDataFiles(token);
+    if (failures.length > 0) {
+      throw new Error(
+        `Deleted ${deleted} file(s), but ${failures.length} failed (e.g. ${failures[0].name}: ${failures[0].message}).`,
+      );
+    }
+    const uid = getGoogleUserId();
+    if (uid) {
+      qc.invalidateQueries({ queryKey: ["records-core", uid] });
+      qc.invalidateQueries({ queryKey: ["records-meals", uid] });
+      qc.invalidateQueries({ queryKey: ["drive-app-files", uid] });
+    }
+  }, [qc]);
+
   const refetch = useCallback(async () => {
     const cr = await coreQuery.refetch();
     if (cr.error) return cr;
@@ -284,7 +372,7 @@ export function useRecords() {
   return {
     records,
     userId,
-    /** True once `records.json` has been loaded or created for this account. */
+    /** True once core Drive JSON (`core.json`) has been loaded or created for this account. */
     isRecordsReady: coreQuery.isSuccess,
     /** Meal shards still syncing from Drive — show placeholders for meal-derived UI. */
     isMealsLoading,
@@ -301,6 +389,7 @@ export function useRecords() {
     updateMeal,
     updateProfile,
     resetLocal,
+    wipeAllRemoteData,
     isSaving: replaceMutation.isPending || mealWriteBusy,
   };
 }

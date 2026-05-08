@@ -1,12 +1,19 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  SchemaType,
+  type GenerationConfig,
+} from "@google/generative-ai";
 
 /** Stable Flash model for AI Studio / Generative Language API (`generateContent`). */
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 
-function resolveGeminiModelId(): string {
-  const fromEnv = import.meta.env.VITE_GEMINI_MODEL?.trim();
-  return fromEnv || DEFAULT_GEMINI_MODEL;
-}
+/**
+ * Disable extended thinking for meal estimates — saves latency and avoids eating
+ * the whole output budget before JSON is emitted. (SDK typings omit this; API accepts it.)
+ */
+type MealScanGenerationConfig = GenerationConfig & {
+  thinkingConfig?: { thinkingBudget?: number };
+};
 
 export type AiMealEstimate = {
   food_name: string;
@@ -29,7 +36,21 @@ function stripCodeFence(text: string): string {
 
 export function parseAiMealJson(text: string): AiMealEstimate {
   const cleaned = stripCodeFence(text);
-  const parsed = JSON.parse(cleaned) as Partial<AiMealEstimate>;
+  if (!cleaned) {
+    throw new Error(
+      "Gemini returned no text — often caused by maxOutputTokens being too small for this model.",
+    );
+  }
+  let parsed: Partial<AiMealEstimate>;
+  try {
+    parsed = JSON.parse(cleaned) as Partial<AiMealEstimate>;
+  } catch (e) {
+    const hint =
+      e instanceof SyntaxError && cleaned.length < 400
+        ? cleaned
+        : `${cleaned.slice(0, 200)}…`;
+    throw new Error(`Could not parse meal JSON: ${hint}`);
+  }
   const food_name = String(parsed.food_name ?? "Meal");
   const calories = Number(parsed.calories ?? 0);
   const protein = Number(parsed.protein ?? 0);
@@ -44,11 +65,30 @@ export async function analyzeFoodPhoto(
   mimeType: string,
 ): Promise<AiMealEstimate> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: resolveGeminiModelId() });
+  const mealGenerationConfig: MealScanGenerationConfig = {
+    temperature: 0.2,
+    responseMimeType: "application/json",
+    responseSchema: {
+      type: SchemaType.OBJECT,
+      properties: {
+        food_name: { type: SchemaType.STRING },
+        calories: { type: SchemaType.NUMBER },
+        protein: { type: SchemaType.NUMBER },
+        fats: { type: SchemaType.NUMBER },
+        carbs: { type: SchemaType.NUMBER },
+      },
+      required: ["food_name", "calories", "protein", "fats", "carbs"],
+    },
+    thinkingConfig: { thinkingBudget: 0 },
+  };
+  const model = genAI.getGenerativeModel({
+    model: DEFAULT_GEMINI_MODEL,
+    generationConfig: mealGenerationConfig,
+  });
   const prompt =
     "You are a nutrition assistant. Estimate the meal in the image.\n" +
-    "Return ONLY valid JSON with keys: food_name (string), calories (number), protein (grams number), fats (grams number), carbs (grams number).\n" +
-    "Use reasonable estimates for the serving visible. Round calories to whole numbers. No markdown.";
+    "Return a JSON object with: food_name (short label), calories (whole number kcal), protein / fats / carbs (grams, numbers).\n" +
+    "Use reasonable estimates for the serving visible.";
 
   const result = await model.generateContent([
     { text: prompt },
@@ -60,6 +100,34 @@ export async function analyzeFoodPhoto(
     },
   ]);
 
-  const text = result.response.text();
+  const response = result.response;
+  const candidate = response.candidates?.[0];
+  let text: string;
+  try {
+    text = response.text();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`Gemini response blocked: ${msg}`);
+  }
+
+  if (!text.trim()) {
+    const fr = candidate?.finishReason;
+    const thoughts = (
+      response as { usageMetadata?: { thoughtsTokenCount?: number } }
+    ).usageMetadata?.thoughtsTokenCount;
+    if (fr === "MAX_TOKENS") {
+      const thoughtHint =
+        thoughts != null
+          ? ` This response used ${thoughts} internal thought tokens before any visible JSON.`
+          : "";
+      throw new Error(
+        `Gemini hit the output token limit with no JSON in the reply.${thoughtHint} Try again, or use a different photo.`,
+      );
+    }
+    throw new Error(
+      "Gemini returned an empty answer. Try another photo or check model/API availability.",
+    );
+  }
+
   return parseAiMealJson(text);
 }

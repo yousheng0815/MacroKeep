@@ -2,6 +2,7 @@ import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { Logo } from "@/components/Logo";
 import { useGoogleSession } from "@/contexts/google-session";
 import { DRIVE_APPDATA_SCOPE } from "@/lib/gapi";
+import { CORE_DRIVE_FILE } from "@/lib/google-drive";
 import { Loader2 } from "lucide-react";
 import { Navigate } from "@tanstack/react-router";
 
@@ -36,7 +37,9 @@ export function LoginPage() {
             Sign in with Google so your diary, profile, and optional Gemini key live in
             your Drive{" "}
             <strong className="font-medium text-zinc-300">App Data</strong> folder (
-            <span className="font-mono text-xs text-zinc-400">records.json</span>
+            <span className="font-mono text-xs text-zinc-400">
+              {CORE_DRIVE_FILE}
+            </span>
             ). Only a small OAuth session is kept in{" "}
             <strong className="font-medium text-zinc-300">localStorage</strong> so you
             don&apos;t have to sign in on every visit.
