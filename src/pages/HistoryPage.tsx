@@ -1,6 +1,7 @@
 import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
+import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
 import {
   formatLocalDateLabel,
@@ -209,12 +210,10 @@ export function HistoryPage() {
 
   return (
     <div className="space-y-6 overflow-x-hidden">
-      <div>
-        <h1 className="text-xl font-bold text-white">History</h1>
-        <p className="mt-1 text-sm text-om-muted">
-          Meals grouped by day with macro totals.
-        </p>
-      </div>
+      <PageHeader
+        title="History"
+        subtitle="Meals grouped by day with macro totals."
+      />
 
       {body}
     </div>

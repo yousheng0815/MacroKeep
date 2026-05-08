@@ -1,6 +1,7 @@
 import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
+import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
 import { formatLocalDateLabel, formatTime } from "@/lib/date";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
@@ -60,15 +61,11 @@ export function MealDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <Link
-          to="/history"
-          className="inline-flex items-center gap-2 text-sm text-zinc-300 transition hover:text-white"
-        >
-          <ArrowLeft className="size-4" />
-          History
-        </Link>
-      </div>
+      <PageHeader
+        title="Meal Details"
+        backTo="/history"
+        backAriaLabel="Back to history"
+      />
 
       <Card>
         <div className="flex items-start gap-4">

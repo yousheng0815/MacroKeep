@@ -1,5 +1,6 @@
 import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
+import { PageHeader } from "@/components/PageHeader";
 import { useGoogleSession } from "@/contexts/google-session";
 import { getAccessToken, getGoogleUserId } from "@/lib/gapi";
 import {
@@ -126,27 +127,29 @@ export function DriveFilesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-white">Drive app data</h1>
-          <p className="mt-1 text-sm text-om-muted">
+      <PageHeader
+        title="Drive app data"
+        subtitle={
+          <>
             Files OpenMacro stores in your Google Drive{" "}
-            <span className="text-zinc-400">App Data</span> folder (hidden from
-            My Drive).
-          </p>
-        </div>
-        <button
-          type="button"
-          disabled={!sessionReady || q.isFetching}
-          aria-busy={q.isFetching}
-          onClick={() => void q.refetch()}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {q.isFetching ? <ButtonSpinner className="text-zinc-300" /> : null}
-          {!q.isFetching ? <RefreshCw className="size-4" aria-hidden /> : null}
-          Refresh
-        </button>
-      </div>
+            <span className="text-zinc-400">App Data</span> folder (hidden from My
+            Drive).
+          </>
+        }
+        actions={
+          <button
+            type="button"
+            disabled={!sessionReady || q.isFetching}
+            aria-busy={q.isFetching}
+            onClick={() => void q.refetch()}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {q.isFetching ? <ButtonSpinner className="text-zinc-300" /> : null}
+            {!q.isFetching ? <RefreshCw className="size-4" aria-hidden /> : null}
+            Refresh
+          </button>
+        }
+      />
 
       {!sessionReady ? (
         <Card>

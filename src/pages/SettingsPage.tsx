@@ -1,5 +1,6 @@
 import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
+import { PageHeader } from "@/components/PageHeader";
 import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
 import { DRIVE_APPDATA_SCOPE, getGoogleUserEmail } from "@/lib/gapi";
@@ -247,11 +248,11 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-white">Settings</h1>
-        <p className="mt-1 text-sm text-om-muted">
-          Authentication, AI keys, and your baseline targets.
-        </p>
+      <div className="space-y-2">
+        <PageHeader
+          title="Settings"
+          subtitle="Authentication, AI keys, and your baseline targets."
+        />
         <p className="mt-2 text-sm">
           <Link to="/tutorial" className="text-emerald-400 hover:text-emerald-300">
             Open setup tutorial to generate targets with Gemini
