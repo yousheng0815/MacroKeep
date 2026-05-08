@@ -33,7 +33,7 @@ export default defineConfig({
     }),
   ],
   server: {
-    allowedHosts: ["c82b-216-58-113-140.ngrok-free.app"],
+    allowedHosts: ["252d-209-227-158-102.ngrok-free.app"],
   },
   resolve: {
     alias: {

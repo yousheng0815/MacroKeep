@@ -6,6 +6,8 @@ import { FavoriteMealsPage } from "@/pages/FavoriteMealsPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MealDetailPage } from "@/pages/MealDetailPage";
+import { ProgressPage } from "@/pages/ProgressPage";
+import { ProgressPhotoSlideshowPage } from "@/pages/ProgressPhotoSlideshowPage";
 import { ScannerPage } from "@/pages/ScannerPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { TutorialPage } from "@/pages/TutorialPage";
@@ -73,6 +75,18 @@ const favoriteMealsRoute = createRoute({
   component: FavoriteMealsPage,
 });
 
+const progressRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/progress",
+  component: ProgressPage,
+});
+
+const progressPhotoSlideshowRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/progress/photos/slideshow",
+  component: ProgressPhotoSlideshowPage,
+});
+
 const driveRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/drive",
@@ -99,13 +113,18 @@ const routeTree = rootRoute.addChildren([
     mealDetailRoute,
     scannerRoute,
     favoriteMealsRoute,
+    progressRoute,
+    progressPhotoSlideshowRoute,
     driveRoute,
     settingsRoute,
     tutorialRoute,
   ]),
 ]);
 
-export const router = createRouter({ routeTree });
+export const router = createRouter({
+  routeTree,
+  scrollRestoration: true,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {

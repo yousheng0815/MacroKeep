@@ -128,6 +128,7 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
     if (!readHasDriveAppDataScope()) return;
 
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- OAuth silent refresh pending flag
     setOauthSilentRefreshPending(true);
     void refreshGoogleAccessTokenSilently(clientId).finally(() => {
       if (cancelled) return;

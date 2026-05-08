@@ -1,22 +1,21 @@
 import { getAccessToken } from "@/lib/gapi";
+import { downloadAppDataFileBlob } from "@/lib/google-drive";
 import { useEffect, useState } from "react";
 
-const DRIVE_MEDIA = "https://www.googleapis.com/drive/v3/files";
 const blobUrlCache = new Map<string, string>();
 const inflightFetches = new Map<string, Promise<string | null>>();
 
 async function fetchDrivePhotoBlobUrl(fileId: string): Promise<string | null> {
   const token = getAccessToken();
   if (!token) return null;
-  const url = `${DRIVE_MEDIA}/${encodeURIComponent(fileId)}?alt=media`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) return null;
-  const blob = await res.blob();
-  const objectUrl = URL.createObjectURL(blob);
-  blobUrlCache.set(fileId, objectUrl);
-  return objectUrl;
+  try {
+    const blob = await downloadAppDataFileBlob(token, fileId);
+    const objectUrl = URL.createObjectURL(blob);
+    blobUrlCache.set(fileId, objectUrl);
+    return objectUrl;
+  } catch {
+    return null;
+  }
 }
 
 export function useDrivePhotoUrl(fileId: string | undefined) {

@@ -6,7 +6,7 @@ import { useRecords } from "@/hooks/use-records";
 import { DRIVE_APPDATA_SCOPE, getGoogleUserEmail } from "@/lib/gapi";
 import { CORE_DRIVE_FILE } from "@/lib/google-drive";
 import type { UserProfile } from "@/types/records";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ChevronRight, FolderOpen } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -267,15 +267,29 @@ export function SettingsPage() {
           <span className="text-zinc-300">App Data</span> folder as{" "}
           <span className="font-mono text-zinc-400">{CORE_DRIVE_FILE}</span>.
           Meals use separate monthly JSON files in the same folder. Only your
-          Google OAuth session is stored locally so repeat visits stay signed in.{" "}
-          <Link
-            to="/drive"
-            className="text-emerald-400/90 underline-offset-2 hover:text-emerald-300 hover:underline"
-          >
-            Browse all app data files
-          </Link>
-          .
+          Google OAuth session is stored locally so repeat visits stay signed in.
         </p>
+
+        <Link
+          to="/drive"
+          className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-left text-sm transition hover:bg-zinc-900"
+        >
+          <span className="flex min-w-0 items-start gap-3">
+            <FolderOpen
+              className="mt-0.5 size-5 shrink-0 text-zinc-400"
+              aria-hidden
+            />
+            <span className="min-w-0">
+              <span className="block font-medium text-zinc-100">
+                Drive app data
+              </span>
+              <span className="mt-0.5 block text-xs font-normal text-om-muted">
+                List files and preview JSON in your App Data folder
+              </span>
+            </span>
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-zinc-500" aria-hidden />
+        </Link>
 
         <dl className="mt-4 space-y-3 text-sm">
           <div>

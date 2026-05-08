@@ -1,3 +1,7 @@
+import {
+  clearProgressPhotosIndexedDb,
+  listProgressPhotosDesc,
+} from "@/lib/progress-photos-db";
 import type {
   MealRecord,
   OnboardingDraft,
@@ -5,9 +9,17 @@ import type {
   RecordsDocument,
 } from "@/types/records";
 import { emptyRecords } from "@/types/records";
+import type {
+  ProgressPhotoDriveMeta,
+  ProgressPhotoRecord,
+  ProgressPhotosPullResult,
+} from "@/types/progress-photos";
 
 /** Drive App Data JSON: profile, macro targets, optional Gemini BYOK key (no meal rows). */
 export const CORE_DRIVE_FILE = "core.json";
+
+/** Index of body progress shots; JPEG files named `progress-photo-<id>.jpg` in the same folder. */
+export const PROGRESS_PHOTOS_MANIFEST_FILE = "progress-photos.json";
 
 /** From `pullRecordsCoreFromDrive`: loaded core document and whether Drive already uses `core.json`. */
 export type PullRecordsCoreFromDriveResult = {
@@ -265,6 +277,12 @@ export function isJsonAppDataFile(f: AppDataDriveFileListItem): boolean {
   return mime.includes("json") || f.name.toLowerCase().endsWith(".json");
 }
 
+/** True when the file can be shown as an image preview (`alt=media` blob). */
+export function isImagePreviewAppDataFile(f: AppDataDriveFileListItem): boolean {
+  const mime = (f.mimeType ?? "").toLowerCase();
+  return mime.startsWith("image/");
+}
+
 /**
  * Downloads a file from `appDataFolder` as UTF-8 text (`alt=media`).
  * Caller should ensure `fileId` belongs to the user's app data folder.
@@ -278,6 +296,146 @@ export async function downloadAppDataFileText(
   const res = await fetch(url, { headers: authHeaders(token), signal });
   if (!res.ok) throw new Error(`Drive download failed: ${res.status}`);
   return res.text();
+}
+
+function sniffImageMimeFromMagic(buf: ArrayBuffer): string | null {
+  const b = new Uint8Array(buf);
+  if (b.byteLength >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff)
+    return "image/jpeg";
+  if (
+    b.byteLength >= 8 &&
+    b[0] === 0x89 &&
+    b[1] === 0x50 &&
+    b[2] === 0x4e &&
+    b[3] === 0x47
+  )
+    return "image/png";
+  if (b.byteLength >= 6 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38)
+    return "image/gif";
+  if (
+    b.byteLength >= 12 &&
+    b[0] === 0x52 &&
+    b[1] === 0x49 &&
+    b[2] === 0x46 &&
+    b[3] === 0x46 &&
+    b[8] === 0x57 &&
+    b[9] === 0x45 &&
+    b[10] === 0x42 &&
+    b[11] === 0x50
+  )
+    return "image/webp";
+  return null;
+}
+
+function blobFromDriveMediaBuffer(buf: ArrayBuffer, contentTypeHeader: string | null): Blob {
+  const rawCt = contentTypeHeader ?? "";
+  const ct = rawCt ? rawCt.split(";")[0].trim().toLowerCase() : "";
+  const magicMime = sniffImageMimeFromMagic(buf);
+  let type = ct;
+  if (!type.startsWith("image/")) {
+    if (magicMime) type = magicMime;
+    else if (!type) type = "application/octet-stream";
+  }
+  return new Blob([buf], { type });
+}
+
+function bufferLooksLikeImageMagic(buf: ArrayBuffer): boolean {
+  return sniffImageMimeFromMagic(buf) !== null;
+}
+
+/** Drive v3 often returns 403 for `?access_token=`; prefer Bearer + redirect follow (Location is signed). */
+function downloadDriveMediaWithXhr(
+  token: string,
+  fileId: string,
+  signal?: AbortSignal,
+): Promise<{ buf: ArrayBuffer; contentType: string | null }> {
+  return new Promise((resolve, reject) => {
+    const url = `${DRIVE_FILES}/${encodeURIComponent(fileId)}?alt=media`;
+    const xhr = new XMLHttpRequest();
+
+    const onAbort = () => {
+      xhr.abort();
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+
+    if (signal) {
+      if (signal.aborted) {
+        onAbort();
+        return;
+      }
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+
+    xhr.open("GET", url);
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.responseType = "arraybuffer";
+
+    xhr.onload = () => {
+      signal?.removeEventListener("abort", onAbort);
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve({
+          buf: xhr.response as ArrayBuffer,
+          contentType: xhr.getResponseHeader("Content-Type"),
+        });
+      } else {
+        reject(new Error(`Drive download failed: ${xhr.status}`));
+      }
+    };
+    xhr.onerror = () => {
+      signal?.removeEventListener("abort", onAbort);
+      reject(new Error("Drive download network error"));
+    };
+
+    xhr.send();
+  });
+}
+
+/**
+ * Downloads raw bytes from `appDataFolder` (`alt=media`).
+ * Caller should ensure `fileId` belongs to the user's app data folder.
+ *
+ * Uses `Authorization: Bearer` only (`access_token` query returns 403 for Drive v3 in browsers).
+ * Redirects are followed to a signed URL; if `fetch` still yields non-image bytes, retries via XHR.
+ */
+export async function downloadAppDataFileBlob(
+  token: string,
+  fileId: string,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const url = `${DRIVE_FILES}/${encodeURIComponent(fileId)}?alt=media`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: authHeaders(token),
+    credentials: "omit",
+    redirect: "follow",
+    signal,
+  });
+  if (!res.ok) {
+    throw new Error(`Drive download failed: ${res.status}`);
+  }
+  let buf = await res.arrayBuffer();
+  let ct = res.headers.get("content-type");
+
+  const jsonProbe = new Uint8Array(buf.slice(0, Math.min(buf.byteLength, 400)));
+  const textHead = new TextDecoder().decode(jsonProbe);
+  if (textHead.trimStart().startsWith("{") && textHead.includes('"error"')) {
+    throw new Error("Drive returned an error JSON body instead of image bytes.");
+  }
+
+  if (!bufferLooksLikeImageMagic(buf)) {
+    const xhrRes = await downloadDriveMediaWithXhr(token, fileId, signal);
+    buf = xhrRes.buf;
+    ct = xhrRes.contentType;
+  }
+
+  if (!bufferLooksLikeImageMagic(buf)) {
+    throw new Error(
+      "Drive download did not return a recognizable image (check file id and OAuth scope).",
+    );
+  }
+
+  return blobFromDriveMediaBuffer(buf, ct);
 }
 
 async function findAppDataJsonFileIdByName(
@@ -740,6 +898,208 @@ export async function uploadMealPhotoToAppData(
   const data = (await res.json()) as { id?: string };
   if (!data.id) throw new Error("Drive meal photo upload missing id");
   return data.id;
+}
+
+function normalizeProgressPhotosManifestDoc(parsed: unknown): {
+  photos: ProgressPhotoDriveMeta[];
+} {
+  if (!parsed || typeof parsed !== "object") {
+    return { photos: [] };
+  }
+  const doc = parsed as Record<string, unknown>;
+  const raw = doc.photos;
+  if (!Array.isArray(raw)) {
+    return { photos: [] };
+  }
+  const out: ProgressPhotoDriveMeta[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const o = row as Record<string, unknown>;
+    const id = typeof o.id === "string" ? o.id.trim() : "";
+    const driveFileId =
+      typeof o.driveFileId === "string" ? o.driveFileId.trim() : "";
+    const capturedAt = Number(o.capturedAt);
+    if (!id || !driveFileId || !Number.isFinite(capturedAt)) continue;
+    out.push({ id, driveFileId, capturedAt });
+  }
+  return { photos: out };
+}
+
+function buildProgressPhotosManifestJson(photos: ProgressPhotoDriveMeta[]): string {
+  return JSON.stringify({ version: 1, photos });
+}
+
+async function readProgressPhotosManifest(token: string): Promise<{
+  manifestFileId: string | null;
+  photos: ProgressPhotoDriveMeta[];
+}> {
+  const manifestFileId = await findAppDataJsonFileIdByName(
+    token,
+    PROGRESS_PHOTOS_MANIFEST_FILE,
+  );
+  if (!manifestFileId) {
+    return { manifestFileId: null, photos: [] };
+  }
+  const text = await downloadAppDataFileText(token, manifestFileId);
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    const { photos } = normalizeProgressPhotosManifestDoc(parsed);
+    return { manifestFileId, photos };
+  } catch {
+    return { manifestFileId, photos: [] };
+  }
+}
+
+async function upsertProgressPhotosManifest(
+  token: string,
+  manifestFileId: string | null,
+  photos: ProgressPhotoDriveMeta[],
+): Promise<void> {
+  const payload = buildProgressPhotosManifestJson(photos);
+  if (manifestFileId) await updateJsonMedia(token, manifestFileId, payload);
+  else await createMultipartJsonAppData(token, PROGRESS_PHOTOS_MANIFEST_FILE, payload);
+}
+
+/** Upload a progress photo JPEG into App Data; returns Drive file id. */
+export async function uploadProgressPhotoImageToAppData(
+  token: string,
+  photoId: string,
+  blob: Blob,
+): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const fileName = `progress-photo-${photoId}.jpg`;
+  const boundary = `boundary_${crypto.randomUUID?.() ?? String(Date.now())}`;
+  const partBreak = `\r\n--${boundary}\r\n`;
+
+  const metadata = JSON.stringify({
+    name: fileName,
+    parents: ["appDataFolder"],
+  });
+
+  const enc = new TextEncoder();
+  const mime = blob.type?.trim() || "image/jpeg";
+
+  const chunks: Uint8Array[] = [
+    enc.encode(`--${boundary}\r\n`),
+    enc.encode("Content-Type: application/json; charset=UTF-8\r\n\r\n"),
+    enc.encode(metadata),
+    enc.encode(partBreak),
+    enc.encode(`Content-Type: ${mime}\r\n\r\n`),
+    bytes,
+    enc.encode(`\r\n--${boundary}--`),
+  ];
+
+  const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+  const body = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  const url = `${UPLOAD_BASE}?uploadType=multipart`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": `multipart/related; boundary=${boundary}`,
+    },
+    body,
+  });
+  if (!res.ok) {
+    throw new Error(`Drive progress photo upload failed: ${res.status}`);
+  }
+  const data = (await res.json()) as { id?: string };
+  if (!data.id) throw new Error("Drive progress photo upload missing id");
+  return data.id;
+}
+
+/**
+ * Loads progress photos from Drive (manifest + image downloads). Uploads any IndexedDB-only
+ * rows then clears local storage so Drive stays authoritative.
+ */
+export async function pullProgressPhotosFromDrive(
+  token: string,
+  signal?: AbortSignal,
+): Promise<ProgressPhotosPullResult> {
+  const { manifestFileId, photos: merged } = await readProgressPhotosManifest(token);
+  const localRows = await listProgressPhotosDesc();
+
+  const manifestIds = new Set(merged.map((p) => p.id));
+  let changed = false;
+  for (const row of localRows) {
+    if (manifestIds.has(row.id)) continue;
+    const driveFileId = await uploadProgressPhotoImageToAppData(token, row.id, row.blob);
+    merged.push({
+      id: row.id,
+      driveFileId,
+      capturedAt: row.capturedAt,
+    });
+    manifestIds.add(row.id);
+    changed = true;
+  }
+  if (changed) {
+    merged.sort((a, b) => b.capturedAt - a.capturedAt);
+    await upsertProgressPhotosManifest(token, manifestFileId, merged);
+  }
+
+  if (localRows.length > 0) {
+    await clearProgressPhotosIndexedDb();
+  }
+
+  const records: ProgressPhotoRecord[] = [];
+  for (const meta of merged) {
+    try {
+      const blob = await downloadAppDataFileBlob(token, meta.driveFileId, signal);
+      records.push({
+        id: meta.id,
+        capturedAt: meta.capturedAt,
+        blob,
+      });
+    } catch {
+      /* transient or missing file — skip entry */
+    }
+  }
+  records.sort((a, b) => b.capturedAt - a.capturedAt);
+  return { photos: records };
+}
+
+export async function addProgressPhotoToDrive(
+  token: string,
+  record: ProgressPhotoRecord,
+): Promise<void> {
+  const driveFileId = await uploadProgressPhotoImageToAppData(token, record.id, record.blob);
+  const { manifestFileId, photos } = await readProgressPhotosManifest(token);
+  const next = photos.filter((p) => p.id !== record.id);
+  next.push({
+    id: record.id,
+    driveFileId,
+    capturedAt: record.capturedAt,
+  });
+  next.sort((a, b) => b.capturedAt - a.capturedAt);
+  await upsertProgressPhotosManifest(token, manifestFileId, next);
+}
+
+export async function deleteProgressPhotoFromDrive(
+  token: string,
+  photoId: string,
+): Promise<void> {
+  const { manifestFileId, photos } = await readProgressPhotosManifest(token);
+  if (!manifestFileId) return;
+  const entry = photos.find((p) => p.id === photoId);
+  const next = photos.filter((p) => p.id !== photoId);
+  if (entry) {
+    try {
+      await deleteDriveFile(token, entry.driveFileId);
+    } catch {
+      /* best-effort */
+    }
+  }
+  await updateJsonMedia(
+    token,
+    manifestFileId,
+    buildProgressPhotosManifestJson(next),
+  );
 }
 
 export async function deleteDriveFile(token: string, fileId: string): Promise<void> {

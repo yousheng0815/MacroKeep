@@ -1,3 +1,10 @@
+/** Encode any image blob for Gemini / uploads (uses a synthetic filename for DataURL parsing). */
+export function blobToBase64(blob: Blob): Promise<{ base64: string; mimeType: string }> {
+  return fileToBase64(
+    new File([blob], "photo.jpg", { type: blob.type || "image/jpeg" }),
+  );
+}
+
 export function fileToBase64(
   file: File,
 ): Promise<{ base64: string; mimeType: string }> {
