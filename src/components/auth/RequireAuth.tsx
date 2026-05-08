@@ -2,7 +2,7 @@ import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
 import { getGoogleUserEmail, getGoogleUserId } from "@/lib/gapi";
-import { Navigate } from "@tanstack/react-router";
+import { Navigate, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -17,8 +17,9 @@ function recordsLoadErrorMessage(error: unknown): string {
 }
 
 function RecordsReadyGate({ children }: { children: ReactNode }) {
-  const { isRecordsReady, error, refetch } = useRecords();
+  const { isRecordsReady, records, error, refetch } = useRecords();
   const [retryPending, setRetryPending] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   if (!isRecordsReady) {
     if (error) {
@@ -59,6 +60,10 @@ function RecordsReadyGate({ children }: { children: ReactNode }) {
         <p className="text-sm">Loading your diary…</p>
       </div>
     );
+  }
+
+  if (!records.onboardingCompleted && pathname !== "/tutorial") {
+    return <Navigate to="/tutorial" replace />;
   }
 
   return <>{children}</>;

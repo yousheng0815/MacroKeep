@@ -7,6 +7,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { MealDetailPage } from "@/pages/MealDetailPage";
 import { ScannerPage } from "@/pages/ScannerPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { TutorialPage } from "@/pages/TutorialPage";
 import { GoogleSessionProvider } from "@/contexts/google-session";
 import {
   Outlet,
@@ -77,6 +78,12 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 });
 
+const tutorialRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/tutorial",
+  component: TutorialPage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   appLayoutRoute.addChildren([
@@ -86,6 +93,7 @@ const routeTree = rootRoute.addChildren([
     scannerRoute,
     driveRoute,
     settingsRoute,
+    tutorialRoute,
   ]),
 ]);
 

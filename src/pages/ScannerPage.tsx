@@ -4,7 +4,7 @@ import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { useRecords } from "@/hooks/use-records";
 import { consumePendingScanPhoto } from "@/lib/pending-scan-photo";
 import type { MealRecord } from "@/types/records";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Camera, ImagePlus, Star } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -209,7 +209,11 @@ export function ScannerPage() {
 
         {!hasKey ? (
           <p className="mt-4 text-sm text-amber-400">
-            Configure your Gemini API key under Settings to enable scanning.
+            Configure your Gemini API key under{" "}
+            <Link to="/tutorial" className="underline underline-offset-2">
+              Setup Tutorial
+            </Link>{" "}
+            (or Settings) to enable scanning.
           </p>
         ) : null}
 

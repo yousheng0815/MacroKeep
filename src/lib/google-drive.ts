@@ -1,5 +1,6 @@
 import type {
   MealRecord,
+  OnboardingDraft,
   RecordsCoreDocument,
   RecordsDocument,
 } from "@/types/records";
@@ -109,6 +110,59 @@ function authHeaders(token: string): HeadersInit {
   };
 }
 
+function normalizeOnboardingDraft(
+  draft: Partial<OnboardingDraft> | null | undefined,
+): OnboardingDraft | undefined {
+  if (!draft || typeof draft !== "object") return undefined;
+  const age = Number(draft.age);
+  const heightCm = Number(draft.heightCm);
+  const weightKg = Number(draft.weightKg);
+  const suggestedDailyTargetKcal = Number(draft.suggestedDailyTargetKcal);
+  const suggestedProteinTargetG = Number(draft.suggestedProteinTargetG);
+  const suggestedFatsTargetG = Number(draft.suggestedFatsTargetG);
+  const suggestedCarbsTargetG = Number(draft.suggestedCarbsTargetG);
+  const suggestedRationale = String(draft.suggestedRationale ?? "").trim();
+  const goal = draft.goal;
+  const activityLevel = draft.activityLevel;
+  if (
+    !Number.isFinite(age) ||
+    !Number.isFinite(heightCm) ||
+    !Number.isFinite(weightKg) ||
+    !Number.isFinite(suggestedDailyTargetKcal) ||
+    !Number.isFinite(suggestedProteinTargetG) ||
+    !Number.isFinite(suggestedFatsTargetG) ||
+    !Number.isFinite(suggestedCarbsTargetG) ||
+    (goal !== "lose_weight" &&
+      goal !== "maintain_weight" &&
+      goal !== "gain_muscle" &&
+      goal !== "improve_health") ||
+    (activityLevel !== "sedentary" &&
+      activityLevel !== "light" &&
+      activityLevel !== "moderate" &&
+      activityLevel !== "active" &&
+      activityLevel !== "very_active")
+  ) {
+    return undefined;
+  }
+  return {
+    age: Math.max(1, Math.round(age)),
+    heightCm: Math.max(1, Math.round(heightCm)),
+    weightKg: Math.max(1, Math.round(weightKg)),
+    goal,
+    activityLevel,
+    notes: typeof draft.notes === "string" && draft.notes.trim() ? draft.notes : undefined,
+    suggestedDailyTargetKcal: Math.max(0, Math.round(suggestedDailyTargetKcal)),
+    suggestedProteinTargetG: Math.max(0, Math.round(suggestedProteinTargetG)),
+    suggestedFatsTargetG: Math.max(0, Math.round(suggestedFatsTargetG)),
+    suggestedCarbsTargetG: Math.max(0, Math.round(suggestedCarbsTargetG)),
+    suggestedRationale: suggestedRationale || "Generated from your profile and goal.",
+    suggestedAt:
+      typeof draft.suggestedAt === "string" && draft.suggestedAt.trim().length > 0
+        ? draft.suggestedAt
+        : new Date().toISOString(),
+  };
+}
+
 export function normalizeRecordsCoreDocument(
   parsed: Partial<RecordsCoreDocument> | null | undefined,
 ): RecordsCoreDocument {
@@ -123,10 +177,13 @@ export function normalizeRecordsCoreDocument(
     typeof parsed.geminiApiKey === "string" && parsed.geminiApiKey.trim().length > 0
       ? parsed.geminiApiKey.trim()
       : undefined;
+  const onboardingDraft = normalizeOnboardingDraft(parsed.onboardingDraft);
   return {
     version: typeof parsed.version === "number" ? parsed.version : empty.version,
     profile: { ...empty.profile, ...parsed.profile },
     ...(gemini !== undefined ? { geminiApiKey: gemini } : {}),
+    ...(parsed.onboardingCompleted === true ? { onboardingCompleted: true } : {}),
+    ...(onboardingDraft ? { onboardingDraft } : {}),
   };
 }
 
@@ -554,6 +611,8 @@ export async function persistRecordsToDrive(
     version: normalized.version,
     profile: normalized.profile,
     ...(normalized.geminiApiKey ? { geminiApiKey: normalized.geminiApiKey } : {}),
+    ...(normalized.onboardingCompleted === true ? { onboardingCompleted: true } : {}),
+    ...(normalized.onboardingDraft ? { onboardingDraft: normalized.onboardingDraft } : {}),
   };
   if (!options?.mealsOnly) {
     await upsertCoreRecordsToDrive(token, core);

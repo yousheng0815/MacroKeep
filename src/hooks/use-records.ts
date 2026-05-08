@@ -14,6 +14,7 @@ import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import type { PreparedMealPhoto } from "@/types/meal-scan";
 import type {
   MealRecord,
+  OnboardingDraft,
   RecordsCoreDocument,
   RecordsDocument,
   UserProfile,
@@ -400,6 +401,39 @@ export function useRecords() {
     [getCurrentRecords, replaceMutation],
   );
 
+  const completeOnboarding = useCallback(async () => {
+    const prev = getCurrentRecords();
+    if (prev.onboardingCompleted) return;
+    const next: RecordsDocument = {
+      ...prev,
+      onboardingCompleted: true,
+    };
+    delete next.onboardingDraft;
+    await replaceMutation.mutateAsync({ next, coreOnly: true });
+  }, [getCurrentRecords, replaceMutation]);
+
+  const saveOnboardingDraft = useCallback(
+    async (draft: OnboardingDraft) => {
+      const prev = getCurrentRecords();
+      const next: RecordsDocument = {
+        ...prev,
+        onboardingDraft: draft,
+      };
+      await replaceMutation.mutateAsync({ next, coreOnly: true });
+    },
+    [getCurrentRecords, replaceMutation],
+  );
+
+  const clearOnboardingDraft = useCallback(async () => {
+    const prev = getCurrentRecords();
+    if (!prev.onboardingDraft) return;
+    const next: RecordsDocument = {
+      ...prev,
+    };
+    delete next.onboardingDraft;
+    await replaceMutation.mutateAsync({ next, coreOnly: true });
+  }, [getCurrentRecords, replaceMutation]);
+
   const resetLocal = useCallback(async () => {
     const prev = getCurrentRecords();
     const fresh: RecordsDocument = {
@@ -458,6 +492,9 @@ export function useRecords() {
     deleteMeal,
     updateMeal,
     updateProfile,
+    completeOnboarding,
+    saveOnboardingDraft,
+    clearOnboardingDraft,
     resetLocal,
     wipeAllRemoteData,
     isSaving: replaceMutation.isPending || mealWriteBusy,

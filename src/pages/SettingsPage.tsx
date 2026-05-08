@@ -252,6 +252,11 @@ export function SettingsPage() {
         <p className="mt-1 text-sm text-om-muted">
           Authentication, AI keys, and your baseline targets.
         </p>
+        <p className="mt-2 text-sm">
+          <Link to="/tutorial" className="text-emerald-400 hover:text-emerald-300">
+            Open setup tutorial to generate targets with Gemini
+          </Link>
+        </p>
       </div>
 
       <Card>

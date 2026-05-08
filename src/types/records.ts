@@ -26,12 +26,44 @@ export type UserProfile = {
   carbsTargetG: number;
 };
 
+export type OnboardingMacroGoal =
+  | "lose_weight"
+  | "maintain_weight"
+  | "gain_muscle"
+  | "improve_health";
+
+export type OnboardingActivityLevel =
+  | "sedentary"
+  | "light"
+  | "moderate"
+  | "active"
+  | "very_active";
+
+export type OnboardingDraft = {
+  age: number;
+  heightCm: number;
+  weightKg: number;
+  goal: OnboardingMacroGoal;
+  activityLevel: OnboardingActivityLevel;
+  notes?: string;
+  suggestedDailyTargetKcal: number;
+  suggestedProteinTargetG: number;
+  suggestedFatsTargetG: number;
+  suggestedCarbsTargetG: number;
+  suggestedRationale: string;
+  suggestedAt: string;
+};
+
 /** Persisted in Drive as `core.json` (profile + optional Gemini key; no meal rows in this file). */
 export type RecordsCoreDocument = {
   version: number;
   profile: UserProfile;
   /** BYOK Gemini key — stored only in Drive app-data `core.json`, not in browser storage. */
   geminiApiKey?: string;
+  /** Marks whether the first-run tutorial/setup flow has been completed. */
+  onboardingCompleted?: boolean;
+  /** Saved onboarding result so refresh doesn't lose generated Step 3 targets. */
+  onboardingDraft?: OnboardingDraft;
 };
 
 /** In-memory / UI document: core fields plus meals merged from monthly shards on pull. */

@@ -2,17 +2,24 @@ import { Footer } from "@/components/Footer";
 import { Logo } from "@/components/Logo";
 import { DesktopSidebar } from "@/components/nav/DesktopSidebar";
 import { MobileBottomNav } from "@/components/nav/MobileBottomNav";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const inOnboarding = pathname === "/tutorial";
+
   return (
     <div className="min-h-dvh bg-om-bg text-zinc-100">
       <div className="mx-auto flex min-h-dvh max-w-6xl lg:max-w-none">
-        <DesktopSidebar />
-        <div className="relative flex min-h-dvh flex-1 flex-col lg:pl-60">
-          <header className="sticky top-0 z-30 flex items-center justify-between border-b border-om-border bg-om-bg/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur lg:hidden">
+        {!inOnboarding ? <DesktopSidebar /> : null}
+        <div
+          className={`relative flex min-h-dvh flex-1 flex-col ${!inOnboarding ? "lg:pl-60" : ""}`}
+        >
+          <header
+            className={`sticky top-0 z-30 flex items-center justify-between border-b border-om-border bg-om-bg/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur lg:hidden ${inOnboarding ? "hidden" : ""}`}
+          >
             <Link to="/" className="flex items-center gap-2">
               <Logo />
             </Link>
@@ -25,15 +32,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           </header>
 
-          <main className="flex-1 px-4 pt-4 pb-28 lg:px-8 lg:pt-8 lg:pb-10">
+          <main
+            className={`flex-1 px-4 pt-4 ${inOnboarding ? "pb-6 lg:px-4 lg:pt-6 lg:pb-6" : "pb-28 lg:px-8 lg:pt-8 lg:pb-10"}`}
+          >
             {children}
           </main>
 
-          <div className="hidden lg:block">
+          <div className={`hidden lg:block ${inOnboarding ? "hidden" : ""}`}>
             <Footer />
           </div>
 
-          <MobileBottomNav />
+          {!inOnboarding ? <MobileBottomNav /> : null}
         </div>
       </div>
     </div>
