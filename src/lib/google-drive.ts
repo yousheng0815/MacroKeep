@@ -133,6 +133,78 @@ function normalizeMealsShardPayload(parsed: unknown): MealRecord[] {
     .filter(Boolean) as MealRecord[];
 }
 
+/** One file in the user's hidden Drive App Data folder (same space as `records.json`). */
+export type AppDataDriveFileListItem = {
+  id: string;
+  name: string;
+  mimeType?: string;
+  size?: string;
+  modifiedTime?: string;
+};
+
+/**
+ * Lists all non-trashed files in `appDataFolder` (paginated).
+ * Requires OAuth scope `drive.appdata`.
+ */
+export async function listAllAppDataFiles(
+  token: string,
+  signal?: AbortSignal,
+): Promise<AppDataDriveFileListItem[]> {
+  const out: AppDataDriveFileListItem[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const params = new URLSearchParams({
+      spaces: "appDataFolder",
+      q: "trashed=false",
+      fields: "nextPageToken,files(id,name,mimeType,size,modifiedTime)",
+      pageSize: "100",
+    });
+    if (pageToken) params.set("pageToken", pageToken);
+
+    const url = `${DRIVE_FILES}?${params.toString()}`;
+    const res = await fetch(url, { headers: authHeaders(token), signal });
+    if (!res.ok) throw new Error(`Drive list app data failed: ${res.status}`);
+    const data = (await res.json()) as {
+      nextPageToken?: string;
+      files?: AppDataDriveFileListItem[];
+    };
+    for (const f of data.files ?? []) {
+      if (f?.id && f?.name) out.push(f);
+    }
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  out.sort((a, b) => {
+    const ta = a.modifiedTime ? Date.parse(a.modifiedTime) : 0;
+    const tb = b.modifiedTime ? Date.parse(b.modifiedTime) : 0;
+    if (tb !== ta) return tb - ta;
+    return a.name.localeCompare(b.name);
+  });
+  return out;
+}
+
+/** True when the file is treated as JSON for in-app preview (name or MIME). */
+export function isJsonAppDataFile(f: AppDataDriveFileListItem): boolean {
+  const mime = (f.mimeType ?? "").toLowerCase();
+  return mime.includes("json") || f.name.toLowerCase().endsWith(".json");
+}
+
+/**
+ * Downloads a file from `appDataFolder` as UTF-8 text (`alt=media`).
+ * Caller should ensure `fileId` belongs to the user's app data folder.
+ */
+export async function downloadAppDataFileText(
+  token: string,
+  fileId: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  const url = `${DRIVE_FILES}/${encodeURIComponent(fileId)}?alt=media`;
+  const res = await fetch(url, { headers: authHeaders(token), signal });
+  if (!res.ok) throw new Error(`Drive download failed: ${res.status}`);
+  return res.text();
+}
+
 export async function findRecordsFileId(token: string): Promise<string | null> {
   const q = encodeURIComponent(
     `name='${RECORDS_NAME}' and trashed=false`,

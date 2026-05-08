@@ -1,6 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { DriveFilesPage } from "@/pages/DriveFilesPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MealDetailPage } from "@/pages/MealDetailPage";
@@ -64,6 +65,12 @@ const scannerRoute = createRoute({
   component: ScannerPage,
 });
 
+const driveRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/drive",
+  component: DriveFilesPage,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/settings",
@@ -77,6 +84,7 @@ const routeTree = rootRoute.addChildren([
     historyRoute,
     mealDetailRoute,
     scannerRoute,
+    driveRoute,
     settingsRoute,
   ]),
 ]);

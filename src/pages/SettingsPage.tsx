@@ -6,6 +6,7 @@ import { DRIVE_APPDATA_SCOPE, getGoogleUserEmail } from "@/lib/gapi";
 import type { UserProfile } from "@/types/records";
 import { CheckCircle2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 function GeminiKeyCard({
@@ -240,7 +241,14 @@ export function SettingsPage() {
           Your diary, targets, and optional Gemini key sync to the hidden{" "}
           <span className="text-zinc-300">App Data</span> folder as{" "}
           <span className="font-mono text-zinc-400">records.json</span>. Only your
-          Google OAuth session is stored locally so repeat visits stay signed in.
+          Google OAuth session is stored locally so repeat visits stay signed in.{" "}
+          <Link
+            to="/drive"
+            className="text-emerald-400/90 underline-offset-2 hover:text-emerald-300 hover:underline"
+          >
+            Browse all app data files
+          </Link>
+          .
         </p>
 
         <dl className="mt-4 space-y-3 text-sm">
