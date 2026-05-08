@@ -135,12 +135,7 @@ export function DashboardPage() {
   const {
     analyzing,
     error,
-    draft,
-    setDraft,
-    isSaving,
     runAnalyzeFromFile,
-    save,
-    cancelDraft,
     clearError,
   } = useMealScanFlow();
   const today = sumToday(records.meals);
@@ -335,11 +330,6 @@ export function DashboardPage() {
 
       <MealScanOverlays
         analyzing={analyzing}
-        draft={draft}
-        setDraft={setDraft}
-        isSaving={isSaving}
-        onSave={save}
-        onCancelDraft={cancelDraft}
       />
 
       <div className="lg:hidden">

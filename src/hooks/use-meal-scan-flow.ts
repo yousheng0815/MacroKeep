@@ -2,14 +2,19 @@ import { useRecords } from "@/hooks/use-records";
 import { fileToBase64 } from "@/lib/file-to-base64";
 import { analyzeFoodPhoto } from "@/lib/gemini";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
-import type { MealScanDraft } from "@/types/meal-scan";
+import {
+  canSyncToDriveAppData,
+  getAccessToken,
+} from "@/lib/gapi";
+import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
+import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
 export function useMealScanFlow() {
-  const { geminiKey, addMeal, isSaving } = useRecords();
+  const { geminiKey, addMeal } = useRecords();
+  const navigate = useNavigate();
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<MealScanDraft | null>(null);
 
   const hasKey = useMemo(() => geminiKey.trim().length > 0, [geminiKey]);
 
@@ -21,22 +26,82 @@ export function useMealScanFlow() {
         return;
       }
       setAnalyzing(true);
-      setDraft(null);
+      let nextMealId: string | null = null;
+      let uploadedPhotoId: string | null = null;
       try {
         const snapshot = await prepareMealPhotoForUpload(base64, mimeType);
-        const est = await analyzeFoodPhoto(
-          geminiKey,
-          snapshot.base64,
-          snapshot.mimeType,
+
+        if (!canSyncToDriveAppData()) {
+          throw new Error("Not signed in or Drive scope unavailable");
+        }
+        const token = getAccessToken();
+        if (!token) throw new Error("Missing access token");
+
+        const mealId = crypto.randomUUID?.() ?? String(Date.now());
+        const recordedAt = new Date().toISOString();
+
+        // Parallelize AI analysis + Drive upload to reduce end-to-end scan latency.
+        const [analysisRes, uploadRes] = await Promise.allSettled([
+          analyzeFoodPhoto(geminiKey, snapshot.base64, snapshot.mimeType),
+          uploadMealPhotoToAppData(
+            token,
+            mealId,
+            snapshot.base64,
+            snapshot.mimeType,
+          ),
+        ]);
+
+        if (analysisRes.status === "rejected") {
+          // Avoid orphaning an uploaded image when Gemini fails.
+          if (uploadRes.status === "fulfilled" && uploadRes.value) {
+            uploadedPhotoId = uploadRes.value;
+            try {
+              await deleteDriveFile(token, uploadedPhotoId);
+            } catch {
+              /* best-effort */
+            }
+          }
+          throw analysisRes.reason;
+        }
+
+        const est = analysisRes.value;
+        if (uploadRes.status === "fulfilled") uploadedPhotoId = uploadRes.value;
+
+        nextMealId = await addMeal(
+          {
+            id: mealId,
+            recordedAt,
+            food_name: est.food_name,
+            calories: est.calories,
+            protein: est.protein,
+            fats: est.fats,
+            carbs: est.carbs,
+          },
+          { photoFileId: uploadedPhotoId ?? undefined },
         );
-        setDraft({ estimate: est, snapshot });
       } catch (e) {
         setError(e instanceof Error ? e.message : "Analysis failed");
+        // If the photo uploaded but meal persistence failed, best-effort clean up.
+        if (uploadedPhotoId) {
+          try {
+            const token = getAccessToken();
+            if (token) await deleteDriveFile(token, uploadedPhotoId);
+          } catch {
+            /* best-effort */
+          }
+        }
       } finally {
         setAnalyzing(false);
       }
+
+      if (nextMealId) {
+        void navigate({
+          to: "/meals/$mealId",
+          params: { mealId: nextMealId },
+        });
+      }
     },
-    [geminiKey, hasKey],
+    [addMeal, geminiKey, hasKey, navigate],
   );
 
   const runAnalyzeFromFile = useCallback(
@@ -51,43 +116,14 @@ export function useMealScanFlow() {
     [runAnalyzeSnapshot],
   );
 
-  const save = useCallback(async () => {
-    if (!draft) return;
-    try {
-      setError(null);
-      await addMeal(
-        {
-          food_name: draft.estimate.food_name,
-          calories: draft.estimate.calories,
-          protein: draft.estimate.protein,
-          fats: draft.estimate.fats,
-          carbs: draft.estimate.carbs,
-        },
-        { preparedPhoto: draft.snapshot },
-      );
-      setDraft(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save meal");
-    }
-  }, [addMeal, draft]);
-
-  const cancelDraft = useCallback(() => {
-    setDraft(null);
-  }, []);
-
   const clearError = useCallback(() => setError(null), []);
 
   return {
     analyzing,
     error,
-    draft,
-    setDraft,
     hasKey,
-    isSaving,
     runAnalyzeSnapshot,
     runAnalyzeFromFile,
-    save,
-    cancelDraft,
     clearError,
   };
 }

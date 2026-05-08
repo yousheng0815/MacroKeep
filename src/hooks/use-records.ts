@@ -161,21 +161,61 @@ export function useRecords() {
         MealRecord,
         "id" | "recordedAt" | "photoFileId" | "thumbnailFileId"
       > & {
+        /**
+         * Optional id for multi-phase flows (e.g. upload photo in parallel with AI).
+         * When omitted, `addMeal` generates one.
+         */
+        id?: string;
         recordedAt?: string;
       },
       options?: {
         photo?: { base64: string; mimeType: string };
+        /** When set, skips photo upload (photo already exists in Drive App Data). */
+        photoFileId?: string;
         /** Skips re-encoding when the scan flow already ran {@link prepareMealPhotoForUpload}. */
         preparedPhoto?: PreparedMealPhoto;
       },
-    ) => {
+    ): Promise<string> => {
       setMealWriteBusy(true);
       await yieldForUiPaint();
       try {
         const prev = getCurrentRecords();
-        const id = crypto.randomUUID?.() ?? String(Date.now());
+        const id = meal.id ?? crypto.randomUUID?.() ?? String(Date.now());
         const recordedAt = meal.recordedAt ?? new Date().toISOString();
         const mealMonthKey = monthKeyFromRecordedAt(recordedAt);
+
+        if (options?.photoFileId) {
+          if (!canSyncToDriveAppData()) {
+            throw new Error("Not signed in or Drive scope unavailable");
+          }
+          const token = getAccessToken();
+          if (!token) throw new Error("Missing access token");
+          const shardDriveId = await resolveMealsShardDriveFileId(token, mealMonthKey);
+
+          const rowWithPhoto: MealRecord = {
+            id,
+            food_name: meal.food_name,
+            calories: meal.calories,
+            protein: meal.protein,
+            fats: meal.fats,
+            carbs: meal.carbs,
+            recordedAt,
+            photoFileId: options.photoFileId,
+          };
+
+          const nextWithPhoto: RecordsDocument = {
+            ...prev,
+            meals: [rowWithPhoto, ...prev.meals],
+          };
+
+          await replaceMutation.mutateAsync({
+            next: nextWithPhoto,
+            mealsOnly: true,
+            mealMonthKeysToSync: [mealMonthKey],
+            shardFileIdsPrefetched: { [mealMonthKey]: shardDriveId },
+          });
+          return id;
+        }
 
         if (options?.preparedPhoto || options?.photo) {
           if (!canSyncToDriveAppData()) {
@@ -221,7 +261,7 @@ export function useRecords() {
             mealMonthKeysToSync: [mealMonthKey],
             shardFileIdsPrefetched: { [mealMonthKey]: shardDriveId },
           });
-          return;
+          return id;
         }
 
         const row: MealRecord = {
@@ -243,6 +283,7 @@ export function useRecords() {
           mealsOnly: true,
           mealMonthKeysToSync: [mealMonthKey],
         });
+        return id;
       } finally {
         setMealWriteBusy(false);
       }

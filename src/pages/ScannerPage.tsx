@@ -12,14 +12,9 @@ export function ScannerPage() {
   const {
     analyzing,
     error,
-    draft,
-    setDraft,
     hasKey,
-    isSaving,
     runAnalyzeSnapshot,
     runAnalyzeFromFile,
-    save,
-    cancelDraft,
   } = useMealScanFlow();
 
   useEffect(() => {
@@ -98,14 +93,7 @@ export function ScannerPage() {
         ) : null}
       </Card>
 
-      <MealScanOverlays
-        analyzing={analyzing}
-        draft={draft}
-        setDraft={setDraft}
-        isSaving={isSaving}
-        onSave={save}
-        onCancelDraft={cancelDraft}
-      />
+      <MealScanOverlays analyzing={analyzing} />
     </div>
   );
 }
