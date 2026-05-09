@@ -54,7 +54,6 @@ export function MealDetailPage() {
   const [savePending, setSavePending] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
   const [favoritePending, setFavoritePending] = useState(false);
-  const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
@@ -111,19 +110,14 @@ export function MealDetailPage() {
               <button
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
+                aria-busy={favoritePending}
                 onClick={() => {
                   void (async () => {
                     setFavoritePending(true);
-                    setSaveNotice(null);
                     try {
                       await updateMeal(meal.id, {
                         isFavorite: !meal.isFavorite,
                       });
-                      setSaveNotice(
-                        !meal.isFavorite
-                          ? "Added to favorites"
-                          : "Removed from favorites",
-                      );
                     } finally {
                       setFavoritePending(false);
                     }
@@ -135,9 +129,13 @@ export function MealDetailPage() {
                     : "border-om-border bg-om-bg text-zinc-200 hover:bg-zinc-900"
                 }`}
               >
-                <Star
-                  className={`size-3.5 ${meal.isFavorite ? "fill-current" : ""}`}
-                />
+                {favoritePending ? (
+                  <ButtonSpinner size="sm" />
+                ) : (
+                  <Star
+                    className={`size-3.5 ${meal.isFavorite ? "fill-current" : ""}`}
+                  />
+                )}
                 {meal.isFavorite ? "Favorite" : "Add to favorites"}
               </button>
             )}
@@ -154,7 +152,6 @@ export function MealDetailPage() {
               e.preventDefault();
               void (async () => {
                 setSavePending(true);
-                setSaveNotice(null);
                 try {
                   const form = new FormData(e.currentTarget);
                   const foodName = String(form.get("foodName") ?? "").trim();
@@ -171,7 +168,6 @@ export function MealDetailPage() {
                     carbs: parseNumber(carbs),
                     recordedAt: toIsoFromLocalDateTimeInput(recordedAtLocal),
                   });
-                  setSaveNotice("Saved");
                   setEditing(false);
                 } finally {
                   setSavePending(false);
@@ -262,6 +258,7 @@ export function MealDetailPage() {
               <button
                 type="submit"
                 disabled={savePending || deletePending || favoritePending}
+                aria-busy={savePending}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {savePending ? <ButtonSpinner /> : null}
@@ -276,10 +273,6 @@ export function MealDetailPage() {
               >
                 Cancel
               </button>
-
-              {saveNotice ? (
-                <span className="text-xs text-emerald-400">{saveNotice}</span>
-              ) : null}
             </div>
           </form>
         ) : (
@@ -330,10 +323,7 @@ export function MealDetailPage() {
               <button
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
-                onClick={() => {
-                  setSaveNotice(null);
-                  setEditing(true);
-                }}
+                onClick={() => setEditing(true)}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Pencil className="size-4" />
@@ -343,6 +333,7 @@ export function MealDetailPage() {
               <button
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
+                aria-busy={deletePending}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => {
                   if (!window.confirm("Delete this meal?")) return;
@@ -364,10 +355,6 @@ export function MealDetailPage() {
                 )}
                 Delete meal
               </button>
-
-              {saveNotice ? (
-                <span className="text-xs text-emerald-400">{saveNotice}</span>
-              ) : null}
             </div>
           </div>
         )}

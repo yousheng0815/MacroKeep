@@ -87,45 +87,58 @@ export function FavoriteMealsPage() {
   return (
     <div className="space-y-6 overflow-x-hidden">
       <PageHeader
-        title="Favorite Meals"
+        title="Add From Favorites"
         backTo="/scanner"
         backAriaLabel="Back to add meal"
         subtitle="Pick a favorite to quickly add it as a new meal entry."
       />
 
       <Card>
-        {favorites.length > 0 ? (
-          <div className="space-y-2">
-            {favorites.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                disabled={pendingKey !== null}
-                onClick={() => void onPickFavorite(item)}
-                className="flex w-full min-w-0 items-center gap-3 overflow-hidden rounded-xl border border-zinc-800 py-2 text-left transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <MealPhotoThumb
-                  photoFileId={item.sourcePhotoFileId}
-                  thumbnailFileId={item.sourceThumbnailFileId}
-                  alt={item.food_name}
-                  className="size-14 shrink-0 overflow-hidden rounded-xl bg-zinc-800 ring-1 ring-zinc-700"
-                />
-                <div className="w-0 flex-1 overflow-hidden">
-                  <div className="block max-w-full truncate text-sm font-medium text-white">
-                    {item.food_name}
-                  </div>
-                  <div className="mt-0.5 truncate text-xs text-om-muted">
-                    {Math.round(item.calories)} kcal · P{" "}
-                    {Math.round(item.protein)} g · F {Math.round(item.fats)} g ·
-                    C {Math.round(item.carbs)} g
-                  </div>
-                </div>
-                {pendingKey === item.key ? (
-                  <ButtonSpinner className="shrink-0 text-zinc-200" />
-                ) : null}
-              </button>
-            ))}
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold text-white">
+              Favorite meals
+            </div>
           </div>
+        </div>
+        {favorites.length > 0 ? (
+          <ul className="divide-y divide-zinc-800">
+            {favorites.map((item) => (
+              <li key={item.key} className="min-w-0 overflow-hidden">
+                <button
+                  type="button"
+                  disabled={pendingKey !== null}
+                  aria-busy={pendingKey === item.key}
+                  onClick={() => void onPickFavorite(item)}
+                  className="flex w-full max-w-full min-w-0 items-start gap-3 py-3 overflow-hidden text-left transition hover:bg-zinc-900/40 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <MealPhotoThumb
+                    photoFileId={item.sourcePhotoFileId}
+                    thumbnailFileId={item.sourceThumbnailFileId}
+                    alt={item.food_name}
+                    className="size-14 shrink-0 overflow-hidden rounded-xl bg-zinc-800 ring-1 ring-zinc-700"
+                  />
+                  <div className="w-0 flex-1 overflow-hidden">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="block max-w-full truncate font-medium text-white">
+                          {item.food_name}
+                        </div>
+                      </div>
+                      {pendingKey === item.key ? (
+                        <ButtonSpinner className="mt-0.5 shrink-0 text-zinc-200" />
+                      ) : null}
+                    </div>
+                    <div className="mt-1 truncate text-xs text-om-muted">
+                      {Math.round(item.calories)} kcal · P{" "}
+                      {Math.round(item.protein)} g · F {Math.round(item.fats)} g
+                      · C {Math.round(item.carbs)} g
+                    </div>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
         ) : (
           <p className="text-sm text-om-muted">
             No favorite meals yet. Open a meal in History and mark it as

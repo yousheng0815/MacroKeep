@@ -153,6 +153,7 @@ export function HistoryPage() {
                             <button
                               type="button"
                               disabled={favoritePendingId !== null}
+                              aria-busy={favoritePendingId === m.id}
                               aria-label={
                                 m.isFavorite
                                   ? "Marked as favorite"
@@ -175,14 +176,14 @@ export function HistoryPage() {
                                   }
                                 })();
                               }}
-                              className={`inline-flex shrink-0 items-center justify-center rounded-full p-1.5 transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                              className={`relative mt-0.5 mr-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full transition before:absolute before:-inset-2 before:content-[''] disabled:cursor-not-allowed disabled:opacity-60 ${
                                 m.isFavorite
                                   ? "text-amber-300 hover:text-amber-200"
                                   : "text-zinc-300 hover:text-zinc-100"
                               }`}
                             >
                               {favoritePendingId === m.id ? (
-                                <ButtonSpinner className="size-3" />
+                                <ButtonSpinner size="sm" />
                               ) : (
                                 <Star
                                   className={`size-3.5 ${m.isFavorite ? "fill-current" : ""}`}
