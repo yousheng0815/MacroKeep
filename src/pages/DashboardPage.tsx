@@ -269,6 +269,7 @@ export function DashboardPage() {
                       <Link
                         to="/meals/$mealId"
                         params={{ mealId: m.id }}
+                        state={{ navFrom: "/" }}
                         className="flex items-center gap-3 py-3 transition hover:bg-zinc-900/40"
                       >
                         <MealPhotoThumb

@@ -75,6 +75,7 @@ export function FavoriteMealsPage() {
       await navigate({
         to: "/meals/$mealId",
         params: { mealId },
+        state: { navFrom: "/scanner" },
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not add meal.");

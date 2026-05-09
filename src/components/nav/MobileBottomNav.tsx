@@ -1,8 +1,16 @@
-import { NAV_ITEMS } from "@/components/nav/nav-config";
+import { NAV_ITEMS, pathForNavHighlight } from "@/components/nav/nav-config";
 import { Link, useRouterState } from "@tanstack/react-router";
 
 export function MobileBottomNav() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { pathname, mealDetailNavFrom } = useRouterState({
+    select: (s) => ({
+      pathname: s.location.pathname,
+      mealDetailNavFrom: s.location.pathname.startsWith("/meals/")
+        ? s.location.state?.navFrom
+        : undefined,
+    }),
+  });
+  const highlightPath = pathForNavHighlight(pathname, mealDetailNavFrom);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-om-border bg-om-bg/95 backdrop-blur lg:hidden">
@@ -10,8 +18,8 @@ export function MobileBottomNav() {
         {NAV_ITEMS.map((item) => {
           const active =
             item.to === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.to);
+              ? highlightPath === "/"
+              : highlightPath.startsWith(item.to);
           const Icon = item.icon;
           return (
             <Link

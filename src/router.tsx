@@ -130,4 +130,9 @@ declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }
+
+  /** Location state for highlighting the shell nav on `/meals/:id`. */
+  interface HistoryState {
+    navFrom?: "/" | "/history" | "/scanner" | "/progress";
+  }
 }

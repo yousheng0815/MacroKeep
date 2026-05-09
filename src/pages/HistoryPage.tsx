@@ -125,6 +125,7 @@ export function HistoryPage() {
                     <Link
                       to="/meals/$mealId"
                       params={{ mealId: m.id }}
+                      state={{ navFrom: "/history" }}
                       className="flex w-full max-w-full min-w-0 items-start gap-3 py-3 overflow-hidden transition hover:bg-zinc-900/40"
                     >
                       <MealPhotoThumb

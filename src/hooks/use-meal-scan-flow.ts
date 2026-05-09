@@ -98,6 +98,7 @@ export function useMealScanFlow() {
         void navigate({
           to: "/meals/$mealId",
           params: { mealId: nextMealId },
+          state: { navFrom: "/scanner" },
         });
       }
     },

@@ -5,8 +5,11 @@ import type { ReactNode } from "react";
 type PageHeaderProps = {
   title: string;
   subtitle?: ReactNode;
+  /** Fixed destination (ignored when `onBack` is set). */
   backTo?: string;
   backAriaLabel?: string;
+  /** Prefer history-style back instead of linking to `backTo`. */
+  onBack?: () => void;
   actions?: ReactNode;
 };
 
@@ -15,13 +18,23 @@ export function PageHeader({
   subtitle,
   backTo,
   backAriaLabel = "Go back",
+  onBack,
   actions,
 }: PageHeaderProps) {
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          {backTo ? (
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label={backAriaLabel}
+              className="inline-flex items-center rounded-md p-1 text-zinc-300 transition hover:text-white"
+            >
+              <ArrowLeft className="size-4" />
+            </button>
+          ) : backTo ? (
             <Link
               to={backTo}
               aria-label={backAriaLabel}

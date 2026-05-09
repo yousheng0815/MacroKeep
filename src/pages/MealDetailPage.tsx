@@ -4,9 +4,14 @@ import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
 import { formatLocalDateLabel, formatTime } from "@/lib/date";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Star, Tag, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useRouter,
+} from "@tanstack/react-router";
+import { ArrowLeft, Pencil, Star, Tag, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 function toLocalDateTimeInput(iso: string): string {
   const d = new Date(iso);
@@ -31,7 +36,16 @@ function parseNumber(value: string): number {
 export function MealDetailPage() {
   const { mealId } = useParams({ strict: false });
   const navigate = useNavigate();
+  const router = useRouter();
   const { records, updateMeal, deleteMeal } = useRecords();
+
+  const handleBack = () => {
+    if (router.history.canGoBack()) {
+      router.history.back();
+    } else {
+      void navigate({ to: "/history" });
+    }
+  };
   const meal = useMemo(
     () => records.meals.find((m) => m.id === mealId),
     [records.meals, mealId],
@@ -41,6 +55,11 @@ export function MealDetailPage() {
   const [deletePending, setDeletePending] = useState(false);
   const [favoritePending, setFavoritePending] = useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    setEditing(false);
+  }, [mealId]);
 
   if (!meal) {
     return (
@@ -63,8 +82,8 @@ export function MealDetailPage() {
     <div className="space-y-6">
       <PageHeader
         title="Meal Details"
-        backTo="/history"
-        backAriaLabel="Back to history"
+        onBack={handleBack}
+        backAriaLabel="Go back"
       />
 
       <Card>
@@ -127,150 +146,231 @@ export function MealDetailPage() {
       </Card>
 
       <Card>
-        <form
-          key={meal.id}
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void (async () => {
-              setSavePending(true);
-              setSaveNotice(null);
-              try {
-                const form = new FormData(e.currentTarget);
-                const foodName = String(form.get("foodName") ?? "").trim();
-                const calories = String(form.get("calories") ?? "0");
-                const protein = String(form.get("protein") ?? "0");
-                const fats = String(form.get("fats") ?? "0");
-                const carbs = String(form.get("carbs") ?? "0");
-                const recordedAtLocal = String(form.get("recordedAt") ?? "");
-                await updateMeal(meal.id, {
-                  food_name: foodName || meal.food_name,
-                  calories: parseNumber(calories),
-                  protein: parseNumber(protein),
-                  fats: parseNumber(fats),
-                  carbs: parseNumber(carbs),
-                  recordedAt: toIsoFromLocalDateTimeInput(recordedAtLocal),
-                });
-                setSaveNotice("Saved");
-              } finally {
-                setSavePending(false);
-              }
-            })();
-          }}
-        >
-          <label className="block">
-            <span className="mb-1 block text-xs text-om-muted">Food name</span>
-            <input
-              name="foodName"
-              type="text"
-              defaultValue={meal.food_name}
-              className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-xs text-om-muted">
-              Recorded at
-            </span>
-            <input
-              name="recordedAt"
-              type="datetime-local"
-              defaultValue={toLocalDateTimeInput(meal.recordedAt)}
-              className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
-            />
-          </label>
-
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="mb-1 block text-xs text-om-muted">Calories</span>
-              <input
-                name="calories"
-                type="number"
-                inputMode="decimal"
-                step="1"
-                defaultValue={meal.calories}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
-              />
-            </label>
+        {editing ? (
+          <form
+            key={meal.id}
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void (async () => {
+                setSavePending(true);
+                setSaveNotice(null);
+                try {
+                  const form = new FormData(e.currentTarget);
+                  const foodName = String(form.get("foodName") ?? "").trim();
+                  const calories = String(form.get("calories") ?? "0");
+                  const protein = String(form.get("protein") ?? "0");
+                  const fats = String(form.get("fats") ?? "0");
+                  const carbs = String(form.get("carbs") ?? "0");
+                  const recordedAtLocal = String(form.get("recordedAt") ?? "");
+                  await updateMeal(meal.id, {
+                    food_name: foodName || meal.food_name,
+                    calories: parseNumber(calories),
+                    protein: parseNumber(protein),
+                    fats: parseNumber(fats),
+                    carbs: parseNumber(carbs),
+                    recordedAt: toIsoFromLocalDateTimeInput(recordedAtLocal),
+                  });
+                  setSaveNotice("Saved");
+                  setEditing(false);
+                } finally {
+                  setSavePending(false);
+                }
+              })();
+            }}
+          >
             <label className="block">
               <span className="mb-1 block text-xs text-om-muted">
-                Protein (g)
+                Food name
               </span>
               <input
-                name="protein"
-                type="number"
-                inputMode="decimal"
-                step="0.1"
-                defaultValue={meal.protein}
+                name="foodName"
+                type="text"
+                defaultValue={meal.food_name}
                 className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
               />
             </label>
-            <label className="block">
-              <span className="mb-1 block text-xs text-om-muted">Fats (g)</span>
-              <input
-                name="fats"
-                type="number"
-                inputMode="decimal"
-                step="0.1"
-                defaultValue={meal.fats}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
-              />
-            </label>
+
             <label className="block">
               <span className="mb-1 block text-xs text-om-muted">
-                Carbs (g)
+                Recorded at
               </span>
               <input
-                name="carbs"
-                type="number"
-                inputMode="decimal"
-                step="0.1"
-                defaultValue={meal.carbs}
+                name="recordedAt"
+                type="datetime-local"
+                defaultValue={toLocalDateTimeInput(meal.recordedAt)}
                 className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
               />
             </label>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="mb-1 block text-xs text-om-muted">
+                  Calories
+                </span>
+                <input
+                  name="calories"
+                  type="number"
+                  inputMode="decimal"
+                  step="1"
+                  defaultValue={meal.calories}
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-om-muted">
+                  Protein (g)
+                </span>
+                <input
+                  name="protein"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  defaultValue={meal.protein}
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-om-muted">
+                  Fats (g)
+                </span>
+                <input
+                  name="fats"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  defaultValue={meal.fats}
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-om-muted">
+                  Carbs (g)
+                </span>
+                <input
+                  name="carbs"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  defaultValue={meal.carbs}
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                type="submit"
+                disabled={savePending || deletePending || favoritePending}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savePending ? <ButtonSpinner /> : null}
+                Save changes
+              </button>
+
+              <button
+                type="button"
+                disabled={savePending || deletePending || favoritePending}
+                onClick={() => setEditing(false)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+
+              {saveNotice ? (
+                <span className="text-xs text-emerald-400">{saveNotice}</span>
+              ) : null}
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <span className="mb-1 block text-xs text-om-muted">
+                Food name
+              </span>
+              <p className="text-sm text-zinc-100">{meal.food_name}</p>
+            </div>
+
+            <div>
+              <span className="mb-1 block text-xs text-om-muted">
+                Recorded at
+              </span>
+              <p className="text-sm text-zinc-100">
+                {formatLocalDateLabel(new Date(meal.recordedAt))} at{" "}
+                {formatTime(new Date(meal.recordedAt))}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <span className="mb-1 block text-xs text-om-muted">
+                  Calories
+                </span>
+                <p className="text-sm text-zinc-100">{meal.calories}</p>
+              </div>
+              <div>
+                <span className="mb-1 block text-xs text-om-muted">
+                  Protein (g)
+                </span>
+                <p className="text-sm text-zinc-100">{meal.protein}</p>
+              </div>
+              <div>
+                <span className="mb-1 block text-xs text-om-muted">Fats (g)</span>
+                <p className="text-sm text-zinc-100">{meal.fats}</p>
+              </div>
+              <div>
+                <span className="mb-1 block text-xs text-om-muted">
+                  Carbs (g)
+                </span>
+                <p className="text-sm text-zinc-100">{meal.carbs}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                type="button"
+                disabled={savePending || deletePending || favoritePending}
+                onClick={() => {
+                  setSaveNotice(null);
+                  setEditing(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Pencil className="size-4" />
+                Edit meal
+              </button>
+
+              <button
+                type="button"
+                disabled={savePending || deletePending || favoritePending}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => {
+                  if (!window.confirm("Delete this meal?")) return;
+                  void (async () => {
+                    setDeletePending(true);
+                    try {
+                      await deleteMeal(meal.id);
+                      await navigate({ to: "/history" });
+                    } finally {
+                      setDeletePending(false);
+                    }
+                  })();
+                }}
+              >
+                {deletePending ? (
+                  <ButtonSpinner className="text-red-200" />
+                ) : (
+                  <Trash2 className="size-4" />
+                )}
+                Delete meal
+              </button>
+
+              {saveNotice ? (
+                <span className="text-xs text-emerald-400">{saveNotice}</span>
+              ) : null}
+            </div>
           </div>
-
-          <div className="flex flex-wrap items-center gap-3 pt-1">
-            <button
-              type="submit"
-              disabled={savePending || deletePending || favoritePending}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {savePending ? <ButtonSpinner /> : null}
-              Save changes
-            </button>
-
-            <button
-              type="button"
-              disabled={savePending || deletePending || favoritePending}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
-              onClick={() => {
-                if (!window.confirm("Delete this meal?")) return;
-                void (async () => {
-                  setDeletePending(true);
-                  try {
-                    await deleteMeal(meal.id);
-                    await navigate({ to: "/history" });
-                  } finally {
-                    setDeletePending(false);
-                  }
-                })();
-              }}
-            >
-              {deletePending ? (
-                <ButtonSpinner className="text-red-200" />
-              ) : (
-                <Trash2 className="size-4" />
-              )}
-              Delete meal
-            </button>
-
-            {saveNotice ? (
-              <span className="text-xs text-emerald-400">{saveNotice}</span>
-            ) : null}
-          </div>
-        </form>
+        )}
       </Card>
     </div>
   );
