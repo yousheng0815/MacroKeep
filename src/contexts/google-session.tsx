@@ -5,7 +5,6 @@ import {
   hasValidGoogleAccessToken,
   isGisOAuthReady,
   loadGisScript,
-  refreshGoogleAccessTokenSilently,
   requestGoogleAccessTokenFromUserGesture,
   restoreOAuthSessionFromStorage,
   signOutGoogle,
@@ -38,8 +37,6 @@ export type GoogleSessionContextValue = {
   ready: boolean;
   signedIn: boolean;
   hasDriveAppDataScope: boolean;
-  /** Trying GIS `prompt: none` after returning with an expired access token. */
-  oauthSilentRefreshPending: boolean;
   sessionReady: boolean;
   error: string | null;
   signInPending: boolean;
@@ -63,10 +60,6 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
   const [signInPending, setSignInPending] = useState(false);
   /** Bumped when GIS token/identity changes so memoized context reflects module state (e.g. hourly expiry). */
   const [oauthEpoch, setOauthEpoch] = useState(0);
-  const [oauthSilentRefreshPending, setOauthSilentRefreshPending] =
-    useState(false);
-  /** Bumped when the tab becomes visible again — retries GIS `prompt:none` after transient failures. */
-  const [silentRetryGen, setSilentRetryGen] = useState(0);
 
   const refresh = useCallback(() => {
     setSignedIn(hasGoogleSession());
@@ -111,35 +104,6 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
     return () =>
       window.removeEventListener("openmacro:oauth-changed", onOAuthChanged);
   }, [refresh]);
-
-  useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState === "visible") setSilentRetryGen((n) => n + 1);
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, []);
-
-  useEffect(() => {
-    if (!clientId || !ready || !isGisOAuthReady()) return;
-    if (document.visibilityState !== "visible") return;
-    if (!hasGoogleSession()) return;
-    if (hasValidGoogleAccessToken()) return;
-    if (!readHasDriveAppDataScope()) return;
-
-    let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- OAuth silent refresh pending flag
-    setOauthSilentRefreshPending(true);
-    void refreshGoogleAccessTokenSilently(clientId).finally(() => {
-      if (cancelled) return;
-      refresh();
-      setOauthSilentRefreshPending(false);
-    });
-    return () => {
-      cancelled = true;
-      setOauthSilentRefreshPending(false);
-    };
-  }, [clientId, ready, refresh, oauthEpoch, silentRetryGen]);
 
   const signIn = useCallback(
     (opts?: GoogleSignInOptions) => {
@@ -208,7 +172,6 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
       ready,
       signedIn,
       hasDriveAppDataScope,
-      oauthSilentRefreshPending,
       sessionReady:
         !!clientId &&
         ready &&
@@ -226,7 +189,6 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
       ready,
       signedIn,
       hasDriveAppDataScope,
-      oauthSilentRefreshPending,
       error,
       signInPending,
       signIn,

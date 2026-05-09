@@ -40,46 +40,6 @@ let cachedUserEmail: string | null = null;
 
 const EXPIRY_SKEW_MS = 60_000;
 
-/** Fire ~2 min before access token expiry to renew without user interaction when possible. */
-const PROACTIVE_REFRESH_BEFORE_MS = 120_000;
-
-/** Timer id (`window.setTimeout`); typed as `number` to avoid Node `Timeout` augmentation clashes. */
-let proactiveRefreshTimer: number | null = null;
-let silentRefreshPromise: Promise<boolean> | null = null;
-let silentRefreshCooldownUntilMs = 0;
-
-const SILENT_REFRESH_RETRY_COOLDOWN_MS = 10 * 60_000;
-
-function clearProactiveRefreshTimer(): void {
-  if (proactiveRefreshTimer !== null) {
-    clearTimeout(proactiveRefreshTimer);
-    proactiveRefreshTimer = null;
-  }
-}
-
-function scheduleProactiveAccessTokenRefresh(): void {
-  clearProactiveRefreshTimer();
-  const cid = getGoogleClientId();
-  if (!cid || !accessToken || accessValidUntilMs <= 0) return;
-  const delay =
-    accessValidUntilMs - Date.now() - PROACTIVE_REFRESH_BEFORE_MS;
-  /** Minimum delay avoids tight loops if expiry already passed skew window. */
-  const ms = Math.min(Math.max(delay, 15_000), 86_400_000);
-  proactiveRefreshTimer = window.setTimeout(() => {
-    proactiveRefreshTimer = null;
-    if (document.visibilityState !== "visible") {
-      scheduleProactiveAccessTokenRefresh();
-      return;
-    }
-    void renewGoogleAccessTokenSilentlyProactive(cid).finally(() => {
-      /** Timer cleared after fire; reschedule if token still valid but renewal failed or skipped. */
-      if (hasValidGoogleAccessToken() && proactiveRefreshTimer === null) {
-        scheduleProactiveAccessTokenRefresh();
-      }
-    });
-  }, ms);
-}
-
 export function getGoogleClientId(): string {
   const id = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
   return id.trim();
@@ -136,12 +96,10 @@ function notifyOAuthChanged(): void {
 function applyTokenResponse(resp: GoogleOAuth2TokenResponse): void {
   if (!resp.access_token) return;
   accessToken = resp.access_token;
-  silentRefreshCooldownUntilMs = 0;
   const ttlSec = resp.expires_in ?? 3600;
   accessValidUntilMs = Date.now() + ttlSec * 1000 - EXPIRY_SKEW_MS;
   if (resp.scope && resp.scope.length > 0) lastGrantedScopeRaw = resp.scope;
   notifyOAuthChanged();
-  scheduleProactiveAccessTokenRefresh();
 }
 
 async function hydrateUserFromGoogle(token: string): Promise<void> {
@@ -178,7 +136,6 @@ async function hydrateScopesFromToken(token: string): Promise<void> {
 }
 
 function clearSession(): void {
-  clearProactiveRefreshTimer();
   accessToken = null;
   accessValidUntilMs = 0;
   lastGrantedScopeRaw = "";
@@ -270,14 +227,11 @@ export async function restoreOAuthSessionFromStorage(): Promise<boolean> {
 
   persistOAuthSnapshot();
   notifyOAuthChanged();
-  if (hasValidGoogleAccessToken()) scheduleProactiveAccessTokenRefresh();
   return hasValidGoogleAccessToken();
 }
 
 export type GoogleSignInOptions = {
   promptConsent?: boolean;
-  /** GIS `prompt: none` — no popup when Google already has a session + prior consent. */
-  silent?: boolean;
 };
 
 function tokenClientSignIn(
@@ -290,14 +244,6 @@ function tokenClientSignIn(
   }
 
   return new Promise((resolve, reject) => {
-    if (opts?.silent === true) {
-      const hint = cachedUserEmail ?? cachedUserSub;
-      if (!hint) {
-        reject(new Error("Silent token refresh requires a saved Google account hint"));
-        return;
-      }
-    }
-
     let settled = false;
     const finishError = (message: string): void => {
       if (settled) return;
@@ -360,9 +306,6 @@ function tokenClientSignIn(
 
     if (opts?.promptConsent === true) {
       client.requestAccessToken({ prompt: "consent" });
-    } else if (opts?.silent === true) {
-      const hint = cachedUserEmail ?? cachedUserSub!;
-      client.requestAccessToken({ prompt: "none", login_hint: hint });
     } else {
       client.requestAccessToken();
     }
@@ -370,67 +313,14 @@ function tokenClientSignIn(
 }
 
 /**
- * Obtains a new access token without showing consent/account UI when Google allows it.
- * Requires a stored email or `sub` from a prior sign-in.
- */
-export function refreshGoogleAccessTokenSilently(clientId: string): Promise<boolean> {
-  if (hasValidGoogleAccessToken()) return Promise.resolve(true);
-  const hint = cachedUserEmail ?? cachedUserSub;
-  if (!hint) return Promise.resolve(false);
-  if (Date.now() < silentRefreshCooldownUntilMs) return Promise.resolve(false);
-  if (silentRefreshPromise) return silentRefreshPromise;
-
-  silentRefreshPromise = (async (): Promise<boolean> => {
-    try {
-      await loadGisScript();
-      await tokenClientSignIn(clientId, { silent: true });
-      return hasValidGoogleAccessToken();
-    } catch {
-      silentRefreshCooldownUntilMs =
-        Date.now() + SILENT_REFRESH_RETRY_COOLDOWN_MS;
-      return false;
-    } finally {
-      silentRefreshPromise = null;
-    }
-  })();
-
-  return silentRefreshPromise;
-}
-
-/**
- * Renew via GIS `prompt: none` while the access token is still valid (~proactive timer).
- * Unlike {@link refreshGoogleAccessTokenSilently}, this does not no-op when a token exists —
- * the old proactive timer incorrectly returned early and never refreshed before expiry.
- */
-function renewGoogleAccessTokenSilentlyProactive(
-  clientId: string,
-): Promise<boolean> {
-  if (!accessToken || accessValidUntilMs <= 0) return Promise.resolve(false);
-  const hint = cachedUserEmail ?? cachedUserSub;
-  if (!hint) return Promise.resolve(false);
-  if (Date.now() < silentRefreshCooldownUntilMs) return Promise.resolve(false);
-  if (silentRefreshPromise) return silentRefreshPromise;
-
-  silentRefreshPromise = (async (): Promise<boolean> => {
-    try {
-      await loadGisScript();
-      await tokenClientSignIn(clientId, { silent: true });
-      return hasValidGoogleAccessToken();
-    } catch {
-      silentRefreshCooldownUntilMs =
-        Date.now() + SILENT_REFRESH_RETRY_COOLDOWN_MS;
-      return false;
-    } finally {
-      silentRefreshPromise = null;
-    }
-  })();
-
-  return silentRefreshPromise;
-}
-
-/**
  * Starts GIS OAuth in direct response to a user click — **do not await anything before this**.
  * Call only after {@link loadGisScript} / {@link isGisOAuthReady}.
+ *
+ * Note: We deliberately do NOT attempt non-gesture silent refresh
+ * (`prompt: "none"`). GIS `oauth2.initTokenClient` opens a brief popup window
+ * even for silent attempts, which the browser will block (and surface the
+ * popup-blocked icon) when no user activation is present. Always route
+ * renewals through this gesture-bound entry point.
  */
 export function requestGoogleAccessTokenFromUserGesture(
   clientId: string,
@@ -463,7 +353,6 @@ export async function signOutGoogle(): Promise<void> {
 export function getAccessToken(): string | null {
   if (!accessToken) return null;
   if (Date.now() >= accessValidUntilMs) {
-    clearProactiveRefreshTimer();
     accessToken = null;
     accessValidUntilMs = 0;
     persistOAuthSnapshot();

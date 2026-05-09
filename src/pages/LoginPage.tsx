@@ -13,7 +13,6 @@ export function LoginPage() {
     sessionReady,
     signedIn,
     hasDriveAppDataScope,
-    oauthSilentRefreshPending,
     error,
     signInPending,
     signIn,
@@ -67,11 +66,6 @@ export function LoginPage() {
         {!ready ? (
           <div className="flex justify-center py-6">
             <Loader2 className="size-10 animate-spin text-emerald-400" />
-          </div>
-        ) : oauthSilentRefreshPending && signedIn && !needsConsent ? (
-          <div className="flex flex-col items-center gap-3 py-8">
-            <Loader2 className="size-10 animate-spin text-emerald-400" aria-hidden />
-            <p className="text-center text-sm text-zinc-400">Refreshing Google access…</p>
           </div>
         ) : (
           <div className="space-y-4">

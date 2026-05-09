@@ -79,7 +79,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     signInPending,
     error,
     hasDriveAppDataScope,
-    oauthSilentRefreshPending,
   } = useGoogleSession();
   const uid = getGoogleUserId();
   const rememberedEmail = getGoogleUserEmail();
@@ -99,17 +98,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!sessionReady) {
     const needsConsent = signedIn && !hasDriveAppDataScope;
-    if (oauthSilentRefreshPending) {
-      return (
-        <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-om-bg text-zinc-400">
-          <Loader2
-            className="size-9 animate-spin text-emerald-400"
-            aria-hidden
-          />
-          <p className="text-sm text-zinc-300">Refreshing Google access…</p>
-        </div>
-      );
-    }
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-om-bg px-6 text-center text-zinc-100">
         <div className="max-w-md space-y-3">
@@ -119,9 +107,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
           <p className="text-sm leading-relaxed text-om-muted">
             {needsConsent
               ? "Grant Drive app data access again so OpenMacro can load and save your diary."
-              : hasDriveAppDataScope
-                ? "This device remembers your account and Drive permission, but Google has not issued a fresh access token for OpenMacro yet. Automatic renewal only works when you stay signed into Google in this browser; otherwise tap Continue once—you should not need to grant Drive again."
-                : "Google couldn’t renew your session automatically (e.g. signed out of Google in this browser). Continue once — your Drive consent stays saved."}
+              : "Tap Continue to refresh your Google access. Your Drive consent stays saved, so you should not need to grant access again."}
           </p>
           {!needsConsent && rememberedEmail ? (
             <p className="text-xs leading-relaxed text-zinc-500">
