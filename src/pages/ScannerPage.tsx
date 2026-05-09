@@ -4,7 +4,7 @@ import { MealScanOverlays } from "@/components/scanner/MealScanOverlays";
 import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { consumePendingScanPhoto } from "@/lib/pending-scan-photo";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Camera, ImagePlus, Star } from "lucide-react";
+import { Camera, ImagePlus, PenLine, Star } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 
 export function ScannerPage() {
@@ -12,13 +12,8 @@ export function ScannerPage() {
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const {
-    analyzing,
-    error,
-    hasKey,
-    runAnalyzeSnapshot,
-    runAnalyzeFromFile,
-  } = useMealScanFlow();
+  const { analyzing, error, hasKey, runAnalyzeSnapshot, runAnalyzeFromFile } =
+    useMealScanFlow();
 
   useEffect(() => {
     const pending = consumePendingScanPhoto();
@@ -43,7 +38,7 @@ export function ScannerPage() {
     <div className="space-y-6">
       <PageHeader
         title="Add Meal"
-        subtitle="Add meals by scanning a photo or selecting one from your favorite meals."
+        subtitle="Estimate macros from a photo, type them in yourself, or reuse a saved meal."
       />
 
       <Card>
@@ -63,30 +58,38 @@ export function ScannerPage() {
           onChange={(e) => void onPick(e.target.files, e.currentTarget)}
         />
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="flex flex-col gap-3">
           <button
             type="button"
             onClick={() => cameraInputRef.current?.click()}
-            className="flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
+            className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
-            <Camera className="size-5 text-emerald-400" />
-            Take photo
+            <Camera className="size-5 shrink-0 text-emerald-400" />
+            Take photo to estimate
           </button>
           <button
             type="button"
             onClick={() => uploadInputRef.current?.click()}
-            className="flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
+            className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
-            <ImagePlus className="size-5 text-orange-500" />
-            Upload from library
+            <ImagePlus className="size-5 shrink-0 text-orange-500" />
+            Choose photo to estimate
           </button>
           <button
             type="button"
             onClick={() => void navigate({ to: "/scanner/favorites" })}
-            className="flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
+            className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
-            <Star className="size-5 text-amber-400" />
+            <Star className="size-5 shrink-0 text-amber-400" />
             Add from favorites
+          </button>
+          <button
+            type="button"
+            onClick={() => void navigate({ to: "/scanner/manual" })}
+            className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
+          >
+            <PenLine className="size-5 shrink-0 text-sky-400" />
+            Enter macros manually
           </button>
         </div>
 
@@ -96,7 +99,8 @@ export function ScannerPage() {
             <Link to="/tutorial" className="underline underline-offset-2">
               Setup Tutorial
             </Link>{" "}
-            (or Settings) to enable scanning.
+            (or Settings) to enable photo scanning. Manual entry and favorites
+            do not need it.
           </p>
         ) : null}
 

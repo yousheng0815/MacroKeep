@@ -8,6 +8,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { MealDetailPage } from "@/pages/MealDetailPage";
 import { ProgressPage } from "@/pages/ProgressPage";
 import { ProgressPhotoSlideshowPage } from "@/pages/ProgressPhotoSlideshowPage";
+import { ManualMealPage } from "@/pages/ManualMealPage";
 import { ScannerPage } from "@/pages/ScannerPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { TutorialPage } from "@/pages/TutorialPage";
@@ -75,6 +76,12 @@ const favoriteMealsRoute = createRoute({
   component: FavoriteMealsPage,
 });
 
+const manualMealRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: "/scanner/manual",
+  component: ManualMealPage,
+});
+
 const progressRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: "/progress",
@@ -113,6 +120,7 @@ const routeTree = rootRoute.addChildren([
     mealDetailRoute,
     scannerRoute,
     favoriteMealsRoute,
+    manualMealRoute,
     progressRoute,
     progressPhotoSlideshowRoute,
     driveRoute,
