@@ -1,12 +1,12 @@
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { Footer } from "@/components/Footer";
 import { MacroSummary } from "@/components/MacroSummary";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { ProgressArc } from "@/components/ProgressArc";
-import {
-  ButtonPendingContents,
-  ButtonSpinner,
-} from "@/components/ButtonSpinner";
 import { MealScanOverlays } from "@/components/scanner/MealScanOverlays";
 import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { useRecords } from "@/hooks/use-records";
@@ -143,12 +143,8 @@ export function DashboardPage() {
   const { records, geminiKey, isMealsLoading, mealsError, refetchMeals } =
     useRecords();
   const quickCameraInputRef = useRef<HTMLInputElement>(null);
-  const {
-    analyzing,
-    error,
-    runAnalyzeFromFile,
-    clearError,
-  } = useMealScanFlow();
+  const { analyzing, error, runAnalyzeFromFile, clearError } =
+    useMealScanFlow();
   const today = sumToday(records.meals);
   const target = records.profile.dailyTargetKcal;
   const connected = geminiKey.trim().length > 0;
@@ -213,8 +209,8 @@ export function DashboardPage() {
                   BYOK — Gemini API Key
                 </h2>
                 <p className="mt-1 text-xs text-om-muted">
-                  Needed for photo meal scanning. Configure under Settings — saved
-                  with your Drive diary file.
+                  Needed for photo meal scanning. Configure under Settings —
+                  saved with your Drive diary file.
                 </p>
               </div>
               <div className="flex items-center gap-2 text-xs">
@@ -319,7 +315,7 @@ export function DashboardPage() {
       <button
         type="button"
         onClick={() => quickCameraInputRef.current?.click()}
-        className="fixed bottom-[5.25rem] right-4 z-30 inline-flex items-center gap-2 rounded-full bg-orange-500 p-4 text-sm font-semibold text-black shadow-lg transition hover:bg-orange-400 lg:hidden"
+        className="fixed bottom-[5.25rem] right-4 z-30 inline-flex items-center gap-2 rounded-full bg-emerald-400 p-4 text-sm font-semibold text-black shadow-lg transition hover:bg-orange-400 lg:hidden"
         aria-label="Quick scan meal photo"
       >
         <Camera className="size-6" />
@@ -340,9 +336,7 @@ export function DashboardPage() {
         </div>
       ) : null}
 
-      <MealScanOverlays
-        analyzing={analyzing}
-      />
+      <MealScanOverlays analyzing={analyzing} />
 
       <div className="lg:hidden">
         <Footer />

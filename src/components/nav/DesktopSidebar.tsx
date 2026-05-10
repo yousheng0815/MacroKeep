@@ -13,6 +13,7 @@ export function DesktopSidebar() {
     }),
   });
   const highlightPath = pathForNavHighlight(pathname, mealDetailNavFrom);
+  const settingsActive = pathname.startsWith("/settings");
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-om-border bg-om-bg lg:flex">
@@ -47,7 +48,12 @@ export function DesktopSidebar() {
       <div className="border-t border-om-border p-3">
         <Link
           to="/settings"
-          className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-white"
+          className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition ${
+            settingsActive
+              ? "bg-zinc-900 text-emerald-400"
+              : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+          }`}
+          aria-current={settingsActive ? "page" : undefined}
         >
           <Settings className="size-5" />
           Settings

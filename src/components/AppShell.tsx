@@ -3,12 +3,13 @@ import { Logo } from "@/components/Logo";
 import { DesktopSidebar } from "@/components/nav/DesktopSidebar";
 import { MobileBottomNav } from "@/components/nav/MobileBottomNav";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { UserRound } from "lucide-react";
+import { Settings } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const inOnboarding = pathname === "/tutorial";
+  const settingsActive = pathname.startsWith("/settings");
 
   return (
     <div className="min-h-dvh bg-om-bg text-zinc-100">
@@ -25,10 +26,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
             <Link
               to="/settings"
-              className="rounded-xl border border-om-border bg-om-surface p-2 text-zinc-300 transition hover:bg-zinc-800"
-              aria-label="Profile"
+              className={`rounded-xl border border-om-border p-2 transition ${
+                settingsActive
+                  ? "bg-zinc-900 text-emerald-400 hover:bg-zinc-900"
+                  : "bg-om-surface text-zinc-300 hover:bg-zinc-800"
+              }`}
+              aria-label="Settings"
+              aria-current={settingsActive ? "page" : undefined}
             >
-              <UserRound className="size-5" />
+              <Settings className="size-5" />
             </Link>
           </header>
 

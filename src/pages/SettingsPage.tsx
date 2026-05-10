@@ -9,9 +9,9 @@ import { useRecords } from "@/hooks/use-records";
 import { DRIVE_APPDATA_SCOPE, getGoogleUserEmail } from "@/lib/gapi";
 import { CORE_DRIVE_FILE } from "@/lib/google-drive";
 import type { UserProfile } from "@/types/records";
-import { CheckCircle2, ChevronRight, FolderOpen } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { CheckCircle2, ChevronRight, FolderOpen } from "lucide-react";
 import { useState } from "react";
 
 /** Remount ProfileCard when the persisted profile replaces local drafts. */
@@ -82,10 +82,7 @@ function GeminiKeyCard({
           onClick={() => void updateGeminiKey(draft)}
           className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <ButtonPendingContents
-            pending={isSaving}
-            spinner={<ButtonSpinner />}
-          >
+          <ButtonPendingContents pending={isSaving} spinner={<ButtonSpinner />}>
             Save key
           </ButtonPendingContents>
         </button>
@@ -117,8 +114,9 @@ function ProfileCard({
     <Card>
       <h2 className="text-sm font-semibold text-white">Profile & targets</h2>
       <p className="mt-1 text-xs text-om-muted">
-        Placeholder defaults (1990-01-01, 180cm / 72kg, 2000 kcal) until you set your
-        own values. Birthday is used to compute your age for targets and AI.
+        Placeholder defaults (1990-01-01, 180cm / 72kg, 2000 kcal) until you set
+        your own values. Birthday is used to compute your age for targets and
+        AI.
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -229,10 +227,7 @@ function ProfileCard({
         onClick={() => void updateProfile(draft)}
         className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <ButtonPendingContents
-          pending={isSaving}
-          spinner={<ButtonSpinner />}
-        >
+        <ButtonPendingContents pending={isSaving} spinner={<ButtonSpinner />}>
           Save profile
         </ButtonPendingContents>
       </button>
@@ -260,26 +255,22 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <PageHeader
-          title="Settings"
-          subtitle="Authentication, AI keys, and your baseline targets."
-        />
-        <p className="mt-2 text-sm">
-          <Link to="/tutorial" className="text-emerald-400 hover:text-emerald-300">
-            Open setup tutorial to generate targets with Gemini
-          </Link>
-        </p>
-      </div>
+      <PageHeader
+        title="Settings"
+        subtitle="Authentication, AI keys, and your baseline targets."
+      />
 
       <Card>
-        <h2 className="text-sm font-semibold text-white">Google account & Drive</h2>
+        <h2 className="text-sm font-semibold text-white">
+          Google account & Drive
+        </h2>
         <p className="mt-2 text-xs text-om-muted">
           Your diary, targets, and optional Gemini key sync to the hidden{" "}
           <span className="text-zinc-300">App Data</span> folder as{" "}
           <span className="font-mono text-zinc-400">{CORE_DRIVE_FILE}</span>.
           Meals use separate monthly JSON files in the same folder. Only your
-          Google OAuth session is stored locally so repeat visits stay signed in.
+          Google OAuth session is stored locally so repeat visits stay signed
+          in.
         </p>
 
         <Link
@@ -357,14 +348,13 @@ export function SettingsPage() {
             Delete all cloud data
           </h3>
           <p className="mt-1 text-xs text-om-muted">
-            Permanently removes every OpenMacro file from this Google account&apos;s
-            Drive App Data folder (meals, photos,{" "}
+            Permanently removes every OpenMacro file from this Google
+            account&apos;s Drive App Data folder (meals, photos,{" "}
             <span className="font-mono text-zinc-400">{CORE_DRIVE_FILE}</span>,
-            etc.). You
-            stay signed in; the app will create a fresh empty diary on next sync. This
-            cannot be undone. Type{" "}
-            <span className="font-mono text-zinc-300">DELETE</span> to enable the
-            button.
+            etc.). You stay signed in; the app will create a fresh empty diary
+            on next sync. This cannot be undone. Type{" "}
+            <span className="font-mono text-zinc-300">DELETE</span> to enable
+            the button.
           </p>
           <label className="mt-3 block text-xs text-zinc-500">
             Confirmation
@@ -406,7 +396,9 @@ export function SettingsPage() {
                   setWipeDone(true);
                 } catch (e) {
                   setWipeError(
-                    e instanceof Error ? e.message : "Could not delete all data.",
+                    e instanceof Error
+                      ? e.message
+                      : "Could not delete all data.",
                   );
                 } finally {
                   setWipeBusy(false);
@@ -438,6 +430,13 @@ export function SettingsPage() {
         updateProfile={updateProfile}
         isSaving={isSaving}
       />
+
+      <Link
+        to="/tutorial"
+        className="relative inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-900"
+      >
+        Calculate suggested targets again
+      </Link>
     </div>
   );
 }

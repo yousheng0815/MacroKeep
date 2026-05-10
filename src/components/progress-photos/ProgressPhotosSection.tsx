@@ -262,40 +262,46 @@ export function ProgressPhotosSection({
         <div className="mt-4">
           {error ? (
             <p className="text-sm text-red-400">{error}</p>
-          ) : loading ? (
-            <div className="min-h-0 w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
-              <div
-                className="flex w-max flex-nowrap items-center gap-2 py-2"
-                aria-busy="true"
-                aria-label="Loading photos"
-              >
-                {Array.from({ length: batchSize }).map((_, i) => (
-                  <div
-                    key={`photo-placeholder-${i}`}
-                    className="h-24 w-24 shrink-0 animate-pulse rounded-xl border border-zinc-700 bg-zinc-800"
-                    aria-hidden
-                  />
-                ))}
-              </div>
-            </div>
-          ) : photos.length === 0 ? (
-            <p className="text-sm text-zinc-400">
-              No photos yet — capture your first check-in.
-            </p>
           ) : (
-            <div
-              ref={stripScrollRef}
-              className="min-h-0 w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain"
-            >
-              <div className="flex w-max flex-nowrap items-center gap-2 py-2">
-                {stripPhotos.map((p, i) => (
-                  <ProgressPhotoThumb
-                    key={p.id}
-                    photo={p}
-                    alt={`Progress photo ${i + 1}`}
-                  />
-                ))}
-              </div>
+            <div className="min-h-28">
+              {loading ? (
+                <div className="min-h-0 w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
+                  <div
+                    className="flex w-max flex-nowrap items-center gap-2 py-2"
+                    aria-busy="true"
+                    aria-label="Loading photos"
+                  >
+                    {Array.from({ length: batchSize }).map((_, i) => (
+                      <div
+                        key={`photo-placeholder-${i}`}
+                        className="h-24 w-24 shrink-0 animate-pulse rounded-xl border border-zinc-700 bg-zinc-800"
+                        aria-hidden
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : photos.length === 0 ? (
+                <div className="flex min-h-28 items-center">
+                  <p className="text-sm text-zinc-400">
+                    No photos yet — capture your first check-in.
+                  </p>
+                </div>
+              ) : (
+                <div
+                  ref={stripScrollRef}
+                  className="min-h-0 w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain"
+                >
+                  <div className="flex w-max flex-nowrap items-center gap-2 py-2">
+                    {stripPhotos.map((p, i) => (
+                      <ProgressPhotoThumb
+                        key={p.id}
+                        photo={p}
+                        alt={`Progress photo ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
