@@ -116,7 +116,7 @@ export function FavoriteMealsPage() {
                     photoFileId={item.sourcePhotoFileId}
                     thumbnailFileId={item.sourceThumbnailFileId}
                     alt={item.food_name}
-                    className="size-14 shrink-0 overflow-hidden rounded-xl bg-zinc-800 ring-1 ring-zinc-700"
+                    className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
                   />
                   <div className="w-0 flex-1 overflow-hidden">
                     <div className="flex items-start justify-between gap-2">

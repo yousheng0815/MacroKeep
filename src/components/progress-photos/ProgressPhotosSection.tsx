@@ -3,11 +3,14 @@ import { Card } from "@/components/Card";
 import { ProgressPhotoCaptureScreen } from "@/components/progress-photos/ProgressPhotoCaptureScreen";
 import { ProgressPhotoViewerScreen } from "@/components/progress-photos/ProgressPhotoViewerScreen";
 import { useBlobObjectUrl } from "@/hooks/use-blob-object-url";
-import { useProgressPhotos } from "@/hooks/use-progress-photos";
-import type { ProgressPhotoRecord } from "@/types/progress-photos";
+import {
+  useProgressPhotos,
+  useProgressPhotosBatchSize,
+} from "@/hooks/use-progress-photos";
+import type { ProgressPhotoItem } from "@/types/progress-photos";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Camera, ChevronLeft, Play } from "lucide-react";
-import { useCallback, useMemo, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 function overlayFromSearch(search: Record<string, unknown>) {
   return {
@@ -20,7 +23,7 @@ function ProgressPhotoThumb({
   photo,
   alt,
 }: {
-  photo: ProgressPhotoRecord;
+  photo: ProgressPhotoItem;
   alt: string;
 }) {
   const url = useBlobObjectUrl(photo.blob);
@@ -29,7 +32,7 @@ function ProgressPhotoThumb({
     <Link
       to="/progress"
       search={{ view: photo.id }}
-      className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl ring-1 ring-zinc-700 transition hover:ring-emerald-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+      className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-zinc-700 transition hover:border-emerald-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
     >
       {url ? (
         <img
@@ -38,7 +41,7 @@ function ProgressPhotoThumb({
           className="size-full max-h-full max-w-full object-cover"
         />
       ) : (
-        <span className="block size-full bg-zinc-800" aria-hidden />
+        <span className="block size-full animate-pulse bg-zinc-800" aria-hidden />
       )}
     </Link>
   );
@@ -91,7 +94,126 @@ export function ProgressPhotosSection({
     window.history.back();
   }, []);
 
-  const { photos, loading, error, remove, addPhoto } = useProgressPhotos();
+  const batchSize = useProgressPhotosBatchSize();
+  const [stripVisibleCount, setStripVisibleCount] = useState(batchSize);
+
+  const {
+    photos,
+    loading,
+    error,
+    remove,
+    addPhoto,
+  } = useProgressPhotos({
+    prefetchPhotoId: view,
+    displayLimit: stripVisibleCount,
+  });
+
+  const photoIdsKey = useMemo(
+    () => photos.map((p) => p.id).join("\0"),
+    [photos],
+  );
+
+  /** Reset paging when the manifest identity changes. */
+  useEffect(() => {
+    if (photos.length === 0) {
+      setStripVisibleCount(0);
+      return;
+    }
+    setStripVisibleCount(Math.min(batchSize, photos.length));
+  }, [photoIdsKey, batchSize, photos.length]);
+
+  const stripPhotos = useMemo(
+    () => photos.slice(0, stripVisibleCount),
+    [photos, stripVisibleCount],
+  );
+
+  const stripScrollRef = useRef<HTMLDivElement>(null);
+  const photosLenRef = useRef(photos.length);
+  photosLenRef.current = photos.length;
+  const batchSzRef = useRef(batchSize);
+  batchSzRef.current = batchSize;
+  const stripCountRef = useRef(stripVisibleCount);
+  stripCountRef.current = stripVisibleCount;
+  /** After scrolling back from the end, allow another “near end” expansion. */
+  const stripAwayFromEndRef = useRef(true);
+
+  useEffect(() => {
+    stripAwayFromEndRef.current = true;
+  }, [photoIdsKey]);
+
+  /**
+   * Ultrawide / tall layouts: if rendered thumbs fit without horizontal scrolling,
+   * `scroll` never reaches “near end”. Grow one page at a time until the strip
+   * overflows or the catalog is fully shown.
+   */
+  const growStripWhenNothingToScroll = useCallback(() => {
+    setStripVisibleCount((c) => {
+      const node = stripScrollRef.current;
+      if (!node) return c;
+      const len = photosLenRef.current;
+      const bs = batchSzRef.current;
+      if (c >= len) return c;
+      if (node.scrollWidth > node.clientWidth + 8) return c;
+      return Math.min(len, c + bs);
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (photos.length === 0 || loading) return;
+    growStripWhenNothingToScroll();
+  }, [
+    stripVisibleCount,
+    stripPhotos.length,
+    photoIdsKey,
+    photos.length,
+    loading,
+    growStripWhenNothingToScroll,
+  ]);
+
+  useEffect(() => {
+    const el = stripScrollRef.current;
+    if (!el || photos.length === 0) return;
+
+    growStripWhenNothingToScroll();
+    const ro = new ResizeObserver(() => {
+      growStripWhenNothingToScroll();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [photoIdsKey, photos.length, growStripWhenNothingToScroll]);
+
+  /**
+   * Append the next page when the user scrolls near the right edge (not on mount).
+   * Uses a crossing gate so layout growth while still “at the end” does not chain-expand.
+   */
+  useEffect(() => {
+    const el = stripScrollRef.current;
+    if (!el) return;
+
+    const NEAR_END_PX = 140;
+
+    const onScroll = () => {
+      const len = photosLenRef.current;
+      const count = stripCountRef.current;
+      if (count >= len) return;
+
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      const maxScroll = Math.max(0, scrollWidth - clientWidth);
+      const nearEnd =
+        maxScroll > 0 && scrollLeft >= maxScroll - NEAR_END_PX;
+
+      if (nearEnd && stripAwayFromEndRef.current) {
+        stripAwayFromEndRef.current = false;
+        const bs = batchSzRef.current;
+        setStripVisibleCount((c) => Math.min(len, c + bs));
+      } else if (!nearEnd) {
+        stripAwayFromEndRef.current = true;
+      }
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [photoIdsKey]);
 
   const viewIndex = useMemo(
     () => (view ? photos.findIndex((p) => p.id === view) : -1),
@@ -141,18 +263,32 @@ export function ProgressPhotosSection({
           {error ? (
             <p className="text-sm text-red-400">{error}</p>
           ) : loading ? (
-            <div className="flex items-center gap-2 text-sm text-om-muted">
-              <ButtonSpinner />
-              Loading photos…
+            <div className="min-h-0 w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
+              <div
+                className="flex w-max flex-nowrap items-center gap-2 py-2"
+                aria-busy="true"
+                aria-label="Loading photos"
+              >
+                {Array.from({ length: batchSize }).map((_, i) => (
+                  <div
+                    key={`photo-placeholder-${i}`}
+                    className="h-24 w-24 shrink-0 animate-pulse rounded-xl border border-zinc-700 bg-zinc-800"
+                    aria-hidden
+                  />
+                ))}
+              </div>
             </div>
           ) : photos.length === 0 ? (
             <p className="text-sm text-zinc-400">
               No photos yet — capture your first check-in.
             </p>
           ) : (
-            <div className="min-h-0 w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain">
-              <div className="flex w-max flex-nowrap gap-2 py-2">
-                {photos.map((p, i) => (
+            <div
+              ref={stripScrollRef}
+              className="min-h-0 w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain"
+            >
+              <div className="flex w-max flex-nowrap items-center gap-2 py-2">
+                {stripPhotos.map((p, i) => (
                   <ProgressPhotoThumb
                     key={p.id}
                     photo={p}

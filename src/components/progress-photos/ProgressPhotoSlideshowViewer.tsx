@@ -1,5 +1,8 @@
 import { useBlobObjectUrl } from "@/hooks/use-blob-object-url";
-import type { ProgressPhotoRecord } from "@/types/progress-photos";
+import type {
+  ProgressPhotoItem,
+  ProgressPhotoRecord,
+} from "@/types/progress-photos";
 import { ChevronLeft, Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -7,17 +10,25 @@ export function ProgressPhotoSlideshowViewer({
   photos,
   onClose,
 }: {
-  photos: ProgressPhotoRecord[];
+  photos: ProgressPhotoItem[];
   onClose: () => void;
 }) {
-  const sorted = useMemo(
-    () => [...photos].sort((a, b) => a.capturedAt - b.capturedAt),
-    [photos],
-  );
+  const sorted = useMemo(() => {
+    const ready: ProgressPhotoRecord[] = [];
+    for (const p of photos) {
+      if (!p.blob) continue;
+      ready.push({
+        id: p.id,
+        capturedAt: p.capturedAt,
+        blob: p.blob,
+      });
+    }
+    return ready.sort((a, b) => a.capturedAt - b.capturedAt);
+  }, [photos]);
 
   const [index, setIndex] = useState(0);
-  const [playing, setPlaying] = useState(true);
-  const [intervalMs, setIntervalMs] = useState(900);
+  const [playing, setPlaying] = useState(false);
+  const [intervalMs, setIntervalMs] = useState(500);
 
   const displayIndex =
     sorted.length === 0 ? 0 : Math.min(index, sorted.length - 1);
@@ -114,7 +125,7 @@ export function ProgressPhotoSlideshowViewer({
         <p className="truncate text-[11px] text-zinc-500">{label}</p>
       </div>
 
-      <footer className="shrink-0 space-y-4 border-t border-zinc-800 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <footer className="shrink-0 space-y-4 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
@@ -141,9 +152,9 @@ export function ProgressPhotoSlideshowViewer({
           </label>
           <input
             type="range"
-            min={400}
-            max={2400}
-            step={100}
+            min={50}
+            max={3000}
+            step={50}
             value={intervalMs}
             onChange={(e) => setIntervalMs(Number(e.target.value))}
             className="w-full accent-emerald-400"

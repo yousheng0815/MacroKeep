@@ -1015,13 +1015,13 @@ export async function uploadProgressPhotoImageToAppData(
 }
 
 /**
- * Loads progress photos from Drive (manifest + image downloads). Uploads any IndexedDB-only
- * rows then clears local storage so Drive stays authoritative.
+ * Syncs the progress-photos manifest with Drive and any IndexedDB-only rows (upload + clear local).
+ * Does not download image blobs — use {@link downloadAppDataFileBlob} per image for lazy loading.
  */
-export async function pullProgressPhotosFromDrive(
+export async function syncProgressPhotosManifestFromDrive(
   token: string,
-  signal?: AbortSignal,
-): Promise<ProgressPhotosPullResult> {
+  _signal?: AbortSignal,
+): Promise<{ photos: ProgressPhotoDriveMeta[] }> {
   const { manifestFileId, photos: merged } = await readProgressPhotosManifest(token);
   const localRows = await listProgressPhotosDesc();
 
@@ -1046,6 +1046,20 @@ export async function pullProgressPhotosFromDrive(
   if (localRows.length > 0) {
     await clearProgressPhotosIndexedDb();
   }
+
+  merged.sort((a, b) => b.capturedAt - a.capturedAt);
+  return { photos: merged };
+}
+
+/**
+ * Loads progress photos from Drive (manifest + every image download). Prefer manifest sync +
+ * lazy blob loads in the UI for large libraries.
+ */
+export async function pullProgressPhotosFromDrive(
+  token: string,
+  signal?: AbortSignal,
+): Promise<ProgressPhotosPullResult> {
+  const { photos: merged } = await syncProgressPhotosManifestFromDrive(token, signal);
 
   const records: ProgressPhotoRecord[] = [];
   for (const meta of merged) {

@@ -91,7 +91,7 @@ export function MealDetailPage() {
             photoFileId={meal.photoFileId}
             thumbnailFileId={meal.thumbnailFileId}
             alt={meal.food_name}
-            className="size-20 shrink-0 overflow-hidden rounded-xl bg-zinc-800 ring-1 ring-zinc-700"
+            className="size-20 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
           />
           <div className="min-w-0">
             <h1 className="min-w-0 break-words text-xl font-bold text-white">
@@ -183,7 +183,7 @@ export function MealDetailPage() {
                 name="foodName"
                 type="text"
                 defaultValue={meal.food_name}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
               />
             </label>
 
@@ -195,7 +195,7 @@ export function MealDetailPage() {
                 name="recordedAt"
                 type="datetime-local"
                 defaultValue={toLocalDateTimeInput(meal.recordedAt)}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
               />
             </label>
 
@@ -210,7 +210,7 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="1"
                   defaultValue={meal.calories}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
                 />
               </label>
               <label className="block">
@@ -223,7 +223,7 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="0.1"
                   defaultValue={meal.protein}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
                 />
               </label>
               <label className="block">
@@ -236,7 +236,7 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="0.1"
                   defaultValue={meal.fats}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
                 />
               </label>
               <label className="block">
@@ -249,7 +249,7 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="0.1"
                   defaultValue={meal.carbs}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
                 />
               </label>
             </div>

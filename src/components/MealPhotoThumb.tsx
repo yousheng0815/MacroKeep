@@ -13,7 +13,7 @@ export function MealPhotoThumb({
   photoFileId,
   thumbnailFileId,
   alt,
-  className = "size-10 shrink-0 overflow-hidden rounded-full bg-zinc-800 ring-1 ring-zinc-700",
+  className = "size-10 shrink-0 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800",
 }: MealPhotoThumbProps) {
   const src = useDrivePhotoUrl(thumbnailFileId || photoFileId);
 

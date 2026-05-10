@@ -133,7 +133,7 @@ export function ManualMealPage() {
               type="text"
               autoComplete="off"
               placeholder="e.g. Chicken salad"
-              className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+              className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
             />
           </label>
 
@@ -145,7 +145,7 @@ export function ManualMealPage() {
               name="recordedAt"
               type="datetime-local"
               defaultValue={nowLocal}
-              className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+              className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
             />
           </label>
 
@@ -167,7 +167,7 @@ export function ManualMealPage() {
               onChange={(e) => onPickPhoto(e.target.files, e.currentTarget)}
             />
             <div className="flex items-start gap-3 rounded-xl border border-om-border bg-om-bg p-3 md:items-center md:gap-5 md:p-4">
-              <div className="size-20 shrink-0 overflow-hidden rounded-lg ring-1 ring-zinc-700 md:size-32">
+              <div className="size-20 shrink-0 overflow-hidden rounded-lg border border-zinc-700 md:size-32">
                 {photoChoice ? (
                   <img
                     src={photoChoice.previewUrl}
@@ -221,7 +221,7 @@ export function ManualMealPage() {
                 inputMode="decimal"
                 step="1"
                 defaultValue={0}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
               />
             </label>
             <label className="block">
@@ -234,7 +234,7 @@ export function ManualMealPage() {
                 inputMode="decimal"
                 step="0.1"
                 defaultValue={0}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
               />
             </label>
             <label className="block">
@@ -245,7 +245,7 @@ export function ManualMealPage() {
                 inputMode="decimal"
                 step="0.1"
                 defaultValue={0}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
               />
             </label>
             <label className="block">
@@ -258,7 +258,7 @@ export function ManualMealPage() {
                 inputMode="decimal"
                 step="0.1"
                 defaultValue={0}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-emerald-500 transition focus:ring-2"
+                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
               />
             </label>
           </div>

@@ -1,7 +1,7 @@
 import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { useBlobObjectUrl } from "@/hooks/use-blob-object-url";
 import { compressProgressPhotoBlob } from "@/lib/progress-photo-compress";
-import type { ProgressPhotoRecord } from "@/types/progress-photos";
+import type { ProgressPhotoItem, ProgressPhotoRecord } from "@/types/progress-photos";
 import { Camera, Check, ChevronLeft, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -15,7 +15,7 @@ export function ProgressPhotoCaptureScreen({
   onDismiss: () => void;
   onSaved?: () => void;
   savePhoto: (record: ProgressPhotoRecord) => Promise<void>;
-  photosForGhost: ProgressPhotoRecord[];
+  photosForGhost: ProgressPhotoItem[];
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -187,7 +187,7 @@ export function ProgressPhotoCaptureScreen({
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 pb-[max(1.5rem,calc(env(safe-area-inset-bottom)+1.25rem))]">
         {phase === "live" ? (
           <>
-            <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-2xl bg-zinc-950 ring-1 ring-zinc-800">
+            <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
               {cameraError ? (
                 <div className="flex size-full items-center justify-center px-6 text-center">
                   <p className="text-sm text-zinc-300">{cameraError}</p>
@@ -269,7 +269,7 @@ export function ProgressPhotoCaptureScreen({
           </>
         ) : (
           <>
-            <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-2xl bg-zinc-950 ring-1 ring-zinc-800">
+            <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
               {previewUrl ? (
                 <img
                   src={previewUrl}

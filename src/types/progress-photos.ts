@@ -12,6 +12,11 @@ export type ProgressPhotoRecord = {
   blob: Blob;
 };
 
+/** Manifest row while image bytes are still loading from Drive. */
+export type ProgressPhotoItem = ProgressPhotoDriveMeta & {
+  blob?: Blob;
+};
+
 /** Result of loading progress photos from Drive (manifest + images). */
 export type ProgressPhotosPullResult = {
   photos: ProgressPhotoRecord[];

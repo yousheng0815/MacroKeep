@@ -6,7 +6,9 @@ import { useNavigate } from "@tanstack/react-router";
 
 export function ProgressPhotoSlideshowPage() {
   const navigate = useNavigate();
-  const { photos, loading, error } = useProgressPhotos();
+  const { photos, loading, allBlobsLoaded, error } = useProgressPhotos({
+    continuousBlobFetch: true,
+  });
 
   const goBack = () => {
     void navigate({ to: "/progress" });
@@ -22,7 +24,7 @@ export function ProgressPhotoSlideshowPage() {
         />
         <div className="flex flex-col items-center justify-center gap-3 py-10 text-zinc-400">
           <ButtonSpinner />
-          <p className="text-sm">Loading photos…</p>
+          <p className="text-sm">Loading library…</p>
         </div>
       </div>
     );
@@ -69,6 +71,22 @@ export function ProgressPhotoSlideshowPage() {
           >
             Back to Progress
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!allBlobsLoaded) {
+    return (
+      <div className="flex flex-col gap-4">
+        <PageHeader
+          title="Play back"
+          backTo="/progress"
+          backAriaLabel="Back to Progress"
+        />
+        <div className="flex flex-col items-center justify-center gap-3 py-10 text-zinc-400">
+          <ButtonSpinner />
+          <p className="text-sm">Loading images…</p>
         </div>
       </div>
     );

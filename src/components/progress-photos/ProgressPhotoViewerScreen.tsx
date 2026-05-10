@@ -1,6 +1,6 @@
 import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { useBlobObjectUrl } from "@/hooks/use-blob-object-url";
-import type { ProgressPhotoRecord } from "@/types/progress-photos";
+import type { ProgressPhotoItem } from "@/types/progress-photos";
 import { ChevronLeft, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -12,7 +12,7 @@ export function ProgressPhotoViewerScreen({
   onIndexChange,
   onDelete,
 }: {
-  photos: ProgressPhotoRecord[];
+  photos: ProgressPhotoItem[];
   index: number;
   onDismiss: () => void;
   onIndexChange: (next: number) => void;
@@ -117,13 +117,18 @@ export function ProgressPhotoViewerScreen({
       </header>
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center p-4 pb-[env(safe-area-inset-bottom)]">
-        {url ? (
+        {!url ? (
+          <div className="flex flex-col items-center gap-3 text-zinc-500">
+            <ButtonSpinner />
+            <p className="text-sm">Loading image…</p>
+          </div>
+        ) : (
           <img
             src={url}
             alt={`Progress photo from ${dateLabel}`}
             className="max-h-full max-w-full object-contain"
           />
-        ) : null}
+        )}
 
         {photos.length > 1 ? (
           <>
