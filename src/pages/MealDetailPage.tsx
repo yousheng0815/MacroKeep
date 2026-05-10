@@ -1,17 +1,31 @@
-import { ButtonSpinner } from "@/components/ButtonSpinner";
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
 import { formatLocalDateLabel, formatTime } from "@/lib/date";
+import { fileToBase64 } from "@/lib/file-to-base64";
+import {
+  canSyncToDriveAppData,
+  getAccessToken,
+} from "@/lib/gapi";
+import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
+import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import {
   Link,
   useNavigate,
   useParams,
   useRouter,
 } from "@tanstack/react-router";
-import { ArrowLeft, Pencil, Star, Tag, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Camera, ImagePlus, Pencil, Star, Tag, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+type EditPhotoState =
+  | { mode: "unchanged" }
+  | { mode: "replacement"; file: File; previewUrl: string };
 
 function toLocalDateTimeInput(iso: string): string {
   const d = new Date(iso);
@@ -54,11 +68,68 @@ export function MealDetailPage() {
   const [savePending, setSavePending] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
   const [favoritePending, setFavoritePending] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [editPhoto, setEditPhoto] = useState<EditPhotoState>({ mode: "unchanged" });
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+
+  const onPickEditPhoto = useCallback(
+    (files: FileList | null, input?: HTMLInputElement | null) => {
+      const file = files?.[0];
+      if (input) input.value = "";
+      if (!file || !file.type.startsWith("image/")) return;
+      setFileInputKey((k) => k + 1);
+      setEditPhoto((prev) => {
+        if (prev.mode === "replacement" && prev.previewUrl) {
+          URL.revokeObjectURL(prev.previewUrl);
+        }
+        return {
+          mode: "replacement",
+          file,
+          previewUrl: URL.createObjectURL(file),
+        };
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     setEditing(false);
+    setEditPhoto((prev) => {
+      if (prev.mode === "replacement" && prev.previewUrl) {
+        URL.revokeObjectURL(prev.previewUrl);
+      }
+      return { mode: "unchanged" };
+    });
   }, [mealId]);
+
+  useEffect(() => {
+    if (!editing) return;
+    setEditPhoto((prev) => {
+      if (prev.mode === "replacement" && prev.previewUrl) {
+        URL.revokeObjectURL(prev.previewUrl);
+      }
+      return { mode: "unchanged" };
+    });
+    setFileInputKey((k) => k + 1);
+  }, [editing, mealId]);
+
+  const revokeEditPhotoPreview = useCallback((state: EditPhotoState) => {
+    if (state.mode === "replacement" && state.previewUrl) {
+      URL.revokeObjectURL(state.previewUrl);
+    }
+  }, []);
+
+  const endEditing = useCallback(() => {
+    setEditError(null);
+    setEditPhoto((prev) => {
+      revokeEditPhotoPreview(prev);
+      return { mode: "unchanged" };
+    });
+    setEditing(false);
+  }, [revokeEditPhotoPreview]);
 
   if (!meal) {
     return (
@@ -152,6 +223,8 @@ export function MealDetailPage() {
               e.preventDefault();
               void (async () => {
                 setSavePending(true);
+                setEditError(null);
+                let orphanUploadId: string | null = null;
                 try {
                   const form = new FormData(e.currentTarget);
                   const foodName = String(form.get("foodName") ?? "").trim();
@@ -160,15 +233,63 @@ export function MealDetailPage() {
                   const fats = String(form.get("fats") ?? "0");
                   const carbs = String(form.get("carbs") ?? "0");
                   const recordedAtLocal = String(form.get("recordedAt") ?? "");
-                  await updateMeal(meal.id, {
+
+                  const basePatch = {
                     food_name: foodName || meal.food_name,
                     calories: parseNumber(calories),
                     protein: parseNumber(protein),
                     fats: parseNumber(fats),
                     carbs: parseNumber(carbs),
                     recordedAt: toIsoFromLocalDateTimeInput(recordedAtLocal),
-                  });
+                  };
+
+                  if (editPhoto.mode === "replacement") {
+                    if (!canSyncToDriveAppData()) {
+                      throw new Error(
+                        "Sign in with Google Drive access to attach a meal photo.",
+                      );
+                    }
+                    const token = getAccessToken();
+                    if (!token) throw new Error("Missing access token");
+                    const { base64, mimeType } = await fileToBase64(
+                      editPhoto.file,
+                    );
+                    const prepared = await prepareMealPhotoForUpload(
+                      base64,
+                      mimeType,
+                    );
+                    const newPhotoId = await uploadMealPhotoToAppData(
+                      token,
+                      meal.id,
+                      prepared.base64,
+                      prepared.mimeType,
+                    );
+                    orphanUploadId = newPhotoId;
+                    await updateMeal(meal.id, {
+                      ...basePatch,
+                      photoFileId: newPhotoId,
+                    });
+                  } else {
+                    await updateMeal(meal.id, basePatch);
+                  }
+
+                  orphanUploadId = null;
+                  revokeEditPhotoPreview(editPhoto);
+                  setEditPhoto({ mode: "unchanged" });
                   setEditing(false);
+                } catch (err) {
+                  if (orphanUploadId) {
+                    try {
+                      const token = getAccessToken();
+                      if (token)
+                        await deleteDriveFile(token, orphanUploadId);
+                    } catch {
+                      /* best-effort */
+                    }
+                  }
+                  setEditError(
+                    err instanceof Error ? err.message : "Could not save meal.",
+                  );
                 } finally {
                   setSavePending(false);
                 }
@@ -198,6 +319,74 @@ export function MealDetailPage() {
                 className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
               />
             </label>
+
+            <div className="space-y-2">
+              <span className="block text-xs text-om-muted">Photo</span>
+              <input
+                key={`cam-${fileInputKey}`}
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => onPickEditPhoto(e.target.files, e.currentTarget)}
+              />
+              <input
+                key={`lib-${fileInputKey}`}
+                ref={uploadInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => onPickEditPhoto(e.target.files, e.currentTarget)}
+              />
+              <div className="flex items-start gap-3 rounded-xl border border-om-border bg-om-bg p-3 md:items-center md:gap-5 md:p-4">
+                <div className="size-20 shrink-0 overflow-hidden rounded-lg border border-zinc-700 md:size-28">
+                  {editPhoto.mode === "replacement" ? (
+                    <img
+                      src={editPhoto.previewUrl}
+                      alt="New meal photo preview"
+                      className="size-full object-cover"
+                    />
+                  ) : meal.photoFileId || meal.thumbnailFileId ? (
+                    <MealPhotoThumb
+                      photoFileId={meal.photoFileId}
+                      thumbnailFileId={meal.thumbnailFileId}
+                      alt={meal.food_name}
+                      className="size-full shrink-0 overflow-hidden rounded-lg border border-zinc-700 bg-zinc-800"
+                    />
+                  ) : (
+                    <MealPhotoThumb
+                      alt="No meal photo"
+                      className="size-full shrink-0 overflow-hidden rounded-lg border-0"
+                    />
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-row md:flex-wrap md:gap-3">
+                  <button
+                    type="button"
+                    disabled={savePending}
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-3 py-2 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem] md:text-sm"
+                  >
+                    <Camera className="size-4 text-emerald-400 md:size-5" />
+                    {meal.photoFileId || meal.thumbnailFileId
+                      ? "Retake"
+                      : "Take photo"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={savePending}
+                    onClick={() => uploadInputRef.current?.click()}
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-3 py-2 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem] md:text-sm"
+                  >
+                    <ImagePlus className="size-4 text-orange-500 md:size-5" />
+                    {meal.photoFileId || meal.thumbnailFileId
+                      ? "Replace from library"
+                      : "Upload from library"}
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
@@ -254,21 +443,31 @@ export function MealDetailPage() {
               </label>
             </div>
 
+            {editError ? (
+              <p className="text-sm text-red-400" role="alert">
+                {editError}
+              </p>
+            ) : null}
+
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <button
                 type="submit"
                 disabled={savePending || deletePending || favoritePending}
                 aria-busy={savePending}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+                className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {savePending ? <ButtonSpinner /> : null}
-                Save changes
+                <ButtonPendingContents
+                  pending={savePending}
+                  spinner={<ButtonSpinner />}
+                >
+                  Save changes
+                </ButtonPendingContents>
               </button>
 
               <button
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
-                onClick={() => setEditing(false)}
+                onClick={() => endEditing()}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
@@ -323,7 +522,10 @@ export function MealDetailPage() {
               <button
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
-                onClick={() => setEditing(true)}
+                onClick={() => {
+                  setEditError(null);
+                  setEditing(true);
+                }}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Pencil className="size-4" />
@@ -334,7 +536,7 @@ export function MealDetailPage() {
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
                 aria-busy={deletePending}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="relative inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => {
                   if (!window.confirm("Delete this meal?")) return;
                   void (async () => {
@@ -348,12 +550,13 @@ export function MealDetailPage() {
                   })();
                 }}
               >
-                {deletePending ? (
-                  <ButtonSpinner className="text-red-200" />
-                ) : (
+                <ButtonPendingContents
+                  pending={deletePending}
+                  spinner={<ButtonSpinner className="text-red-200" />}
+                >
                   <Trash2 className="size-4" />
-                )}
-                Delete meal
+                  Delete meal
+                </ButtonPendingContents>
               </button>
             </div>
           </div>

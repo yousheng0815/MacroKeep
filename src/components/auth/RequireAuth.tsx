@@ -1,4 +1,7 @@
-import { ButtonSpinner } from "@/components/ButtonSpinner";
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
 import { getGoogleUserEmail, getGoogleUserId } from "@/lib/gapi";
@@ -46,10 +49,14 @@ function RecordsReadyGate({ children }: { children: ReactNode }) {
                 }
               })()
             }
-            className="flex min-w-[220px] items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="relative flex min-w-[220px] items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {retryPending ? <ButtonSpinner /> : null}
-            Try again
+            <ButtonPendingContents
+              pending={retryPending}
+              spinner={<ButtonSpinner />}
+            >
+              Try again
+            </ButtonPendingContents>
           </button>
         </div>
       );
@@ -125,10 +132,14 @@ export function RequireAuth({ children }: { children: ReactNode }) {
           onClick={() =>
             signIn(needsConsent ? { promptConsent: true } : undefined)
           }
-          className="flex min-w-[220px] items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative flex min-w-[220px] items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {signInPending ? <ButtonSpinner /> : null}
-          {needsConsent ? "Grant Drive app data access" : "Continue with Google"}
+          <ButtonPendingContents
+            pending={signInPending}
+            spinner={<ButtonSpinner />}
+          >
+            {needsConsent ? "Grant Drive app data access" : "Continue with Google"}
+          </ButtonPendingContents>
         </button>
       </div>
     );

@@ -1,4 +1,7 @@
-import { ButtonSpinner } from "@/components/ButtonSpinner";
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { Logo } from "@/components/Logo";
 import { useGoogleSession } from "@/contexts/google-session";
 import { DRIVE_APPDATA_SCOPE } from "@/lib/gapi";
@@ -90,10 +93,14 @@ export function LoginPage() {
               onClick={() =>
                 signIn(needsConsent ? { promptConsent: true } : undefined)
               }
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+              className="relative flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {signInPending ? <ButtonSpinner /> : null}
-              {needsConsent ? "Grant Drive app data access" : "Continue with Google"}
+              <ButtonPendingContents
+                pending={signInPending}
+                spinner={<ButtonSpinner />}
+              >
+                {needsConsent ? "Grant Drive app data access" : "Continue with Google"}
+              </ButtonPendingContents>
             </button>
 
             <p className="text-center text-[11px] leading-relaxed text-zinc-500">

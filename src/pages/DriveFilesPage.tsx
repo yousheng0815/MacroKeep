@@ -1,4 +1,7 @@
-import { ButtonSpinner } from "@/components/ButtonSpinner";
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { useGoogleSession } from "@/contexts/google-session";
@@ -189,13 +192,15 @@ export function DriveFilesPage() {
             disabled={!sessionReady || q.isFetching}
             aria-busy={q.isFetching}
             onClick={() => void q.refetch()}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {q.isFetching ? <ButtonSpinner className="text-zinc-300" /> : null}
-            {!q.isFetching ? (
+            <ButtonPendingContents
+              pending={q.isFetching}
+              spinner={<ButtonSpinner className="text-zinc-300" />}
+            >
               <RefreshCw className="size-4" aria-hidden />
-            ) : null}
-            Refresh
+              Refresh
+            </ButtonPendingContents>
           </button>
         }
       />
@@ -235,10 +240,14 @@ export function DriveFilesPage() {
                   }
                 })()
               }
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+              className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {retryBusy ? <ButtonSpinner /> : null}
-              Retry
+              <ButtonPendingContents
+                pending={retryBusy}
+                spinner={<ButtonSpinner />}
+              >
+                Retry
+              </ButtonPendingContents>
             </button>
           </div>
         </Card>

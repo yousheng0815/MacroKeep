@@ -1,4 +1,7 @@
-import { ButtonSpinner } from "@/components/ButtonSpinner";
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { Logo } from "@/components/Logo";
 import { useRecords } from "@/hooks/use-records";
@@ -164,10 +167,14 @@ export function TutorialPage() {
               }
             })()
           }
-          className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSaving ? <ButtonSpinner /> : null}
-          Save key
+          <ButtonPendingContents
+            pending={isSaving}
+            spinner={<ButtonSpinner />}
+          >
+            Save key
+          </ButtonPendingContents>
         </button>
       </Card>
 
@@ -312,10 +319,14 @@ export function TutorialPage() {
                 }
               })()
             }
-            className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isGenerating ? <ButtonSpinner /> : null}
-            Generate targets with Gemini
+            <ButtonPendingContents
+              pending={isGenerating}
+              spinner={<ButtonSpinner />}
+            >
+              Generate targets with Gemini
+            </ButtonPendingContents>
           </button>
         </Card>
       )}
@@ -381,10 +392,14 @@ export function TutorialPage() {
                 }
               })()
             }
-            className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSaving ? <ButtonSpinner /> : null}
-            Use these targets
+            <ButtonPendingContents
+              pending={isSaving}
+              spinner={<ButtonSpinner />}
+            >
+              Use these targets
+            </ButtonPendingContents>
           </button>
         </Card>
       ) : null}

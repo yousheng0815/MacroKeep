@@ -1,5 +1,5 @@
 import { useDrivePhotoUrl } from "@/hooks/use-drive-photo-url";
-import { Salad } from "lucide-react";
+import { ImagePlus } from "lucide-react";
 
 type MealPhotoThumbProps = {
   photoFileId?: string;
@@ -19,8 +19,16 @@ export function MealPhotoThumb({
 
   if (!thumbnailFileId && !photoFileId) {
     return (
-      <div className={`flex items-center justify-center ${className}`}>
-        <Salad className="size-5 text-emerald-400" aria-hidden />
+      <div
+        className={`flex items-center justify-center ${className}`}
+        {...(alt
+          ? { role: "img" as const, "aria-label": alt }
+          : { "aria-hidden": true as const })}
+      >
+        <ImagePlus
+          className="aspect-square w-[42%] max-w-10 min-w-3 shrink-0 text-zinc-600"
+          aria-hidden
+        />
       </div>
     );
   }

@@ -360,15 +360,48 @@ export function useRecords() {
           | "isFavorite"
           | "sourceFavoriteMealId"
         >
-      >,
+      > & {
+        /** New Drive file id, or `null` / empty string to drop the meal photo. */
+        photoFileId?: string | null;
+        thumbnailFileId?: string | null;
+      },
     ) => {
       const prev = getCurrentRecords();
       const hasTarget = prev.meals.some((m) => m.id === id);
       if (!hasTarget) throw new Error("Meal not found");
       const prevMeal = prev.meals.find((m) => m.id === id)!;
+      const oldPhotoId = prevMeal.photoFileId;
+      const oldThumbId = prevMeal.thumbnailFileId;
+
+      const {
+        photoFileId: patchPhoto,
+        thumbnailFileId: patchThumb,
+        ...scalarPatch
+      } = patch;
+
+      const updated: MealRecord = { ...prevMeal, ...scalarPatch };
+
+      if ("photoFileId" in patch) {
+        if (patchPhoto === null || patchPhoto === "") {
+          delete updated.photoFileId;
+          delete updated.thumbnailFileId;
+        } else if (typeof patchPhoto === "string") {
+          updated.photoFileId = patchPhoto;
+          delete updated.thumbnailFileId;
+        }
+      } else if ("thumbnailFileId" in patch) {
+        if (patchThumb === null || patchThumb === "") {
+          delete updated.thumbnailFileId;
+        } else if (typeof patchThumb === "string") {
+          updated.thumbnailFileId = patchThumb;
+        }
+      }
+
       const monthKeys = new Set<string>();
       monthKeys.add(
-        monthKeyFromRecordedAt(patch.recordedAt ?? prevMeal.recordedAt),
+        monthKeyFromRecordedAt(
+          patch.recordedAt ?? updated.recordedAt ?? prevMeal.recordedAt,
+        ),
       );
       if (
         patch.recordedAt !== undefined &&
@@ -378,13 +411,42 @@ export function useRecords() {
       }
       const next: RecordsDocument = {
         ...prev,
-        meals: prev.meals.map((m) => (m.id === id ? { ...m, ...patch } : m)),
+        meals: prev.meals.map((m) => (m.id === id ? updated : m)),
       };
       await replaceMutation.mutateAsync({
         next,
         mealsOnly: true,
         mealMonthKeysToSync: [...monthKeys],
       });
+
+      const newPhotoId = updated.photoFileId;
+      const newThumbId = updated.thumbnailFileId;
+      const photoRefsChanged =
+        oldPhotoId !== newPhotoId || oldThumbId !== newThumbId;
+      if (photoRefsChanged && canSyncToDriveAppData()) {
+        const token = getAccessToken();
+        if (token) {
+          const mealsAfter = next.meals;
+          const deleteIfUnreferenced = async (
+            fileId: string | undefined,
+            replacementPrimary: string | undefined,
+          ) => {
+            if (!fileId || fileId === replacementPrimary) return;
+            const still = mealsAfter.some(
+              (m) => m.photoFileId === fileId || m.thumbnailFileId === fileId,
+            );
+            if (!still) {
+              try {
+                await deleteDriveFile(token, fileId);
+              } catch {
+                /* best-effort */
+              }
+            }
+          };
+          await deleteIfUnreferenced(oldPhotoId, newPhotoId);
+          await deleteIfUnreferenced(oldThumbId, newThumbId);
+        }
+      }
     },
     [getCurrentRecords, replaceMutation],
   );

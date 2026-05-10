@@ -3,7 +3,10 @@ import { Footer } from "@/components/Footer";
 import { MacroSummary } from "@/components/MacroSummary";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { ProgressArc } from "@/components/ProgressArc";
-import { ButtonSpinner } from "@/components/ButtonSpinner";
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { MealScanOverlays } from "@/components/scanner/MealScanOverlays";
 import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { useRecords } from "@/hooks/use-records";
@@ -66,10 +69,14 @@ function MealsLoadErrorBanner({
             }
           })()
         }
-        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+        className="relative inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {retryPending ? <ButtonSpinner /> : null}
-        Retry
+        <ButtonPendingContents
+          pending={retryPending}
+          spinner={<ButtonSpinner />}
+        >
+          Retry
+        </ButtonPendingContents>
       </button>
     </div>
   );
@@ -117,10 +124,14 @@ function MealDerivedPlaceholder({
               }
             })()
           }
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+          className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {retryPending ? <ButtonSpinner /> : null}
-          Retry
+          <ButtonPendingContents
+            pending={retryPending}
+            spinner={<ButtonSpinner />}
+          >
+            Retry
+          </ButtonPendingContents>
         </button>
       </div>
     );

@@ -1,4 +1,7 @@
-import { ButtonSpinner } from "@/components/ButtonSpinner";
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { useBlobObjectUrl } from "@/hooks/use-blob-object-url";
 import type { ProgressPhotoItem } from "@/types/progress-photos";
 import { ChevronLeft, Trash2 } from "lucide-react";
@@ -105,14 +108,15 @@ export function ProgressPhotoViewerScreen({
           disabled={busy}
           aria-busy={busy}
           onClick={onConfirmDelete}
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-red-900/80 text-red-400 hover:bg-red-950/40 disabled:opacity-50"
+          className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-red-900/80 text-red-400 hover:bg-red-950/40 disabled:opacity-50"
           aria-label="Delete photo"
         >
-          {busy ? (
-            <ButtonSpinner className="text-red-400" />
-          ) : (
+          <ButtonPendingContents
+            pending={busy}
+            spinner={<ButtonSpinner className="text-red-400" />}
+          >
             <Trash2 className="size-5" />
-          )}
+          </ButtonPendingContents>
         </button>
       </header>
 

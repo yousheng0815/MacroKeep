@@ -1,4 +1,7 @@
-import { ButtonSpinner } from "@/components/ButtonSpinner";
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { useGoogleSession } from "@/contexts/google-session";
@@ -77,10 +80,14 @@ function GeminiKeyCard({
           disabled={isSaving}
           aria-busy={isSaving}
           onClick={() => void updateGeminiKey(draft)}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSaving ? <ButtonSpinner /> : null}
-          Save key
+          <ButtonPendingContents
+            pending={isSaving}
+            spinner={<ButtonSpinner />}
+          >
+            Save key
+          </ButtonPendingContents>
         </button>
         <a
           className="inline-flex items-center rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-semibold text-blue-400 transition hover:bg-zinc-900"
@@ -219,10 +226,14 @@ function ProfileCard({
         disabled={isSaving}
         aria-busy={isSaving}
         onClick={() => void updateProfile(draft)}
-        className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isSaving ? <ButtonSpinner /> : null}
-        Save profile
+        <ButtonPendingContents
+          pending={isSaving}
+          spinner={<ButtonSpinner />}
+        >
+          Save profile
+        </ButtonPendingContents>
       </button>
     </Card>
   );
@@ -330,10 +341,14 @@ export function SettingsPage() {
               }
             })()
           }
-          className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+          className="relative mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {signOutBusy ? <ButtonSpinner className="text-zinc-200" /> : null}
-          Sign out
+          <ButtonPendingContents
+            pending={signOutBusy}
+            spinner={<ButtonSpinner className="text-zinc-200" />}
+          >
+            Sign out
+          </ButtonPendingContents>
         </button>
 
         <div className="mt-8 border-t border-red-500/15 pt-6">
@@ -397,10 +412,14 @@ export function SettingsPage() {
                 }
               })()
             }
-            className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-950/40 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-950/70 disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-950/40 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-950/70 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {wipeBusy ? <ButtonSpinner className="text-red-100" /> : null}
-            Delete all data in Drive
+            <ButtonPendingContents
+              pending={wipeBusy}
+              spinner={<ButtonSpinner className="text-red-100" />}
+            >
+              Delete all data in Drive
+            </ButtonPendingContents>
           </button>
         </div>
       </Card>

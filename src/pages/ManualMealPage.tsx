@@ -1,5 +1,9 @@
-import { ButtonSpinner } from "@/components/ButtonSpinner";
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
+import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
 import { fileToBase64 } from "@/lib/file-to-base64";
@@ -36,6 +40,7 @@ export function ManualMealPage() {
     file: File;
     previewUrl: string;
   } | null>(null);
+  const [photoInputKey, setPhotoInputKey] = useState(0);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,6 +49,7 @@ export function ManualMealPage() {
       const file = files?.[0];
       if (input) input.value = "";
       if (!file || !file.type.startsWith("image/")) return;
+      setPhotoInputKey((k) => k + 1);
       setPhotoChoice((prev) => {
         if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
         return {
@@ -152,6 +158,7 @@ export function ManualMealPage() {
           <div className="space-y-2">
             <span className="block text-xs text-om-muted">Photo (optional)</span>
             <input
+              key={`cam-${photoInputKey}`}
               ref={cameraInputRef}
               type="file"
               accept="image/*"
@@ -160,6 +167,7 @@ export function ManualMealPage() {
               onChange={(e) => onPickPhoto(e.target.files, e.currentTarget)}
             />
             <input
+              key={`lib-${photoInputKey}`}
               ref={uploadInputRef}
               type="file"
               accept="image/*"
@@ -175,16 +183,10 @@ export function ManualMealPage() {
                     className="size-full object-cover"
                   />
                 ) : (
-                  <div
-                    className="flex size-full items-center justify-center bg-zinc-800/80"
-                    role="img"
-                    aria-label="No meal photo yet"
-                  >
-                    <ImagePlus
-                      className="size-8 text-zinc-600 md:size-10"
-                      aria-hidden
-                    />
-                  </div>
+                  <MealPhotoThumb
+                    alt="No meal photo yet — use Take photo or Upload to add one"
+                    className="size-full shrink-0 overflow-hidden rounded-lg border-0 bg-zinc-800/80"
+                  />
                 )}
               </div>
               <div className="flex min-w-0 flex-1 flex-col gap-2 md:flex-none md:flex-row md:flex-wrap md:gap-3">
@@ -195,7 +197,7 @@ export function ManualMealPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-3 py-2 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[11rem] md:px-4 md:py-2.5 md:text-sm"
                 >
                   <Camera className="size-4 text-emerald-400 md:size-5" />
-                  Take photo
+                  {photoChoice ? "Retake photo" : "Take photo"}
                 </button>
                 <button
                   type="button"
@@ -204,7 +206,7 @@ export function ManualMealPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-3 py-2 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[11rem] md:px-4 md:py-2.5 md:text-sm"
                 >
                   <ImagePlus className="size-4 text-orange-500 md:size-5" />
-                  Upload from library
+                  {photoChoice ? "Replace from library" : "Upload from library"}
                 </button>
               </div>
             </div>
@@ -273,10 +275,14 @@ export function ManualMealPage() {
             type="submit"
             disabled={savePending}
             aria-busy={savePending}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {savePending ? <ButtonSpinner /> : null}
-            Save meal
+            <ButtonPendingContents
+              pending={savePending}
+              spinner={<ButtonSpinner />}
+            >
+              Save meal
+            </ButtonPendingContents>
           </button>
         </form>
       </Card>

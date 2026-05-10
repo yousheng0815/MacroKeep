@@ -1,4 +1,7 @@
-import { ButtonSpinner } from "@/components/ButtonSpinner";
+import {
+  ButtonPendingContents,
+  ButtonSpinner,
+} from "@/components/ButtonSpinner";
 import { useBlobObjectUrl } from "@/hooks/use-blob-object-url";
 import { compressProgressPhotoBlob } from "@/lib/progress-photo-compress";
 import type { ProgressPhotoItem, ProgressPhotoRecord } from "@/types/progress-photos";
@@ -298,14 +301,15 @@ export function ProgressPhotoCaptureScreen({
                 type="button"
                 disabled={busy}
                 onClick={() => void onSave()}
-                className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-zinc-200 disabled:opacity-60 sm:flex-none"
+                className="relative inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-zinc-200 disabled:opacity-60 sm:flex-none"
               >
-                {busy ? (
-                  <ButtonSpinner />
-                ) : (
+                <ButtonPendingContents
+                  pending={busy}
+                  spinner={<ButtonSpinner />}
+                >
                   <Check className="size-5 shrink-0" />
-                )}
-                Save
+                  Save
+                </ButtonPendingContents>
               </button>
             </div>
           </>
