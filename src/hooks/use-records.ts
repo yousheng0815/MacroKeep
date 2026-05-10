@@ -1,7 +1,7 @@
 import {
   canSyncToDriveAppData,
+  ensureGoogleAccessToken,
   fetchGoogleProfileBirthDate,
-  getAccessToken,
   getGoogleUserId,
 } from "@/lib/gapi";
 import {
@@ -60,7 +60,7 @@ export function useRecords() {
     enabled: !!userId,
     staleTime: 60_000,
     queryFn: async (): Promise<RecordsCoreQueryData> => {
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
 
       const pulled = await pullRecordsCoreFromDrive(token);
@@ -86,7 +86,7 @@ export function useRecords() {
     enabled: !!userId && coreQuery.isSuccess,
     staleTime: 60_000,
     queryFn: async ({ signal }): Promise<MealRecord[]> => {
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
       return pullMealsFromDriveShards(token, signal);
     },
@@ -103,7 +103,7 @@ export function useRecords() {
       if (!canSyncToDriveAppData()) {
         throw new Error("Not signed in or Drive scope unavailable");
       }
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing access token");
       const uid = getGoogleUserId() ?? "";
       const boot = qc.getQueryData<RecordsCoreQueryData>(["records-core", uid]);
@@ -196,7 +196,7 @@ export function useRecords() {
           if (!canSyncToDriveAppData()) {
             throw new Error("Not signed in or Drive scope unavailable");
           }
-          const token = getAccessToken();
+          const token = await ensureGoogleAccessToken();
           if (!token) throw new Error("Missing access token");
           const shardDriveId = await resolveMealsShardDriveFileId(token, mealMonthKey);
 
@@ -233,7 +233,7 @@ export function useRecords() {
           if (!canSyncToDriveAppData()) {
             throw new Error("Not signed in or Drive scope unavailable");
           }
-          const token = getAccessToken();
+          const token = await ensureGoogleAccessToken();
           if (!token) throw new Error("Missing access token");
           const prepared = options.preparedPhoto
             ? options.preparedPhoto
@@ -328,7 +328,7 @@ export function useRecords() {
         mealMonthKeysToSync: [monthKeyFromRecordedAt(removed.recordedAt)],
       });
       if ((photoId || thumbId) && canSyncToDriveAppData()) {
-        const token = getAccessToken();
+        const token = await ensureGoogleAccessToken();
         if (token) {
           try {
             const photoStillReferenced =
@@ -431,7 +431,7 @@ export function useRecords() {
       const photoRefsChanged =
         oldPhotoId !== newPhotoId || oldThumbId !== newThumbId;
       if (photoRefsChanged && canSyncToDriveAppData()) {
-        const token = getAccessToken();
+        const token = await ensureGoogleAccessToken();
         if (token) {
           const mealsAfter = next.meals;
           const deleteIfUnreferenced = async (
@@ -516,7 +516,7 @@ export function useRecords() {
     if (!canSyncToDriveAppData()) {
       throw new Error("Not signed in or Drive scope unavailable");
     }
-    const token = getAccessToken();
+    const token = await ensureGoogleAccessToken();
     if (!token) throw new Error("Missing access token");
     const { deleted, failures } = await deleteAllAppDataFiles(token);
     if (failures.length > 0) {

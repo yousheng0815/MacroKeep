@@ -10,7 +10,7 @@ import { formatLocalDateLabel, formatTime } from "@/lib/date";
 import { fileToBase64 } from "@/lib/file-to-base64";
 import {
   canSyncToDriveAppData,
-  getAccessToken,
+  ensureGoogleAccessToken,
 } from "@/lib/gapi";
 import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
@@ -249,7 +249,7 @@ export function MealDetailPage() {
                         "Sign in with Google Drive access to attach a meal photo.",
                       );
                     }
-                    const token = getAccessToken();
+                    const token = await ensureGoogleAccessToken();
                     if (!token) throw new Error("Missing access token");
                     const { base64, mimeType } = await fileToBase64(
                       editPhoto.file,
@@ -280,7 +280,7 @@ export function MealDetailPage() {
                 } catch (err) {
                   if (orphanUploadId) {
                     try {
-                      const token = getAccessToken();
+                      const token = await ensureGoogleAccessToken();
                       if (token)
                         await deleteDriveFile(token, orphanUploadId);
                     } catch {

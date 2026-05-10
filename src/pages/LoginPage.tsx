@@ -4,26 +4,67 @@ import {
 } from "@/components/ButtonSpinner";
 import { Logo } from "@/components/Logo";
 import { useGoogleSession } from "@/contexts/google-session";
-import { DRIVE_APPDATA_SCOPE } from "@/lib/gapi";
+import { DRIVE_APPDATA_SCOPE, startGoogleOAuthRedirect } from "@/lib/gapi";
 import { CORE_DRIVE_FILE } from "@/lib/google-drive";
 import { Loader2 } from "lucide-react";
-import { Navigate } from "@tanstack/react-router";
-
+import { useEffect } from "react";
+import {
+  Navigate,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 export function LoginPage() {
   const {
     ready,
-    clientId,
     sessionReady,
     signedIn,
     hasDriveAppDataScope,
     error,
-    signInPending,
     signIn,
   } = useGoogleSession();
 
-  const needsConsent = ready && !!clientId && signedIn && !hasDriveAppDataScope;
+  const navigate = useNavigate();
 
-  if (ready && clientId && sessionReady) {
+  const oauthError = useRouterState({
+    select: (s) =>
+      new URLSearchParams(s.location.search).get("oauth_error"),
+  });
+
+  /** Callback asked us to re-run OAuth with prompt=consent (refresh token retry). */
+  const oauthRetrySearch = useRouterState({
+    select: (s) => s.location.search,
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(oauthRetrySearch);
+    if (params.get("oauth_retry") !== "1") return;
+    const dedupeKey = `om_oauth_retry:${oauthRetrySearch}`;
+    try {
+      if (sessionStorage.getItem(dedupeKey) === "1") return;
+      sessionStorage.setItem(dedupeKey, "1");
+    } catch {
+      /* ignore */
+    }
+
+    const promptConsent = params.get("prompt_consent") === "1";
+    let nextPath = "/";
+    const n = params.get("next");
+    if (n) {
+      try {
+        const decoded = decodeURIComponent(n);
+        if (decoded.startsWith("/") && !decoded.startsWith("//")) nextPath = decoded;
+      } catch {
+        /* ignore */
+      }
+    }
+
+    void navigate({ to: "/login", replace: true });
+    void startGoogleOAuthRedirect({ promptConsent, nextPath });
+  }, [oauthRetrySearch, navigate]);
+
+  const needsConsent = ready && signedIn && !hasDriveAppDataScope;
+
+  if (ready && sessionReady) {
     return <Navigate to="/" replace />;
   }
 
@@ -42,23 +83,14 @@ export function LoginPage() {
             <span className="font-mono text-xs text-zinc-400">
               {CORE_DRIVE_FILE}
             </span>
-            ). Only a small OAuth session is kept in{" "}
-            <strong className="font-medium text-zinc-300">localStorage</strong> so you
-            don&apos;t have to sign in on every visit.
+            ). A secure session cookie and encrypted refresh tokens on the server keep
+            you signed in without repeated prompts.
           </p>
         </div>
 
-        {!clientId ? (
-          <div className="rounded-2xl border border-amber-500/40 bg-amber-950/30 px-4 py-3 text-sm text-amber-200">
-            Add{" "}
-            <code className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-xs">
-              VITE_GOOGLE_CLIENT_ID
-            </code>{" "}
-            to your{" "}
-            <code className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-xs">
-              .env
-            </code>{" "}
-            file and restart the dev server.
+        {oauthError ? (
+          <div className="rounded-2xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-center text-sm text-red-200">
+            {oauthError}
           </div>
         ) : null}
 
@@ -88,25 +120,21 @@ export function LoginPage() {
 
             <button
               type="button"
-              disabled={!clientId || signInPending || !ready}
-              aria-busy={signInPending}
+              disabled={!ready}
               onClick={() =>
                 signIn(needsConsent ? { promptConsent: true } : undefined)
               }
               className="relative flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <ButtonPendingContents
-                pending={signInPending}
-                spinner={<ButtonSpinner />}
-              >
+              <ButtonPendingContents pending={false} spinner={<ButtonSpinner />}>
                 {needsConsent ? "Grant Drive app data access" : "Continue with Google"}
               </ButtonPendingContents>
             </button>
 
             <p className="text-center text-[11px] leading-relaxed text-zinc-500">
               By continuing, you agree to connect Google Drive App Data for sync.
-              No OpenMacro backend — keys and meals stay on-device except your own
-              Google account storage.
+              OpenMacro stores an encrypted OAuth refresh token for your account on the
+              deployment backend (configure server env vars).
             </p>
           </div>
         )}

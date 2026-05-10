@@ -80,10 +80,8 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const {
     ready,
     sessionReady,
-    clientId,
     signedIn,
     signIn,
-    signInPending,
     error,
     hasDriveAppDataScope,
   } = useGoogleSession();
@@ -99,7 +97,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!clientId || !signedIn) {
+  if (!signedIn) {
     return <Navigate to="/login" replace />;
   }
 
@@ -109,12 +107,12 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-om-bg px-6 text-center text-zinc-100">
         <div className="max-w-md space-y-3">
           <h1 className="text-lg font-semibold tracking-tight text-white">
-            {needsConsent ? "Drive permission needed" : "Reconnect to Google"}
+            {needsConsent ? "Drive permission needed" : "Sign in again"}
           </h1>
           <p className="text-sm leading-relaxed text-om-muted">
             {needsConsent
               ? "Grant Drive app data access again so OpenMacro can load and save your diary."
-              : "Tap Continue to refresh your Google access. Your Drive consent stays saved, so you should not need to grant access again."}
+              : "Your session may have expired. Continue to sign in with Google again."}
           </p>
           {!needsConsent && rememberedEmail ? (
             <p className="text-xs leading-relaxed text-zinc-500">
@@ -127,17 +125,12 @@ export function RequireAuth({ children }: { children: ReactNode }) {
         ) : null}
         <button
           type="button"
-          disabled={signInPending || !clientId}
-          aria-busy={signInPending}
           onClick={() =>
             signIn(needsConsent ? { promptConsent: true } : undefined)
           }
           className="relative flex min-w-[220px] items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <ButtonPendingContents
-            pending={signInPending}
-            spinner={<ButtonSpinner />}
-          >
+          <ButtonPendingContents pending={false} spinner={<ButtonSpinner />}>
             {needsConsent ? "Grant Drive app data access" : "Continue with Google"}
           </ButtonPendingContents>
         </button>

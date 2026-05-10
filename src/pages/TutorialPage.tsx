@@ -7,8 +7,8 @@ import { Logo } from "@/components/Logo";
 import { useRecords } from "@/hooks/use-records";
 import { ageYearsFromIsoBirthDate, isValidIsoBirthDate } from "@/lib/birth-date";
 import {
+  ensureGoogleAccessToken,
   fetchGoogleProfileBirthDate,
-  getAccessToken,
   getGoogleProfileBirthDate,
 } from "@/lib/gapi";
 import {
@@ -92,7 +92,7 @@ export function TutorialPage() {
 
     let cancelled = false;
     void (async () => {
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) return;
       await fetchGoogleProfileBirthDate(token);
       if (cancelled) return;

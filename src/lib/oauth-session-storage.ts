@@ -1,6 +1,6 @@
 /**
- * Only Google OAuth session fields belong in localStorage so visits can restore
- * sign-in without prompting every time. Diary/profile/Gemini key live in Drive.
+ * Google OAuth hints (identity + optional cached access token) for local UX.
+ * Refresh tokens live on the server; diary/profile/Gemini key live in Drive.
  */
 
 const STORAGE_KEY = "openmacro:oauth:v1";

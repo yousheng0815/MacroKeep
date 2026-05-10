@@ -1,6 +1,6 @@
 import {
   canSyncToDriveAppData,
-  getAccessToken,
+  ensureGoogleAccessToken,
   getGoogleUserId,
 } from "@/lib/gapi";
 import {
@@ -80,7 +80,7 @@ export function useProgressPhotos(options: UseProgressPhotosOptions = {}) {
     enabled: !!userId && canSyncToDriveAppData(),
     staleTime: 30_000,
     queryFn: async ({ signal }) => {
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
       return syncProgressPhotosManifestFromDrive(token, signal);
     },
@@ -111,7 +111,7 @@ export function useProgressPhotos(options: UseProgressPhotosOptions = {}) {
   const fetchBatch = useCallback(
     async (batch: ProgressPhotoDriveMeta[], signal: AbortSignal) => {
       if (batch.length === 0) return;
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) return;
       const updates: Record<string, Blob> = {};
       const failed: string[] = [];
@@ -233,7 +233,7 @@ export function useProgressPhotos(options: UseProgressPhotosOptions = {}) {
 
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing access token");
       await deleteProgressPhotoFromDrive(token, id);
     },
@@ -244,7 +244,7 @@ export function useProgressPhotos(options: UseProgressPhotosOptions = {}) {
 
   const addMutation = useMutation({
     mutationFn: async (record: ProgressPhotoRecord) => {
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing access token");
       await addProgressPhotoToDrive(token, record);
     },

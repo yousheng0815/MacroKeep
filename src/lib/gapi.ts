@@ -1,7 +1,6 @@
 /**
- * Google auth via **Google Identity Services** (GIS) OAuth 2.0 token client.
- * `gapi.auth2` is deprecated; new OAuth clients must use GIS — see
- * https://developers.google.com/identity/gsi/web/guides/gis-migration
+ * Google OAuth via **server redirect flow** (Vercel `/api`, refresh tokens in Firestore).
+ * Short-lived access tokens are refreshed through `/api/google/access-token`.
  */
 
 import { isoBirthDateFromParts } from "@/lib/birth-date";
@@ -10,31 +9,16 @@ import {
   loadPersistedOAuth,
   savePersistedOAuth,
 } from "@/lib/oauth-session-storage";
-import type {
-  GoogleOAuth2TokenErrorDetail,
-  GoogleOAuth2TokenResponse,
-} from "@/types/google-gsi";
+
+type AccessTokenPayload = {
+  access_token?: string;
+  expires_in?: number;
+  scope?: string;
+};
 
 /** Private Drive app folder scope. */
 export const DRIVE_APPDATA_SCOPE =
   "https://www.googleapis.com/auth/drive.appdata" as const;
-
-const GOOGLE_USER_BIRTHDAY_READ =
-  "https://www.googleapis.com/auth/user.birthday.read" as const;
-
-/** OIDC + People (birthday) for profile-backed defaults. */
-const GIS_SCOPES = [
-  DRIVE_APPDATA_SCOPE,
-  "openid",
-  "email",
-  "profile",
-  GOOGLE_USER_BIRTHDAY_READ,
-].join(" ");
-
-const GIS_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
-const GIS_SCRIPT_ID = "google-gsi-client";
-
-let scriptPromise: Promise<void> | null = null;
 
 let accessToken: string | null = null;
 /** Epoch ms; token treated invalid at or after this time (includes skew). */
@@ -47,60 +31,14 @@ let cachedGoogleBirthDate: string | null = null;
 
 const EXPIRY_SKEW_MS = 60_000;
 
-export function getGoogleClientId(): string {
-  const id = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
-  return id.trim();
-}
-
-/** True when GIS is usable — avoids `await` before `requestAccessToken` (popup blocker). */
-export function isGisOAuthReady(): boolean {
-  return typeof window !== "undefined" && !!window.google?.accounts?.oauth2;
-}
-
-export function loadGisScript(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (window.google?.accounts?.oauth2) return Promise.resolve();
-
-  if (scriptPromise) return scriptPromise;
-
-  scriptPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(
-      `script[src="${GIS_SCRIPT_SRC}"]`,
-    );
-    if (existing) {
-      if (window.google?.accounts?.oauth2) {
-        resolve();
-        return;
-      }
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(new Error("Google Identity Services script failed")),
-        { once: true },
-      );
-      return;
-    }
-
-    const s = document.createElement("script");
-    s.id = GIS_SCRIPT_ID;
-    s.src = GIS_SCRIPT_SRC;
-    s.async = true;
-    s.defer = true;
-    s.onload = () => resolve();
-    s.onerror = () =>
-      reject(new Error("Failed to load Google Identity Services"));
-    document.head.appendChild(s);
-  });
-
-  return scriptPromise;
-}
+let brokerAccessTokenRefresh: Promise<string | null> | null = null;
 
 function notifyOAuthChanged(): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("openmacro:oauth-changed"));
 }
 
-function applyTokenResponse(resp: GoogleOAuth2TokenResponse): void {
+function applyTokenResponse(resp: AccessTokenPayload): void {
   if (!resp.access_token) return;
   accessToken = resp.access_token;
   const ttlSec = resp.expires_in ?? 3600;
@@ -236,165 +174,76 @@ export function hasGoogleSession(): boolean {
   );
 }
 
-/** Restore GIS session from localStorage after a previous visit. */
-export async function restoreOAuthSessionFromStorage(): Promise<boolean> {
+async function fetchSessionFromBroker(): Promise<boolean> {
   const p = loadPersistedOAuth();
-  if (!p) {
-    clearSession();
-    return false;
-  }
-
-  lastGrantedScopeRaw = p.scope ?? "";
-  cachedUserSub = p.sub ?? null;
-  cachedUserEmail = p.email ?? null;
-
-  const tokenOk =
-    !!p.accessToken &&
-    p.expiresAtMs > 0 &&
-    Date.now() < p.expiresAtMs;
-
-  if (tokenOk && p.accessToken) {
-    accessToken = p.accessToken;
-    accessValidUntilMs = p.expiresAtMs;
-    try {
-      await Promise.all([
-        hydrateUserFromGoogle(p.accessToken),
-        hydrateBirthdayFromPeople(p.accessToken),
-        hydrateScopesFromToken(p.accessToken),
-      ]);
-    } catch {
-      accessToken = null;
-      accessValidUntilMs = 0;
-    }
+  if (p) {
+    lastGrantedScopeRaw = p.scope ?? "";
+    cachedUserSub = p.sub ?? null;
+    cachedUserEmail = p.email ?? null;
   } else {
+    lastGrantedScopeRaw = "";
+    cachedUserSub = null;
+    cachedUserEmail = null;
     accessToken = null;
     accessValidUntilMs = 0;
   }
 
-  persistOAuthSnapshot();
-  notifyOAuthChanged();
-  return hasValidGoogleAccessToken();
+  try {
+    const res = await fetch("/api/google/access-token", {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      accessToken = null;
+      accessValidUntilMs = 0;
+      persistOAuthSnapshot();
+      notifyOAuthChanged();
+      return false;
+    }
+    const data = (await res.json()) as {
+      access_token: string;
+      expires_in: number;
+      scope?: string;
+    };
+    applyTokenResponse(data);
+    await Promise.all([
+      hydrateUserFromGoogle(data.access_token),
+      hydrateBirthdayFromPeople(data.access_token),
+      data.scope ? Promise.resolve() : hydrateScopesFromToken(data.access_token),
+    ]);
+    if (data.scope) lastGrantedScopeRaw = data.scope;
+    persistOAuthSnapshot();
+    notifyOAuthChanged();
+    return true;
+  } catch {
+    accessToken = null;
+    accessValidUntilMs = 0;
+    persistOAuthSnapshot();
+    notifyOAuthChanged();
+    return false;
+  }
+}
+
+/** Restore session from cookie-backed broker + localStorage hints after navigation. */
+export async function restoreOAuthSessionFromStorage(): Promise<boolean> {
+  return fetchSessionFromBroker();
 }
 
 export type GoogleSignInOptions = {
   promptConsent?: boolean;
+  /** Return path after OAuth (must start with `/`). Defaults to current URL. */
+  nextPath?: string;
 };
 
-function tokenClientSignIn(
-  clientId: string,
-  opts?: GoogleSignInOptions,
-): Promise<void> {
-  const googleAccounts = window.google?.accounts?.oauth2;
-  if (!googleAccounts) {
-    return Promise.reject(new Error("Google Identity Services not loaded"));
-  }
-
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    const finishError = (message: string): void => {
-      if (settled) return;
-      settled = true;
-      reject(new Error(message));
-    };
-    const finishOk = (): void => {
-      if (settled) return;
-      settled = true;
-      resolve();
-    };
-
-    const client = googleAccounts.initTokenClient({
-      client_id: clientId,
-      scope: GIS_SCOPES,
-      /**
-       * GIS defaults to `select_account`, which re-shows the account picker on every
-       * `requestAccessToken()` — bad UX. Empty string = prompt only on first access.
-       */
-      prompt: "",
-      callback: async (resp: GoogleOAuth2TokenResponse) => {
-        if (resp.error) {
-          finishError(
-            resp.error_description?.trim() ||
-              resp.error ||
-              "OAuth token request failed",
-          );
-          return;
-        }
-        if (!resp.access_token) {
-          finishError("No access token returned");
-          return;
-        }
-        try {
-          applyTokenResponse(resp);
-          await Promise.all([
-            hydrateUserFromGoogle(resp.access_token),
-            hydrateBirthdayFromPeople(resp.access_token),
-            hydrateScopesFromToken(resp.access_token),
-          ]);
-          persistOAuthSnapshot();
-          finishOk();
-        } catch (e) {
-          finishError(e instanceof Error ? e.message : String(e));
-        }
-      },
-      /** Closing the OAuth popup does not always invoke `callback`; GIS uses this instead. */
-      error_callback: (detail: GoogleOAuth2TokenErrorDetail) => {
-        const t = detail?.type ?? "unknown";
-        if (t === "popup_closed") {
-          finishError("popup_closed_by_user");
-          return;
-        }
-        if (t === "popup_failed_to_open") {
-          finishError("popup_failed_to_open");
-          return;
-        }
-        finishError(`google_oauth_${t}`);
-      },
-    });
-
-    if (opts?.promptConsent === true) {
-      client.requestAccessToken({ prompt: "consent" });
-    } else {
-      client.requestAccessToken();
-    }
-  });
-}
-
-/**
- * Starts GIS OAuth in direct response to a user click — **do not await anything before this**.
- * Call only after {@link loadGisScript} / {@link isGisOAuthReady}.
- *
- * Note: We deliberately do NOT attempt non-gesture silent refresh
- * (`prompt: "none"`). GIS `oauth2.initTokenClient` opens a brief popup window
- * even for silent attempts, which the browser will block (and surface the
- * popup-blocked icon) when no user activation is present. Always route
- * renewals through this gesture-bound entry point.
- */
-export function requestGoogleAccessTokenFromUserGesture(
-  clientId: string,
-  opts?: GoogleSignInOptions,
-): Promise<void> {
-  return tokenClientSignIn(clientId, opts);
-}
-
-export async function signInGoogle(
-  clientId: string,
-  opts?: GoogleSignInOptions,
-): Promise<void> {
-  await loadGisScript();
-  await tokenClientSignIn(clientId, opts);
-}
-
 export async function signOutGoogle(): Promise<void> {
-  const token = accessToken;
-  clearSession();
   try {
-    await loadGisScript();
-    if (token && window.google?.accounts?.oauth2?.revoke) {
-      window.google.accounts.oauth2.revoke(token, () => {});
-    }
+    await fetch("/api/auth/sign-out", {
+      method: "POST",
+      credentials: "include",
+    });
   } catch {
     /* ignore */
   }
+  clearSession();
 }
 
 export function getAccessToken(): string | null {
@@ -407,6 +256,95 @@ export function getAccessToken(): string | null {
     return null;
   }
   return accessToken;
+}
+
+/** Returns a valid access token, refreshing via `/api/google/access-token` when needed. */
+export async function ensureGoogleAccessToken(): Promise<string | null> {
+  const existing = getAccessToken();
+  if (existing) return existing;
+
+  if (!brokerAccessTokenRefresh) {
+    const run = async (): Promise<string | null> => {
+      try {
+        const res = await fetch("/api/google/access-token", {
+          credentials: "include",
+        });
+        if (!res.ok) return null;
+        const data = (await res.json()) as {
+          access_token: string;
+          expires_in: number;
+          scope?: string;
+        };
+        applyTokenResponse(data);
+        await Promise.all([
+          hydrateUserFromGoogle(data.access_token),
+          hydrateBirthdayFromPeople(data.access_token),
+          data.scope
+            ? Promise.resolve()
+            : hydrateScopesFromToken(data.access_token),
+        ]);
+        if (data.scope) lastGrantedScopeRaw = data.scope;
+        persistOAuthSnapshot();
+        notifyOAuthChanged();
+        return getAccessToken();
+      } catch {
+        return null;
+      }
+    };
+    brokerAccessTokenRefresh = run().finally(() => {
+      brokerAccessTokenRefresh = null;
+    });
+  }
+  return brokerAccessTokenRefresh;
+}
+
+/**
+ * Starts Google OAuth: sets state cookies via `/api/auth/google`, then navigates to Google.
+ * Uses `fetch` + JSON so a document navigation never lands on `/api/auth/google` (PWA SW /
+ * SPA fallback can serve `index.html` there and show a blank screen).
+ */
+export async function startGoogleOAuthRedirect(
+  opts?: GoogleSignInOptions,
+): Promise<void> {
+  const rawPath =
+    opts?.nextPath ??
+    (typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/");
+  const path = rawPath.startsWith("/") ? rawPath : "/";
+  const next = encodeURIComponent(path || "/");
+  const qs = new URLSearchParams({ next, format: "json" });
+  if (opts?.promptConsent) qs.set("prompt_consent", "1");
+  try {
+    const res = await fetch(`/api/auth/google?${qs}`, {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      let msg = `oauth_start_http_${res.status}`;
+      try {
+        const j = (await res.json()) as { error?: string };
+        if (typeof j.error === "string" && j.error.length > 0) msg = j.error;
+      } catch {
+        /* ignore */
+      }
+      window.location.assign(`/login?oauth_error=${encodeURIComponent(msg)}`);
+      return;
+    }
+    const data = (await res.json()) as { url?: string };
+    if (typeof data.url !== "string" || data.url.length === 0) {
+      window.location.assign(
+        `/login?oauth_error=${encodeURIComponent("missing_auth_url")}`,
+      );
+      return;
+    }
+    window.location.assign(data.url);
+  } catch {
+    window.location.assign(
+      `/login?oauth_error=${encodeURIComponent("oauth_start_network")}`,
+    );
+  }
 }
 
 export function isSignedInGoogle(): boolean {

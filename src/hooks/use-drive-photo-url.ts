@@ -1,4 +1,4 @@
-import { getAccessToken } from "@/lib/gapi";
+import { ensureGoogleAccessToken } from "@/lib/gapi";
 import { downloadAppDataFileBlob } from "@/lib/google-drive";
 import { useEffect, useState } from "react";
 
@@ -6,7 +6,7 @@ const blobUrlCache = new Map<string, string>();
 const inflightFetches = new Map<string, Promise<string | null>>();
 
 async function fetchDrivePhotoBlobUrl(fileId: string): Promise<string | null> {
-  const token = getAccessToken();
+  const token = await ensureGoogleAccessToken();
   if (!token) return null;
   try {
     const blob = await downloadAppDataFileBlob(token, fileId);

@@ -4,7 +4,7 @@ import { analyzeFoodPhoto } from "@/lib/gemini";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import {
   canSyncToDriveAppData,
-  getAccessToken,
+  ensureGoogleAccessToken,
 } from "@/lib/gapi";
 import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
 import { useNavigate } from "@tanstack/react-router";
@@ -34,7 +34,7 @@ export function useMealScanFlow() {
         if (!canSyncToDriveAppData()) {
           throw new Error("Not signed in or Drive scope unavailable");
         }
-        const token = getAccessToken();
+        const token = await ensureGoogleAccessToken();
         if (!token) throw new Error("Missing access token");
 
         const mealId = crypto.randomUUID?.() ?? String(Date.now());
@@ -84,7 +84,7 @@ export function useMealScanFlow() {
         // If the photo uploaded but meal persistence failed, best-effort clean up.
         if (uploadedPhotoId) {
           try {
-            const token = getAccessToken();
+            const token = await ensureGoogleAccessToken();
             if (token) await deleteDriveFile(token, uploadedPhotoId);
           } catch {
             /* best-effort */

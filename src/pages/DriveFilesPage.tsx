@@ -5,7 +5,7 @@ import {
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { useGoogleSession } from "@/contexts/google-session";
-import { getAccessToken, getGoogleUserId } from "@/lib/gapi";
+import { ensureGoogleAccessToken, getGoogleUserId } from "@/lib/gapi";
 import { useBlobObjectUrl } from "@/hooks/use-blob-object-url";
 import {
   downloadAppDataFileBlob,
@@ -121,7 +121,7 @@ export function DriveFilesPage() {
     staleTime: 0,
     gcTime: 0,
     queryFn: async ({ signal }) => {
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
       return downloadAppDataFileBlob(token, previewImageFileId!, signal);
     },
@@ -132,7 +132,7 @@ export function DriveFilesPage() {
     enabled: !!userId && sessionReady,
     staleTime: 30_000,
     queryFn: async ({ signal }) => {
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
       return listAllAppDataFiles(token, signal);
     },
@@ -155,7 +155,7 @@ export function DriveFilesPage() {
       isJsonAppDataFile(viewerFile) &&
       !viewerJsonOversized,
     queryFn: async ({ signal }) => {
-      const token = getAccessToken();
+      const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
       return downloadAppDataFileText(token, viewerFile!.id, signal);
     },

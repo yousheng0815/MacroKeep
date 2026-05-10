@@ -1,7 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_GOOGLE_CLIENT_ID: string;
+  /** When set, Vite dev server proxies `/api/*` to this origin (e.g. `vercel dev`). */
+  readonly VITE_DEV_API_PROXY_TARGET?: string;
 }
 
 interface ImportMeta {

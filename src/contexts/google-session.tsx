@@ -1,15 +1,15 @@
 import {
-  getGoogleClientId,
+  ensureGoogleAccessToken,
+  getAccessToken,
   hasDriveAppDataScope as readHasDriveAppDataScope,
   hasGoogleSession,
   hasValidGoogleAccessToken,
-  isGisOAuthReady,
-  loadGisScript,
-  requestGoogleAccessTokenFromUserGesture,
   restoreOAuthSessionFromStorage,
   signOutGoogle,
+  startGoogleOAuthRedirect,
   type GoogleSignInOptions,
 } from "@/lib/gapi";
+import { SESSION_HANDOFF_QUERY } from "@/lib/oauth-handoff-param";
 import { purgeLegacyOpenMacroStorage } from "@/lib/oauth-session-storage";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -22,24 +22,12 @@ import {
   type ReactNode,
 } from "react";
 
-function formatSignInError(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  if (e && typeof e === "object") {
-    const rec = e as Record<string, unknown>;
-    if (typeof rec.error === "string") return rec.error;
-    if (typeof rec.details === "string") return rec.details;
-  }
-  return "Sign-in failed or was cancelled.";
-}
-
 export type GoogleSessionContextValue = {
-  clientId: string;
   ready: boolean;
   signedIn: boolean;
   hasDriveAppDataScope: boolean;
   sessionReady: boolean;
   error: string | null;
-  signInPending: boolean;
   signIn: (opts?: GoogleSignInOptions) => void;
   signOut: () => Promise<void>;
   refresh: () => void;
@@ -52,13 +40,11 @@ const GoogleSessionContext = createContext<GoogleSessionContextValue | null>(
 export function GoogleSessionProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
-  const clientId = useMemo(() => getGoogleClientId(), []);
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [hasDriveAppDataScope, setHasDriveAppDataScope] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [signInPending, setSignInPending] = useState(false);
-  /** Bumped when GIS token/identity changes so memoized context reflects module state (e.g. hourly expiry). */
+  /** Bumped when OAuth/token state changes so memoized context reflects module state. */
   const [oauthEpoch, setOauthEpoch] = useState(0);
 
   const refresh = useCallback(() => {
@@ -68,18 +54,42 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      if (!clientId) {
-        setReady(true);
-        setSignedIn(false);
-        setHasDriveAppDataScope(false);
-        return;
-      }
+    void (async () => {
       try {
-        await loadGisScript();
+        purgeLegacyOpenMacroStorage();
+
+        const params = new URLSearchParams(window.location.search);
+        const handoff = params.get(SESSION_HANDOFF_QUERY);
+        if (handoff) {
+          const res = await fetch("/api/auth/session-handoff", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({ nonce: handoff }),
+            cache: "no-store",
+          });
+          const url = new URL(window.location.href);
+          url.searchParams.delete(SESSION_HANDOFF_QUERY);
+          const clean = `${url.pathname}${url.search}${url.hash}`;
+          if (res.ok) {
+            window.location.replace(clean);
+            return;
+          }
+          window.history.replaceState({}, "", clean);
+          if (!cancelled) {
+            setError(
+              res.status === 410
+                ? "Sign-in link expired. Please try again."
+                : "Could not complete sign-in. Please try again.",
+            );
+          }
+        }
+
+        await restoreOAuthSessionFromStorage();
         if (!cancelled) {
-          purgeLegacyOpenMacroStorage();
-          await restoreOAuthSessionFromStorage();
           refresh();
           setReady(true);
         }
@@ -93,7 +103,7 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [clientId, refresh]);
+  }, [refresh]);
 
   useEffect(() => {
     const onOAuthChanged = () => {
@@ -105,59 +115,41 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("openmacro:oauth-changed", onOAuthChanged);
   }, [refresh]);
 
-  const signIn = useCallback(
-    (opts?: GoogleSignInOptions) => {
-      if (!clientId) {
-        setError("Add VITE_GOOGLE_CLIENT_ID to enable Google login.");
-        return;
-      }
-      if (!ready || !isGisOAuthReady()) {
-        setError(
-          "Google Sign-In is still loading. Wait a moment and try again.",
-        );
-        return;
-      }
+  useEffect(() => {
+    if (!ready) return;
+    const id = window.setInterval(() => {
+      getAccessToken();
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, [ready]);
 
-      /**
-       * GIS `requestAccessToken` must run synchronously inside the click/tap handler so the
-       * browser treats it as a user gesture and allows the OAuth popup.
-       */
-      const oauthPromise = requestGoogleAccessTokenFromUserGesture(
-        clientId,
-        opts,
-      );
-      setError(null);
-      setSignInPending(true);
+  useEffect(() => {
+    if (!ready || !signedIn) return;
+    if (hasValidGoogleAccessToken() && readHasDriveAppDataScope()) return;
 
-      void oauthPromise
-        .then(() => {
-          refresh();
-        })
-        .catch((e: unknown) => {
-          const msg = formatSignInError(e);
-          const lower = msg.toLowerCase();
-          if (
-            lower.includes("popup_closed") ||
-            lower.includes("closed_by_user") ||
-            lower.includes("popup_failed_to_open") ||
-            lower.includes("popup blocked") ||
-            lower.includes("failed to open") ||
-            lower.includes("access_denied")
-          ) {
-            setError(
-              "The Google sign-in window was blocked or closed. Allow popups for this site, then tap the button again.",
-            );
-          } else {
-            setError(msg);
-          }
-        })
-        .finally(() => {
-          setSignInPending(false);
-          refresh();
-        });
-    },
-    [clientId, ready, refresh],
-  );
+    let cancelled = false;
+    const bump = () => {
+      void ensureGoogleAccessToken().then((t) => {
+        if (cancelled || !t) return;
+        refresh();
+        setOauthEpoch((n) => n + 1);
+      });
+    };
+    bump();
+    const onVis = () => {
+      if (document.visibilityState === "visible") bump();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [ready, signedIn, refresh, oauthEpoch]);
+
+  const signIn = useCallback((opts?: GoogleSignInOptions) => {
+    setError(null);
+    void startGoogleOAuthRedirect(opts);
+  }, []);
 
   const signOut = useCallback(async () => {
     setError(null);
@@ -168,29 +160,24 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     (): GoogleSessionContextValue => ({
-      clientId,
       ready,
       signedIn,
       hasDriveAppDataScope,
       sessionReady:
-        !!clientId &&
         ready &&
         hasGoogleSession() &&
         hasValidGoogleAccessToken() &&
         readHasDriveAppDataScope(),
       error,
-      signInPending,
       signIn,
       signOut,
       refresh,
     }),
     [
-      clientId,
       ready,
       signedIn,
       hasDriveAppDataScope,
       error,
-      signInPending,
       signIn,
       signOut,
       refresh,
