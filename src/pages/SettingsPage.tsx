@@ -17,7 +17,7 @@ import { useState } from "react";
 /** Remount ProfileCard when the persisted profile replaces local drafts. */
 function profileSyncKey(profile: UserProfile): string {
   return [
-    profile.birthYear,
+    profile.birthDate,
     profile.heightCm,
     profile.weightKg,
     profile.dailyTargetKcal,
@@ -117,19 +117,20 @@ function ProfileCard({
     <Card>
       <h2 className="text-sm font-semibold text-white">Profile & targets</h2>
       <p className="mt-1 text-xs text-om-muted">
-        Defaults ship as requested (1989 birth year, 180cm / 72kg, 2000 kcal).
+        Placeholder defaults (1990-01-01, 180cm / 72kg, 2000 kcal) until you set your
+        own values. Birthday is used to compute your age for targets and AI.
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block text-xs text-zinc-400">
-          Birth year
+          Birthday
           <input
-            inputMode="numeric"
-            value={draft.birthYear}
+            type="date"
+            value={draft.birthDate}
             onChange={(e) =>
               setDraft((p) => ({
                 ...p,
-                birthYear: Number(e.target.value),
+                birthDate: e.target.value,
               }))
             }
             className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"

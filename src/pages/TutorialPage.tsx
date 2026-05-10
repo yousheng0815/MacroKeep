@@ -5,18 +5,25 @@ import {
 import { Card } from "@/components/Card";
 import { Logo } from "@/components/Logo";
 import { useRecords } from "@/hooks/use-records";
+import { ageYearsFromIsoBirthDate, isValidIsoBirthDate } from "@/lib/birth-date";
+import {
+  fetchGoogleProfileBirthDate,
+  getAccessToken,
+  getGoogleProfileBirthDate,
+} from "@/lib/gapi";
 import {
   suggestMacroPlan,
   type ActivityLevel,
   type MacroGoal,
   type MacroPlanSuggestion,
 } from "@/lib/gemini";
+import { DEFAULT_PROFILE } from "@/types/records";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
 type TutorialForm = {
   geminiApiKey: string;
-  age: number;
+  birthDate: string;
   heightCm: number;
   weightKg: number;
   goal: MacroGoal;
@@ -51,10 +58,9 @@ export function TutorialPage() {
     isSaving,
   } = useRecords();
   const navigate = useNavigate();
-  const inferredAge = new Date().getFullYear() - records.profile.birthYear;
   const [form, setForm] = useState<TutorialForm>({
     geminiApiKey: geminiKey,
-    age: Number.isFinite(inferredAge) ? inferredAge : 30,
+    birthDate: records.profile.birthDate,
     heightCm: records.profile.heightCm,
     weightKg: records.profile.weightKg,
     goal: "gain_muscle",
@@ -72,7 +78,7 @@ export function TutorialPage() {
   const canGenerate = useMemo(
     () =>
       hasSavedKey &&
-      form.age > 0 &&
+      isValidIsoBirthDate(form.birthDate) &&
       form.heightCm > 0 &&
       form.weightKg > 0 &&
       !isGenerating,
@@ -81,12 +87,31 @@ export function TutorialPage() {
 
   useEffect(() => {
     if (didHydrateFromDraft) return;
+    if (records.onboardingDraft) return;
+    if (records.profile.birthDate !== DEFAULT_PROFILE.birthDate) return;
+
+    let cancelled = false;
+    void (async () => {
+      const token = getAccessToken();
+      if (!token) return;
+      await fetchGoogleProfileBirthDate(token);
+      if (cancelled) return;
+      const google = getGoogleProfileBirthDate();
+      if (google) setForm((prev) => ({ ...prev, birthDate: google }));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [didHydrateFromDraft, records.onboardingDraft, records.profile.birthDate]);
+
+  useEffect(() => {
+    if (didHydrateFromDraft) return;
     const draft = records.onboardingDraft;
     if (!draft) return;
     const timer = window.setTimeout(() => {
       setForm((prev) => ({
         ...prev,
-        age: draft.age,
+        birthDate: draft.birthDate,
         heightCm: draft.heightCm,
         weightKg: draft.weightKg,
         goal: draft.goal,
@@ -185,12 +210,12 @@ export function TutorialPage() {
           </h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="block text-xs text-zinc-400">
-              Age
+              Birthday
               <input
-                inputMode="numeric"
-                value={form.age}
+                type="date"
+                value={form.birthDate}
                 onChange={(e) =>
-                  setForm((prev) => ({ ...prev, age: Number(e.target.value) }))
+                  setForm((prev) => ({ ...prev, birthDate: e.target.value }))
                 }
                 className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
               />
@@ -286,7 +311,7 @@ export function TutorialPage() {
                 setIsGenerating(true);
                 try {
                   const plan = await suggestMacroPlan(savedGeminiKey, {
-                    age: form.age,
+                    age: ageYearsFromIsoBirthDate(form.birthDate),
                     heightCm: form.heightCm,
                     weightKg: form.weightKg,
                     goal: form.goal,
@@ -294,7 +319,8 @@ export function TutorialPage() {
                     notes: form.notes.trim() || undefined,
                   });
                   await saveOnboardingDraft({
-                    age: form.age,
+                    birthDate: form.birthDate,
+                    age: ageYearsFromIsoBirthDate(form.birthDate),
                     heightCm: form.heightCm,
                     weightKg: form.weightKg,
                     goal: form.goal,
@@ -374,7 +400,7 @@ export function TutorialPage() {
                 setError(null);
                 try {
                   await updateProfile({
-                    birthYear: new Date().getFullYear() - form.age,
+                    birthDate: form.birthDate,
                     heightCm: form.heightCm,
                     weightKg: form.weightKg,
                     dailyTargetKcal: generatedPlan.dailyTargetKcal,

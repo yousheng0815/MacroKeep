@@ -1,4 +1,8 @@
 import {
+  ageYearsFromIsoBirthDate,
+  isValidIsoBirthDate,
+} from "@/lib/birth-date";
+import {
   clearProgressPhotosIndexedDb,
   listProgressPhotosDesc,
 } from "@/lib/progress-photos-db";
@@ -7,6 +11,7 @@ import type {
   OnboardingDraft,
   RecordsCoreDocument,
   RecordsDocument,
+  UserProfile,
 } from "@/types/records";
 import { emptyRecords } from "@/types/records";
 import type {
@@ -126,7 +131,10 @@ function normalizeOnboardingDraft(
   draft: Partial<OnboardingDraft> | null | undefined,
 ): OnboardingDraft | undefined {
   if (!draft || typeof draft !== "object") return undefined;
-  const age = Number(draft.age);
+  const birthDateRaw =
+    typeof draft.birthDate === "string" ? draft.birthDate.trim() : "";
+  if (!isValidIsoBirthDate(birthDateRaw)) return undefined;
+  const age = ageYearsFromIsoBirthDate(birthDateRaw);
   const heightCm = Number(draft.heightCm);
   const weightKg = Number(draft.weightKg);
   const suggestedDailyTargetKcal = Number(draft.suggestedDailyTargetKcal);
@@ -157,6 +165,7 @@ function normalizeOnboardingDraft(
     return undefined;
   }
   return {
+    birthDate: birthDateRaw,
     age: Math.max(1, Math.round(age)),
     heightCm: Math.max(1, Math.round(heightCm)),
     weightKg: Math.max(1, Math.round(weightKg)),
@@ -172,6 +181,44 @@ function normalizeOnboardingDraft(
       typeof draft.suggestedAt === "string" && draft.suggestedAt.trim().length > 0
         ? draft.suggestedAt
         : new Date().toISOString(),
+  };
+}
+
+function normalizeUserProfile(
+  partial: Partial<UserProfile> | null | undefined,
+  defaults: UserProfile,
+): UserProfile {
+  const p = partial && typeof partial === "object" ? partial : {};
+  const raw = typeof p.birthDate === "string" ? p.birthDate.trim() : "";
+  const birthDate = isValidIsoBirthDate(raw) ? raw : defaults.birthDate;
+  const heightCm = Number(p.heightCm);
+  const weightKg = Number(p.weightKg);
+  const dailyTargetKcal = Number(p.dailyTargetKcal);
+  const proteinTargetG = Number(p.proteinTargetG);
+  const fatsTargetG = Number(p.fatsTargetG);
+  const carbsTargetG = Number(p.carbsTargetG);
+  return {
+    birthDate,
+    heightCm:
+      Number.isFinite(heightCm) && heightCm > 0 ? Math.round(heightCm) : defaults.heightCm,
+    weightKg:
+      Number.isFinite(weightKg) && weightKg > 0 ? Math.round(weightKg) : defaults.weightKg,
+    dailyTargetKcal:
+      Number.isFinite(dailyTargetKcal) && dailyTargetKcal >= 0
+        ? Math.round(dailyTargetKcal)
+        : defaults.dailyTargetKcal,
+    proteinTargetG:
+      Number.isFinite(proteinTargetG) && proteinTargetG >= 0
+        ? Math.round(proteinTargetG)
+        : defaults.proteinTargetG,
+    fatsTargetG:
+      Number.isFinite(fatsTargetG) && fatsTargetG >= 0
+        ? Math.round(fatsTargetG)
+        : defaults.fatsTargetG,
+    carbsTargetG:
+      Number.isFinite(carbsTargetG) && carbsTargetG >= 0
+        ? Math.round(carbsTargetG)
+        : defaults.carbsTargetG,
   };
 }
 
@@ -192,7 +239,7 @@ export function normalizeRecordsCoreDocument(
   const onboardingDraft = normalizeOnboardingDraft(parsed.onboardingDraft);
   return {
     version: typeof parsed.version === "number" ? parsed.version : empty.version,
-    profile: { ...empty.profile, ...parsed.profile },
+    profile: normalizeUserProfile(parsed.profile, empty.profile),
     ...(gemini !== undefined ? { geminiApiKey: gemini } : {}),
     ...(parsed.onboardingCompleted === true ? { onboardingCompleted: true } : {}),
     ...(onboardingDraft ? { onboardingDraft } : {}),

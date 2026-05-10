@@ -17,7 +17,8 @@ export type MealRecord = {
 };
 
 export type UserProfile = {
-  birthYear: number;
+  /** `YYYY-MM-DD` — used for accurate age (not only birth year). */
+  birthDate: string;
   heightCm: number;
   weightKg: number;
   dailyTargetKcal: number;
@@ -40,6 +41,8 @@ export type OnboardingActivityLevel =
   | "very_active";
 
 export type OnboardingDraft = {
+  birthDate: string;
+  /** Snapshot for display / APIs; always matches {@link birthDate}. */
   age: number;
   heightCm: number;
   weightKg: number;
@@ -77,7 +80,7 @@ export type MealsShardDocument = {
 };
 
 export const DEFAULT_PROFILE: UserProfile = {
-  birthYear: 1989,
+  birthDate: "1990-01-01",
   heightCm: 180,
   weightKg: 72,
   dailyTargetKcal: 2000,
