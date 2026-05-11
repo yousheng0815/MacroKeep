@@ -14,6 +14,7 @@ const queryClient = new QueryClient({
   },
 });
 
+/** Old builds registered Workbox; unregister once so `/api/*` is never intercepted. */
 async function unregisterLegacyServiceWorkers(): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
   const regs = await navigator.serviceWorker.getRegistrations();

@@ -9,7 +9,6 @@ import {
   startGoogleOAuthRedirect,
   type GoogleSignInOptions,
 } from "@/lib/gapi";
-import { SESSION_HANDOFF_QUERY } from "@/lib/oauth-handoff-param";
 import { purgeLegacyOpenMacroStorage } from "@/lib/oauth-session-storage";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -44,7 +43,6 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
   const [signedIn, setSignedIn] = useState(false);
   const [hasDriveAppDataScope, setHasDriveAppDataScope] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /** Bumped when OAuth/token state changes so memoized context reflects module state. */
   const [oauthEpoch, setOauthEpoch] = useState(0);
 
   const refresh = useCallback(() => {
@@ -57,37 +55,6 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         purgeLegacyOpenMacroStorage();
-
-        const params = new URLSearchParams(window.location.search);
-        const handoff = params.get(SESSION_HANDOFF_QUERY);
-        if (handoff) {
-          const res = await fetch("/api/auth/session-handoff", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify({ nonce: handoff }),
-            cache: "no-store",
-          });
-          const url = new URL(window.location.href);
-          url.searchParams.delete(SESSION_HANDOFF_QUERY);
-          const clean = `${url.pathname}${url.search}${url.hash}`;
-          if (res.ok) {
-            window.location.replace(clean);
-            return;
-          }
-          window.history.replaceState({}, "", clean);
-          if (!cancelled) {
-            setError(
-              res.status === 410
-                ? "Sign-in link expired. Please try again."
-                : "Could not complete sign-in. Please try again.",
-            );
-          }
-        }
-
         await restoreOAuthSessionFromStorage();
         if (!cancelled) {
           refresh();

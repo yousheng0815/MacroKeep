@@ -59,10 +59,7 @@ export default function handler(req: VercelRequest, res: VercelResponse): void {
       include_granted_scopes: "true",
       state,
     });
-    if (promptConsent) {
-      params.set("prompt", "consent");
-    } else if (jsonClient) {
-      /** Prompt once per sign-in — improves refresh_token delivery for server-side offline access. */
+    if (promptConsent || jsonClient) {
       params.set("prompt", "consent");
     }
 

@@ -4,14 +4,12 @@ import {
   OAUTH_NEXT_COOKIE,
   OAUTH_RT_FALLBACK_COOKIE,
   OAUTH_STATE_COOKIE,
-  SESSION_COOKIE,
   oauthRedirectUri,
   requireEnv,
 } from "../../../server/oauth/config.js";
 import {
   appendSetCookie,
   cookieClear,
-  cookiePersistedSession,
   cookieSession,
   parseCookies,
   safeNextPath,
@@ -98,11 +96,6 @@ export default async function handler(
 
     const handoffNonce = crypto.randomBytes(24).toString("hex");
     await saveSessionHandoff(handoffNonce, sessionId);
-
-    appendSetCookie(
-      res,
-      cookiePersistedSession(SESSION_COOKIE, sessionId, 31536000),
-    );
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.status(200).send(

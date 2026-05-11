@@ -1,7 +1,4 @@
-/**
- * Minimal HTML document loaded from `/api/auth/google/callback` after OAuth succeeds.
- * Performs POST `/api/auth/session-handoff` then navigates — survives SPA routers and flaky 302 Set-Cookie.
- */
+/** Returned by OAuth callback: POST session-handoff, then `location.replace(next)`. */
 export function oauthSuccessHtml(payload: { nonce: string; next: string }): string {
   const json = JSON.stringify(payload)
     .replace(/</g, "\\u003c")

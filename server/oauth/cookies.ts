@@ -7,7 +7,6 @@ function secureFlag(): string {
 }
 
 export function appendSetCookie(res: VercelResponse, cookie: string): void {
-  // Multiple Set-Cookie headers must use appendHeader; manual array merging can break on some runtimes.
   if (typeof res.appendHeader === "function") {
     res.appendHeader("Set-Cookie", cookie);
     return;
@@ -36,11 +35,7 @@ function useStrictCrossSiteSessionCookie(): boolean {
   return Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
 }
 
-/**
- * Long-lived session cookie after OAuth callback. Uses `SameSite=None; Secure` on Vercel so
- * the jar reliably keeps `om_session` across the Google → app redirect chain (some browsers
- * treat Lax session writes on that navigation oddly).
- */
+/** Session cookie: `SameSite=None; Secure` in production (cross-site redirect from Google). */
 export function cookiePersistedSession(
   name: string,
   value: string,
@@ -53,7 +48,7 @@ export function cookiePersistedSession(
   return `${name}=${enc}; Path=/; HttpOnly${secureFlag()}; SameSite=Lax; Max-Age=${maxAgeSec}`;
 }
 
-/** Match {@link cookiePersistedSession} attributes when deleting the cookie. */
+/** Clear cookie set via {@link cookiePersistedSession}. */
 export function cookieClearPersistedSession(name: string): string {
   if (useStrictCrossSiteSessionCookie()) {
     return `${name}=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0`;

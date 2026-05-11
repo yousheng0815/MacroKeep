@@ -16,10 +16,7 @@ import {
   requireEnv,
 } from "./config.js";
 
-/**
- * Vercel/dash env vars usually store the JSON on one line; `private_key` then contains
- * literal `\n` sequences instead of PEM newlines — Firebase rejects that unless normalized.
- */
+/** Env JSON often has literal `\n` in `private_key`; Firebase needs real PEM newlines. */
 function normalizeServiceAccountCredential(
   parsed: Record<string, unknown>,
 ): ServiceAccount {
@@ -67,7 +64,6 @@ function ensureApp() {
   });
 }
 
-/** Always the `(default)` Firestore database for this project. */
 function ensureFirestore(): Firestore {
   return getFirestore(ensureApp());
 }
@@ -131,7 +127,6 @@ export async function saveSessionHandoff(
   });
 }
 
-/** Deletes handoff doc and returns session id if valid; otherwise null. */
 export async function consumeSessionHandoff(
   nonce: string,
 ): Promise<string | null> {

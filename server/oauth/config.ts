@@ -19,9 +19,7 @@ export const OAUTH_NEXT_COOKIE = "om_oauth_next";
 export const OAUTH_RT_FALLBACK_COOKIE = "om_oauth_rt_fallback";
 
 export const FIRESTORE_SESSION_COLLECTION = "openmacro_oauth_sessions";
-/** Single-use OAuth→browser bridge when Set-Cookie on 302 is dropped (short TTL). */
 export const FIRESTORE_HANDOFF_COLLECTION = "openmacro_oauth_handoffs";
-export const SESSION_HANDOFF_QUERY = "session_handoff";
 
 function forwardedFirst(v: string | string[] | undefined): string | undefined {
   if (!v) return undefined;
@@ -38,11 +36,7 @@ function inferScheme(protoHeader: string | undefined, host: string): "http" | "h
   return "https";
 }
 
-/**
- * Public origin for OAuth redirects. Prefer `OM_SITE_ORIGIN` when set (canonical URL).
- * Otherwise derive from the incoming request so custom domains match state/session cookies
- * (defaults based only on `VERCEL_URL` break when users open a mapped domain).
- */
+/** OAuth redirects: `OM_SITE_ORIGIN` if set, else `Host`/`x-forwarded-*` from the request. */
 export function siteOriginFromRequestHeaders(headers: IncomingHttpHeaders): string | null {
   const host =
     forwardedFirst(headers["x-forwarded-host"]) ??
@@ -71,7 +65,6 @@ export function oauthRedirectUri(req?: SiteOriginRequest): string {
   return `${getSiteOrigin(req)}/api/auth/google/callback`;
 }
 
-/** Absolute URL for post-OAuth redirects (avoids relative Location edge cases behind proxies). */
 export function absoluteSitePath(
   req: SiteOriginRequest,
   pathnameAndQuery: string,

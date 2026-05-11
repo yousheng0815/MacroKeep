@@ -1,7 +1,4 @@
-/**
- * Google OAuth via **server redirect flow** (Vercel `/api`, refresh tokens in Firestore).
- * Short-lived access tokens are refreshed through `/api/google/access-token`.
- */
+/** Server OAuth + Firestore refresh tokens; access tokens via `/api/google/access-token`. */
 
 import { isoBirthDateFromParts } from "@/lib/birth-date";
 import {
@@ -298,11 +295,7 @@ export async function ensureGoogleAccessToken(): Promise<string | null> {
   return brokerAccessTokenRefresh;
 }
 
-/**
- * Starts Google OAuth: sets state cookies via `/api/auth/google`, then navigates to Google.
- * Uses `fetch` + JSON so a document navigation never lands on `/api/auth/google` (PWA SW /
- * SPA fallback can serve `index.html` there and show a blank screen).
- */
+/** JSON `fetch` to `/api/auth/google` then redirect to Google (avoids navigating to `/api/…` as a document). */
 export async function startGoogleOAuthRedirect(
   opts?: GoogleSignInOptions,
 ): Promise<void> {
