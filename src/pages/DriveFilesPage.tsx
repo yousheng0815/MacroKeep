@@ -192,7 +192,7 @@ export function DriveFilesPage() {
             disabled={!sessionReady || q.isFetching}
             aria-busy={q.isFetching}
             onClick={() => void q.refetch()}
-            className="relative inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ButtonPendingContents
               pending={q.isFetching}
@@ -240,7 +240,7 @@ export function DriveFilesPage() {
                   }
                 })()
               }
-              className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+              className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <ButtonPendingContents
                 pending={retryBusy}
@@ -260,7 +260,7 @@ export function DriveFilesPage() {
           <div className="min-w-0 overflow-x-auto">
             <table className="w-full table-fixed text-left text-sm">
               <thead>
-                <tr className="border-b border-om-border bg-zinc-900/40 text-xs text-zinc-500">
+                <tr className="border-b border-om-border bg-zinc-900/40 text-sm text-zinc-500">
                   <th className="min-w-0 px-4 py-3 font-medium">File</th>
                   <th className="hidden min-w-0 px-4 py-3 font-medium sm:table-cell sm:w-[28%]">
                     Type
@@ -295,7 +295,7 @@ export function DriveFilesPage() {
                               <button
                                 type="button"
                                 onClick={() => setViewerFile(f)}
-                                className="w-full min-w-0 text-left font-mono text-xs text-emerald-300/95 break-all underline decoration-emerald-500/40 underline-offset-2 hover:text-emerald-200 hover:decoration-emerald-400/70"
+                                className="w-full min-w-0 text-left font-mono text-sm text-emerald-300/95 break-all underline decoration-emerald-500/40 underline-offset-2 hover:text-emerald-200 hover:decoration-emerald-400/70"
                                 aria-label={`View JSON contents of ${f.name}`}
                               >
                                 {f.name}
@@ -304,32 +304,32 @@ export function DriveFilesPage() {
                               <button
                                 type="button"
                                 onClick={() => setViewerFile(f)}
-                                className="w-full min-w-0 text-left font-mono text-xs text-amber-300/95 break-all underline decoration-amber-500/40 underline-offset-2 hover:text-amber-200 hover:decoration-amber-400/70"
+                                className="w-full min-w-0 text-left font-mono text-sm text-amber-300/95 break-all underline decoration-amber-500/40 underline-offset-2 hover:text-amber-200 hover:decoration-amber-400/70"
                                 aria-label={`Preview image ${f.name}`}
                               >
                                 {f.name}
                               </button>
                             ) : (
-                              <span className="block min-w-0 font-mono text-xs text-white break-all">
+                              <span className="block min-w-0 font-mono text-sm text-white break-all">
                                 {f.name}
                               </span>
                             )}
                           </div>
                         </div>
-                        <div className="mt-1 font-mono text-[10px] text-zinc-600 md:hidden">
+                        <div className="mt-1 font-mono text-sm text-zinc-600 md:hidden">
                           {f.mimeType ?? "unknown"}
                         </div>
-                        <div className="mt-0.5 text-[10px] text-zinc-600 md:hidden">
+                        <div className="mt-0.5 text-sm text-zinc-600 md:hidden">
                           {formatModified(f.modifiedTime)}
                         </div>
                       </td>
-                      <td className="hidden min-w-0 px-4 py-3 align-top text-xs text-zinc-400 break-all sm:table-cell">
+                      <td className="hidden min-w-0 px-4 py-3 align-top text-sm text-zinc-400 break-all sm:table-cell">
                         {f.mimeType ?? "—"}
                       </td>
-                      <td className="w-[4.25rem] whitespace-nowrap px-2 py-3 align-top text-xs text-zinc-400 sm:w-auto sm:px-4">
+                      <td className="w-[4.25rem] whitespace-nowrap px-2 py-3 align-top text-sm text-zinc-400 sm:w-auto sm:px-4">
                         {formatBytes(f.size)}
                       </td>
-                      <td className="hidden whitespace-nowrap px-4 py-3 align-top text-xs text-zinc-400 md:table-cell">
+                      <td className="hidden whitespace-nowrap px-4 py-3 align-top text-sm text-zinc-400 md:table-cell">
                         {formatModified(f.modifiedTime)}
                       </td>
                     </tr>
@@ -381,7 +381,7 @@ export function DriveFilesPage() {
                         displayText || contentQuery.data || "",
                       )
                     }
-                    className="rounded-xl border border-om-border bg-om-bg px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl border border-om-border bg-om-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Copy
                   </button>
@@ -420,7 +420,7 @@ export function DriveFilesPage() {
                       : "Could not load file."}
                   </p>
                 ) : (
-                  <pre className="font-mono text-[11px] leading-relaxed text-zinc-200 whitespace-pre-wrap break-words sm:text-xs">
+                  <pre className="font-mono text-sm leading-relaxed whitespace-pre-wrap break-words text-zinc-200">
                     {displayText}
                   </pre>
                 )

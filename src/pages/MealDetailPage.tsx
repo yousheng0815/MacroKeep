@@ -138,7 +138,7 @@ export function MealDetailPage() {
           <p className="text-sm text-om-muted">This meal could not be found.</p>
           <Link
             to="/history"
-            className="inline-flex items-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+            className="inline-flex items-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
             Back to history
@@ -168,12 +168,12 @@ export function MealDetailPage() {
             <h1 className="min-w-0 break-words text-xl font-bold text-white">
               {meal.food_name}
             </h1>
-            <p className="mt-1 text-xs text-om-muted">
+            <p className="mt-1 text-sm text-om-muted">
               {formatLocalDateLabel(new Date(meal.recordedAt))} at{" "}
               {formatTime(new Date(meal.recordedAt))}
             </p>
             {meal.sourceFavoriteMealId ? (
-              <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-emerald-300">
+              <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 text-sm font-semibold text-emerald-300">
                 <Tag className="size-3.5" />
                 From favorite
               </div>
@@ -194,7 +194,7 @@ export function MealDetailPage() {
                     }
                   })();
                 }}
-                className={`mt-2 inline-flex items-center justify-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`mt-2 inline-flex items-center justify-center gap-1 rounded-full border px-3 py-1 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   meal.isFavorite
                     ? "border-amber-400/40 bg-amber-500/15 text-amber-200 hover:bg-amber-500/20"
                     : "border-om-border bg-om-bg text-zinc-200 hover:bg-zinc-900"
@@ -297,31 +297,31 @@ export function MealDetailPage() {
             }}
           >
             <label className="block">
-              <span className="mb-1 block text-xs text-om-muted">
+              <span className="mb-1 block text-sm text-om-muted">
                 Food name
               </span>
               <input
                 name="foodName"
                 type="text"
                 defaultValue={meal.food_name}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
               />
             </label>
 
             <label className="block">
-              <span className="mb-1 block text-xs text-om-muted">
+              <span className="mb-1 block text-sm text-om-muted">
                 Recorded at
               </span>
               <input
                 name="recordedAt"
                 type="datetime-local"
                 defaultValue={toLocalDateTimeInput(meal.recordedAt)}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
               />
             </label>
 
             <div className="space-y-2">
-              <span className="block text-xs text-om-muted">Photo</span>
+              <span className="block text-sm text-om-muted">Photo</span>
               <input
                 key={`cam-${fileInputKey}`}
                 ref={cameraInputRef}
@@ -366,7 +366,7 @@ export function MealDetailPage() {
                     type="button"
                     disabled={savePending}
                     onClick={() => cameraInputRef.current?.click()}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-3 py-2 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem] md:text-sm"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                   >
                     <Camera className="size-4 text-emerald-400 md:size-5" />
                     {meal.photoFileId || meal.thumbnailFileId
@@ -377,7 +377,7 @@ export function MealDetailPage() {
                     type="button"
                     disabled={savePending}
                     onClick={() => uploadInputRef.current?.click()}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-3 py-2 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem] md:text-sm"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                   >
                     <ImagePlus className="size-4 text-orange-500 md:size-5" />
                     {meal.photoFileId || meal.thumbnailFileId
@@ -390,7 +390,7 @@ export function MealDetailPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="mb-1 block text-xs text-om-muted">
+                <span className="mb-1 block text-sm text-om-muted">
                   Calories
                 </span>
                 <input
@@ -399,11 +399,11 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="1"
                   defaultValue={meal.calories}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs text-om-muted">
+                <span className="mb-1 block text-sm text-om-muted">
                   Protein (g)
                 </span>
                 <input
@@ -412,11 +412,11 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="0.1"
                   defaultValue={meal.protein}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs text-om-muted">
+                <span className="mb-1 block text-sm text-om-muted">
                   Fats (g)
                 </span>
                 <input
@@ -425,11 +425,11 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="0.1"
                   defaultValue={meal.fats}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs text-om-muted">
+                <span className="mb-1 block text-sm text-om-muted">
                   Carbs (g)
                 </span>
                 <input
@@ -438,7 +438,7 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="0.1"
                   defaultValue={meal.carbs}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                  className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
                 />
               </label>
             </div>
@@ -454,7 +454,7 @@ export function MealDetailPage() {
                 type="submit"
                 disabled={savePending || deletePending || favoritePending}
                 aria-busy={savePending}
-                className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+                className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <ButtonPendingContents
                   pending={savePending}
@@ -468,7 +468,7 @@ export function MealDetailPage() {
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
                 onClick={() => endEditing()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -477,14 +477,14 @@ export function MealDetailPage() {
         ) : (
           <div className="space-y-4">
             <div>
-              <span className="mb-1 block text-xs text-om-muted">
+              <span className="mb-1 block text-sm text-om-muted">
                 Food name
               </span>
               <p className="text-sm text-zinc-100">{meal.food_name}</p>
             </div>
 
             <div>
-              <span className="mb-1 block text-xs text-om-muted">
+              <span className="mb-1 block text-sm text-om-muted">
                 Recorded at
               </span>
               <p className="text-sm text-zinc-100">
@@ -495,23 +495,23 @@ export function MealDetailPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <span className="mb-1 block text-xs text-om-muted">
+                <span className="mb-1 block text-sm text-om-muted">
                   Calories
                 </span>
                 <p className="text-sm text-zinc-100">{meal.calories}</p>
               </div>
               <div>
-                <span className="mb-1 block text-xs text-om-muted">
+                <span className="mb-1 block text-sm text-om-muted">
                   Protein (g)
                 </span>
                 <p className="text-sm text-zinc-100">{meal.protein}</p>
               </div>
               <div>
-                <span className="mb-1 block text-xs text-om-muted">Fats (g)</span>
+                <span className="mb-1 block text-sm text-om-muted">Fats (g)</span>
                 <p className="text-sm text-zinc-100">{meal.fats}</p>
               </div>
               <div>
-                <span className="mb-1 block text-xs text-om-muted">
+                <span className="mb-1 block text-sm text-om-muted">
                   Carbs (g)
                 </span>
                 <p className="text-sm text-zinc-100">{meal.carbs}</p>
@@ -526,7 +526,7 @@ export function MealDetailPage() {
                   setEditError(null);
                   setEditing(true);
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Pencil className="size-4" />
                 Edit meal
@@ -536,7 +536,7 @@ export function MealDetailPage() {
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
                 aria-busy={deletePending}
-                className="relative inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="relative inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => {
                   if (!window.confirm("Delete this meal?")) return;
                   void (async () => {

@@ -43,11 +43,13 @@ export function PageHeader({
               <ArrowLeft className="size-4" />
             </Link>
           ) : null}
-          <h1 className="text-xl font-bold text-white">{title}</h1>
+          <h1 className="text-xl font-bold tracking-tight text-white">{title}</h1>
         </div>
         {actions ? <div className="shrink-0">{actions}</div> : null}
       </div>
-      {subtitle ? <p className="text-sm text-om-muted">{subtitle}</p> : null}
+      {subtitle ? (
+        <p className="text-sm leading-relaxed text-om-muted">{subtitle}</p>
+      ) : null}
     </div>
   );
 }

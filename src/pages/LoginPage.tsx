@@ -80,7 +80,7 @@ export function LoginPage() {
             Sign in with Google so your diary, profile, and optional Gemini key live in
             your Drive{" "}
             <strong className="font-medium text-zinc-300">App Data</strong> folder (
-            <span className="font-mono text-xs text-zinc-400">
+            <span className="font-mono text-sm text-zinc-400">
               {CORE_DRIVE_FILE}
             </span>
             ). A secure session cookie and encrypted refresh tokens on the server keep
@@ -107,9 +107,9 @@ export function LoginPage() {
             {needsConsent ? (
               <div className="rounded-2xl border border-amber-500/40 bg-amber-950/25 px-4 py-3 text-sm text-amber-100">
                 <p className="font-medium text-amber-50">Drive permission needed</p>
-                <p className="mt-2 text-xs leading-relaxed text-amber-200/90">
+                <p className="mt-2 text-sm leading-relaxed text-amber-200/90">
                   OpenMacro needs{" "}
-                  <span className="break-all font-mono text-[11px] text-amber-100/90">
+                  <span className="break-all font-mono text-sm text-amber-100/90">
                     {DRIVE_APPDATA_SCOPE}
                   </span>{" "}
                   to save your data in the hidden app folder. Tap below to grant
@@ -131,7 +131,7 @@ export function LoginPage() {
               </ButtonPendingContents>
             </button>
 
-            <p className="text-center text-[11px] leading-relaxed text-zinc-500">
+            <p className="text-center text-sm leading-relaxed text-zinc-500">
               By continuing, you agree to connect Google Drive App Data for sync.
               OpenMacro stores an encrypted OAuth refresh token for your account on the
               deployment backend (configure server env vars).

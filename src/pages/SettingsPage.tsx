@@ -45,13 +45,13 @@ function GeminiKeyCard({
           <h2 className="text-sm font-semibold text-white">
             BYOK — Gemini API Key
           </h2>
-          <p className="mt-1 text-xs text-om-muted">
+          <p className="mt-1 text-sm text-om-muted">
             Saved inside your Drive{" "}
             <span className="font-mono text-zinc-400">{CORE_DRIVE_FILE}</span>{" "}
             (targets and this key — meals stay in monthly shard files).
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 text-sm">
           {geminiKey.trim() ? (
             <>
               <CheckCircle2 className="size-4 text-emerald-400" />
@@ -63,14 +63,14 @@ function GeminiKeyCard({
         </div>
       </div>
 
-      <label className="mt-4 block text-xs text-zinc-400">
+      <label className="mt-4 block text-sm text-zinc-400">
         API key
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="AIza…"
           autoComplete="off"
-          className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 font-mono text-sm text-white outline-none focus:border-emerald-400/60"
+          className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 font-mono text-base text-white outline-none focus:border-emerald-400/60"
         />
       </label>
 
@@ -80,14 +80,14 @@ function GeminiKeyCard({
           disabled={isSaving}
           aria-busy={isSaving}
           onClick={() => void updateGeminiKey(draft)}
-          className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ButtonPendingContents pending={isSaving} spinner={<ButtonSpinner />}>
             Save key
           </ButtonPendingContents>
         </button>
         <a
-          className="inline-flex items-center rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-semibold text-blue-400 transition hover:bg-zinc-900"
+          className="inline-flex items-center rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-blue-400 transition hover:bg-zinc-900"
           href="https://aistudio.google.com/app/apikey"
           target="_blank"
           rel="noreferrer"
@@ -113,14 +113,14 @@ function ProfileCard({
   return (
     <Card>
       <h2 className="text-sm font-semibold text-white">Profile & targets</h2>
-      <p className="mt-1 text-xs text-om-muted">
+      <p className="mt-1 text-sm text-om-muted">
         Placeholder defaults (1990-01-01, 180cm / 72kg, 2000 kcal) until you set
         your own values. Birthday is used to compute your age for targets and
         AI.
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <label className="block text-xs text-zinc-400">
+        <label className="block text-sm text-zinc-400">
           Birthday
           <input
             type="date"
@@ -131,10 +131,10 @@ function ProfileCard({
                 birthDate: e.target.value,
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
           />
         </label>
-        <label className="block text-xs text-zinc-400">
+        <label className="block text-sm text-zinc-400">
           Height (cm)
           <input
             inputMode="decimal"
@@ -145,10 +145,10 @@ function ProfileCard({
                 heightCm: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
           />
         </label>
-        <label className="block text-xs text-zinc-400">
+        <label className="block text-sm text-zinc-400">
           Weight (kg)
           <input
             inputMode="decimal"
@@ -159,10 +159,10 @@ function ProfileCard({
                 weightKg: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
           />
         </label>
-        <label className="block text-xs text-zinc-400">
+        <label className="block text-sm text-zinc-400">
           Daily target (kcal)
           <input
             inputMode="numeric"
@@ -173,10 +173,10 @@ function ProfileCard({
                 dailyTargetKcal: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
           />
         </label>
-        <label className="block text-xs text-zinc-400">
+        <label className="block text-sm text-zinc-400">
           Protein target (g)
           <input
             inputMode="decimal"
@@ -187,10 +187,10 @@ function ProfileCard({
                 proteinTargetG: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
           />
         </label>
-        <label className="block text-xs text-zinc-400">
+        <label className="block text-sm text-zinc-400">
           Fats target (g)
           <input
             inputMode="decimal"
@@ -201,10 +201,10 @@ function ProfileCard({
                 fatsTargetG: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
           />
         </label>
-        <label className="block text-xs text-zinc-400 sm:col-span-2">
+        <label className="block text-sm text-zinc-400 sm:col-span-2">
           Carbs target (g)
           <input
             inputMode="decimal"
@@ -215,7 +215,7 @@ function ProfileCard({
                 carbsTargetG: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
           />
         </label>
       </div>
@@ -225,7 +225,7 @@ function ProfileCard({
         disabled={isSaving}
         aria-busy={isSaving}
         onClick={() => void updateProfile(draft)}
-        className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
       >
         <ButtonPendingContents pending={isSaving} spinner={<ButtonSpinner />}>
           Save profile
@@ -264,7 +264,7 @@ export function SettingsPage() {
         <h2 className="text-sm font-semibold text-white">
           Google account & Drive
         </h2>
-        <p className="mt-2 text-xs text-om-muted">
+        <p className="mt-2 text-sm text-om-muted">
           Your diary, targets, and optional Gemini key sync to the hidden{" "}
           <span className="text-zinc-300">App Data</span> folder as{" "}
           <span className="font-mono text-zinc-400">{CORE_DRIVE_FILE}</span>.
@@ -286,7 +286,7 @@ export function SettingsPage() {
               <span className="block font-medium text-zinc-100">
                 Drive app data
               </span>
-              <span className="mt-0.5 block text-xs font-normal text-om-muted">
+              <span className="mt-0.5 block text-sm font-normal text-om-muted">
                 List files and preview JSON in your App Data folder
               </span>
             </span>
@@ -296,18 +296,18 @@ export function SettingsPage() {
 
         <dl className="mt-4 space-y-3 text-sm">
           <div>
-            <dt className="text-xs text-zinc-500">Signed in as</dt>
+            <dt className="text-sm text-zinc-500">Signed in as</dt>
             <dd className="mt-0.5 font-medium text-white">
               {email ?? "Unknown"}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-zinc-500">Drive scope</dt>
+            <dt className="text-sm text-zinc-500">Drive scope</dt>
             <dd className="mt-1 flex flex-wrap items-center gap-2">
               {sessionReady ? (
                 <>
                   <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
-                  <span className="break-all font-mono text-[11px] text-emerald-400/90">
+                  <span className="break-all font-mono text-sm text-emerald-400/90">
                     {DRIVE_APPDATA_SCOPE}
                   </span>
                 </>
@@ -333,7 +333,7 @@ export function SettingsPage() {
               }
             })()
           }
-          className="relative mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+          className="relative mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <ButtonPendingContents
             pending={signOutBusy}
@@ -347,7 +347,7 @@ export function SettingsPage() {
           <h3 className="text-sm font-semibold text-red-300">
             Delete all cloud data
           </h3>
-          <p className="mt-1 text-xs text-om-muted">
+          <p className="mt-1 text-sm text-om-muted">
             Permanently removes every OpenMacro file from this Google
             account&apos;s Drive App Data folder (meals, photos,{" "}
             <span className="font-mono text-zinc-400">{CORE_DRIVE_FILE}</span>,
@@ -356,7 +356,7 @@ export function SettingsPage() {
             <span className="font-mono text-zinc-300">DELETE</span> to enable
             the button.
           </p>
-          <label className="mt-3 block text-xs text-zinc-500">
+          <label className="mt-3 block text-sm text-zinc-500">
             Confirmation
             <input
               value={wipePhrase}
@@ -368,14 +368,14 @@ export function SettingsPage() {
               autoComplete="off"
               placeholder="DELETE"
               disabled={!sessionReady || wipeBusy}
-              className="mt-1 w-full max-w-xs rounded-xl border border-om-border bg-om-bg px-3 py-2 font-mono text-sm text-white outline-none placeholder:text-zinc-600 focus:border-red-400/50"
+              className="mt-1 w-full max-w-xs rounded-xl border border-om-border bg-om-bg px-4 py-3 font-mono text-base text-white outline-none placeholder:text-zinc-600 focus:border-red-400/50"
             />
           </label>
           {wipeError ? (
-            <p className="mt-2 text-xs text-red-300">{wipeError}</p>
+            <p className="mt-2 text-sm text-red-300">{wipeError}</p>
           ) : null}
           {wipeDone ? (
-            <p className="mt-2 text-xs text-emerald-400">
+            <p className="mt-2 text-sm text-emerald-400">
               All App Data files were removed. Your diary will reload empty.
             </p>
           ) : null}
@@ -405,7 +405,7 @@ export function SettingsPage() {
                 }
               })()
             }
-            className="relative mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-950/40 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-950/70 disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-950/40 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-950/70 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ButtonPendingContents
               pending={wipeBusy}
@@ -433,7 +433,7 @@ export function SettingsPage() {
 
       <Link
         to="/tutorial"
-        className="relative inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-900"
+        className="relative inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900"
       >
         Calculate suggested targets again
       </Link>

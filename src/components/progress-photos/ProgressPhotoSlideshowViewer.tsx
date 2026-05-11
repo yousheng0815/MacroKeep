@@ -93,7 +93,7 @@ export function ProgressPhotoSlideshowViewer({
           />
         ) : null}
 
-        <div className="pointer-events-none absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-3 py-1 text-[11px] text-zinc-300 backdrop-blur-sm">
+        <div className="pointer-events-none absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-3 py-1 text-sm text-zinc-300 backdrop-blur-sm">
           <span className="tabular-nums">
             {displayIndex + 1} / {sorted.length}
           </span>
@@ -122,7 +122,7 @@ export function ProgressPhotoSlideshowViewer({
       </div>
 
       <div className="shrink-0 px-4 pb-3 text-center">
-        <p className="truncate text-[11px] text-zinc-500">{label}</p>
+        <p className="truncate text-sm text-zinc-500">{label}</p>
       </div>
 
       <footer className="shrink-0 space-y-4 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -131,7 +131,7 @@ export function ProgressPhotoSlideshowViewer({
             type="button"
             onClick={() => setPlaying((p) => !p)}
             disabled={sorted.length < 2}
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {playing ? (
               <>
@@ -146,7 +146,7 @@ export function ProgressPhotoSlideshowViewer({
         </div>
 
         <div className="mx-auto flex max-w-md flex-col gap-2">
-          <label className="flex items-center justify-between text-[11px] text-zinc-500">
+          <label className="flex items-center justify-between text-sm text-zinc-500">
             <span>Slide interval</span>
             <span className="tabular-nums text-zinc-400">{intervalMs} ms</span>
           </label>

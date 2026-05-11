@@ -115,7 +115,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
               : "Your session may have expired. Continue to sign in with Google again."}
           </p>
           {!needsConsent && rememberedEmail ? (
-            <p className="text-xs leading-relaxed text-zinc-500">
+            <p className="text-sm leading-relaxed text-zinc-500">
               Reconnecting as <span className="font-medium text-zinc-400">{rememberedEmail}</span>
             </p>
           ) : null}

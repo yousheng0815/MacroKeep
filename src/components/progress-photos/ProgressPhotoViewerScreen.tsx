@@ -101,7 +101,7 @@ export function ProgressPhotoViewerScreen({
           <h2 className="truncate text-sm font-semibold text-white">
             Progress photo
           </h2>
-          <p className="truncate text-[11px] text-zinc-500">{dateLabel}</p>
+          <p className="truncate text-sm text-zinc-500">{dateLabel}</p>
         </div>
         <button
           type="button"
@@ -155,7 +155,7 @@ export function ProgressPhotoViewerScreen({
           </>
         ) : null}
 
-        <div className="pointer-events-none absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-3 py-1 text-[11px] text-zinc-300 backdrop-blur-sm">
+        <div className="pointer-events-none absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/55 px-3 py-1 text-sm text-zinc-300 backdrop-blur-sm">
           <span className="tabular-nums">
             {index + 1} / {photos.length}
           </span>

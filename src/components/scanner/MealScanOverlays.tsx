@@ -19,7 +19,7 @@ export function MealScanOverlays({
           aria-label="Analyzing meal photo"
         >
           <Loader2 className="size-12 animate-spin text-emerald-400" />
-          <p className="text-center text-base font-medium text-zinc-100">
+          <p className="text-center text-sm font-medium text-zinc-100">
             AI analyzing…
           </p>
           <p className="max-w-sm text-center text-sm text-zinc-400">

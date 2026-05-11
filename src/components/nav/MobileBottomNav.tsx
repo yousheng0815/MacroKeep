@@ -25,11 +25,11 @@ export function MobileBottomNav() {
             <Link
               key={item.to}
               to={item.to}
-              className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[11px] font-medium transition ${
+              className={`flex flex-col items-center gap-1 rounded-xl py-2 text-xs font-medium leading-snug transition ${
                 active ? "text-emerald-400" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              <Icon className="size-5" />
+              <Icon className="size-5 shrink-0" />
               {item.label}
             </Link>
           );

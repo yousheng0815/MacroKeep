@@ -77,7 +77,7 @@ export function HistoryPage() {
                 }
               })()
             }
-            className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <ButtonPendingContents
               pending={retryPending}
@@ -120,7 +120,7 @@ export function HistoryPage() {
                   <div className="text-sm font-semibold text-white">
                     {today ? "Today" : formatLocalDateLabel(dayDate)}
                   </div>
-                  <div className="mt-1 text-xs text-om-muted">
+                  <div className="mt-1 text-sm text-om-muted">
                     {Math.round(totals.kcal)} kcal · P {Math.round(totals.p)} g
                     · F {Math.round(totals.f)} g · C {Math.round(totals.c)} g
                   </div>
@@ -199,7 +199,7 @@ export function HistoryPage() {
                             </button>
                           )}
                         </div>
-                        <div className="mt-1 truncate text-xs text-om-muted">
+                        <div className="mt-1 truncate text-sm text-om-muted">
                           {formatTime(new Date(m.recordedAt))} ·{" "}
                           {Math.round(m.calories)} kcal · P{" "}
                           {Math.round(m.protein)} · F {Math.round(m.fats)} · C{" "}

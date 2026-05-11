@@ -129,7 +129,7 @@ export function FavoriteMealsPage() {
                         <ButtonSpinner className="mt-0.5 shrink-0 text-zinc-200" />
                       ) : null}
                     </div>
-                    <div className="mt-1 truncate text-xs text-om-muted">
+                    <div className="mt-1 truncate text-sm text-om-muted">
                       {Math.round(item.calories)} kcal · P{" "}
                       {Math.round(item.protein)} g · F {Math.round(item.fats)} g
                       · C {Math.round(item.carbs)} g

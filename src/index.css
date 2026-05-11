@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    @apply antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /*
+   * iOS Safari zooms focused fields when computed font-size is under ~16px.
+   * Keep general UI at text-sm; use text-base (1rem) on inputs/textarea/select only.
+   */
+}
+
 html,
 body,
 #root {

@@ -180,7 +180,7 @@ export function ProgressPhotoCaptureScreen({
           <h2 className="truncate text-sm font-semibold text-white">
             Progress photo
           </h2>
-          <p className="text-[11px] text-zinc-500">
+          <p className="text-sm text-zinc-500">
             Synced to Google Drive (hidden app data folder, same account as
             meals).
           </p>
@@ -217,7 +217,7 @@ export function ProgressPhotoCaptureScreen({
             </div>
 
             <div className="mx-auto flex w-full max-w-md flex-col gap-3">
-              <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-400">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-400">
                 <input
                   type="checkbox"
                   checked={ghostEnabled}
@@ -228,7 +228,7 @@ export function ProgressPhotoCaptureScreen({
               </label>
               {ghostBlob ? (
                 <label className="flex flex-col gap-1.5 px-0.5">
-                  <span className="flex items-center justify-between text-[11px] text-zinc-500">
+                  <span className="flex items-center justify-between text-sm text-zinc-500">
                     <span>Overlay opacity</span>
                     <span className="tabular-nums text-zinc-400">
                       {Math.round(ghostOverlayOpacity * 100)}%

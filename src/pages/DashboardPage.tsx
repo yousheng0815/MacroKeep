@@ -69,7 +69,7 @@ function MealsLoadErrorBanner({
             }
           })()
         }
-        className="relative inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+        className="relative inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <ButtonPendingContents
           pending={retryPending}
@@ -98,7 +98,7 @@ function MealDerivedPlaceholder({
     return (
       <div className="flex min-h-[140px] flex-col items-center justify-center gap-3 py-10">
         <Loader2 className="size-8 animate-spin text-emerald-400" aria-hidden />
-        <p className="text-xs text-om-muted">Loading meals…</p>
+        <p className="text-sm text-om-muted">Loading meals…</p>
       </div>
     );
   }
@@ -124,7 +124,7 @@ function MealDerivedPlaceholder({
               }
             })()
           }
-          className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+          className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <ButtonPendingContents
             pending={retryPending}
@@ -208,12 +208,12 @@ export function DashboardPage() {
                 <h2 className="text-sm font-semibold text-white">
                   BYOK — Gemini API Key
                 </h2>
-                <p className="mt-1 text-xs text-om-muted">
+                <p className="mt-1 text-sm text-om-muted">
                   Needed for photo meal scanning. Configure under Settings —
                   saved with your Drive diary file.
                 </p>
               </div>
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-sm">
                 {connected ? (
                   <>
                     <CheckCircle2 className="size-4 text-emerald-400" />
@@ -288,7 +288,7 @@ export function DashboardPage() {
                           <div className="truncate font-medium text-white">
                             {m.food_name}
                           </div>
-                          <div className="text-xs text-om-muted">
+                          <div className="text-sm text-om-muted">
                             {formatTime(new Date(m.recordedAt))} ·{" "}
                             {Math.round(m.calories)} kcal
                           </div>
@@ -326,10 +326,10 @@ export function DashboardPage() {
           <button
             type="button"
             onClick={() => clearError()}
-            className="w-full rounded-lg border border-red-500/40 bg-red-950/70 px-3 py-2 text-left text-sm text-red-200"
+            className="w-full rounded-lg border border-red-500/40 bg-red-950/70 px-4 py-3 text-left text-sm text-red-200"
           >
             {error}
-            <span className="mt-1 block text-xs text-red-300/80">
+            <span className="mt-1 block text-sm text-red-300/80">
               Tap to dismiss
             </span>
           </button>

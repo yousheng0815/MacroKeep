@@ -43,7 +43,7 @@ export function ProgressPhotoSlideshowPage() {
           <button
             type="button"
             onClick={goBack}
-            className="mx-auto inline-flex rounded-xl border border-om-border bg-om-bg px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+            className="mx-auto inline-flex rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
           >
             Back to Progress
           </button>

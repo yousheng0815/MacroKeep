@@ -134,12 +134,14 @@ export function TutorialPage() {
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <div className="rounded-2xl border border-om-border bg-om-surface px-4 py-3 sm:px-5">
         <div className="flex items-center justify-between gap-3">
-          <Logo className="text-base" />
-          <span className="rounded-full border border-om-border bg-om-bg px-2.5 py-1 text-[11px] font-medium text-zinc-300">
+          <Logo />
+          <span className="rounded-full border border-om-border bg-om-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
             Setup
           </span>
         </div>
-        <h1 className="mt-3 text-xl font-bold text-white">Set your targets</h1>
+        <h1 className="mt-3 text-xl font-bold tracking-tight text-white">
+          Set your targets
+        </h1>
         <p className="mt-1 text-sm text-om-muted">
           Add your Gemini API key, describe your goal, generate suggested
           calories/macros, then save them as your daily targets.
@@ -150,7 +152,7 @@ export function TutorialPage() {
         <h2 className="text-sm font-semibold text-white">
           Step 1: Gemini API key
         </h2>
-        <p className="mt-1 text-xs text-om-muted">
+        <p className="mt-1 text-sm text-om-muted">
           Need a key?{" "}
           <a
             className="text-blue-400 underline-offset-2 hover:underline"
@@ -162,7 +164,7 @@ export function TutorialPage() {
           </a>
           .
         </p>
-        <label className="mt-3 block text-xs text-zinc-400">
+        <label className="mt-3 block text-sm text-zinc-400">
           API key
           <input
             value={form.geminiApiKey}
@@ -171,7 +173,7 @@ export function TutorialPage() {
             }
             placeholder="AIza..."
             autoComplete="off"
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 font-mono text-sm text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 font-mono text-base text-white outline-none focus:border-emerald-400/60"
           />
         </label>
         <button
@@ -192,7 +194,7 @@ export function TutorialPage() {
               }
             })()
           }
-          className="relative mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ButtonPendingContents
             pending={isSaving}
@@ -209,7 +211,7 @@ export function TutorialPage() {
             Step 2: Profile + goal
           </h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="block text-xs text-zinc-400">
+            <label className="block text-sm text-zinc-400">
               Birthday
               <input
                 type="date"
@@ -217,10 +219,10 @@ export function TutorialPage() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, birthDate: e.target.value }))
                 }
-                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
               />
             </label>
-            <label className="block text-xs text-zinc-400">
+            <label className="block text-sm text-zinc-400">
               Height (cm)
               <input
                 inputMode="decimal"
@@ -231,10 +233,10 @@ export function TutorialPage() {
                     heightCm: Number(e.target.value),
                   }))
                 }
-                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
               />
             </label>
-            <label className="block text-xs text-zinc-400">
+            <label className="block text-sm text-zinc-400">
               Weight (kg)
               <input
                 inputMode="decimal"
@@ -245,10 +247,10 @@ export function TutorialPage() {
                     weightKg: Number(e.target.value),
                   }))
                 }
-                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
               />
             </label>
-            <label className="block text-xs text-zinc-400">
+            <label className="block text-sm text-zinc-400">
               Goal
               <select
                 value={form.goal}
@@ -258,7 +260,7 @@ export function TutorialPage() {
                     goal: e.target.value as MacroGoal,
                   }))
                 }
-                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
               >
                 {GOAL_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -267,7 +269,7 @@ export function TutorialPage() {
                 ))}
               </select>
             </label>
-            <label className="block text-xs text-zinc-400 sm:col-span-2">
+            <label className="block text-sm text-zinc-400 sm:col-span-2">
               Activity level
               <select
                 value={form.activityLevel}
@@ -277,7 +279,7 @@ export function TutorialPage() {
                     activityLevel: e.target.value as ActivityLevel,
                   }))
                 }
-                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none focus:border-emerald-400/60"
+                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
               >
                 {ACTIVITY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -286,7 +288,7 @@ export function TutorialPage() {
                 ))}
               </select>
             </label>
-            <label className="block text-xs text-zinc-400 sm:col-span-2">
+            <label className="block text-sm text-zinc-400 sm:col-span-2">
               Extra notes (optional)
               <textarea
                 value={form.notes}
@@ -295,7 +297,7 @@ export function TutorialPage() {
                 }
                 placeholder="Example: vegetarian, 4 lifting sessions/week"
                 rows={3}
-                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-emerald-400/60"
+                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none placeholder:text-zinc-600 focus:border-emerald-400/60"
               />
             </label>
           </div>
@@ -345,7 +347,7 @@ export function TutorialPage() {
                 }
               })()
             }
-            className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-2 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ButtonPendingContents
               pending={isGenerating}
@@ -362,7 +364,7 @@ export function TutorialPage() {
           <h2 className="text-sm font-semibold text-white">
             Step 3: Apply suggested targets
           </h2>
-          <p className="mt-2 text-xs text-om-muted">
+          <p className="mt-2 text-sm text-om-muted">
             {generatedPlan.rationale}
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -418,7 +420,7 @@ export function TutorialPage() {
                 }
               })()
             }
-            className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ButtonPendingContents
               pending={isSaving}
@@ -432,7 +434,7 @@ export function TutorialPage() {
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
 
-      <p className="text-xs text-zinc-500">
+      <p className="text-sm text-zinc-500">
         You can always fine tune in Settings.
       </p>
     </div>

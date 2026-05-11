@@ -255,7 +255,7 @@ export function ProgressPhotosSection({
         <h2 className="text-sm font-semibold text-white">
           Body progress photos
         </h2>
-        <p className="mt-1 text-xs text-om-muted">
+        <p className="mt-1 text-sm text-om-muted">
           Capture photos of your body progress.
         </p>
 
