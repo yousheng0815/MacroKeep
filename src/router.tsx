@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { AddFromHistoryPage } from "@/pages/AddFromHistoryPage";
 import { AddMealPage } from "@/pages/AddMealPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { DriveFilesPage } from "@/pages/DriveFilesPage";
@@ -79,6 +80,12 @@ const favoriteMealsRoute = createRoute({
   component: FavoriteMealsPage,
 });
 
+const addFromHistoryRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.add.history,
+  component: AddFromHistoryPage,
+});
+
 const manualMealRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: paths.add.manual,
@@ -141,6 +148,7 @@ const routeTree = rootRoute.addChildren([
     mealDetailRoute,
     addMealRoute,
     favoriteMealsRoute,
+    addFromHistoryRoute,
     manualMealRoute,
     legacyScannerRoute,
     legacyScannerFavoritesRoute,

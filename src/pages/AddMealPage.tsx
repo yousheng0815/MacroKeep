@@ -5,7 +5,7 @@ import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { consumePendingScanPhoto } from "@/lib/pending-scan-photo";
 import { paths } from "@/lib/routes";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Camera, ImagePlus, PenLine, Star } from "lucide-react";
+import { Camera, History, ImagePlus, PenLine, Star } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 
 export function AddMealPage() {
@@ -39,7 +39,7 @@ export function AddMealPage() {
     <div className="space-y-6">
       <PageHeader
         title="Add Meal"
-        subtitle="Estimate macros from a photo, type them in yourself, or reuse a saved meal."
+        subtitle="Estimate macros from a photo, type them in yourself, or reuse a past or saved meal."
       />
 
       <Card>
@@ -86,6 +86,14 @@ export function AddMealPage() {
           </button>
           <button
             type="button"
+            onClick={() => void navigate({ to: paths.add.history })}
+            className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
+          >
+            <History className="size-5 shrink-0 text-violet-400" />
+            Add from history
+          </button>
+          <button
+            type="button"
             onClick={() => void navigate({ to: paths.add.manual })}
             className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
@@ -100,8 +108,8 @@ export function AddMealPage() {
             <Link to={paths.tutorial} className="underline underline-offset-2">
               Setup Tutorial
             </Link>{" "}
-            (or Settings) to enable photo scanning. Manual entry and favorites
-            do not need it.
+            (or Settings) to enable photo scanning. Manual entry, history, and
+            favorites do not need it.
           </p>
         ) : null}
 

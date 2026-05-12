@@ -7,6 +7,7 @@ export const paths = {
   add: {
     root: "/add",
     favorites: "/add/favorites",
+    history: "/add/history",
     manual: "/add/manual",
   },
   progress: {
