@@ -5,7 +5,13 @@ import {
 import { useBlobObjectUrl } from "@/hooks/use-blob-object-url";
 import { compressProgressPhotoBlob } from "@/lib/progress-photo-compress";
 import type { ProgressPhotoItem, ProgressPhotoRecord } from "@/types/progress-photos";
-import { Camera, Check, ChevronLeft, RotateCcw } from "lucide-react";
+import {
+  Camera,
+  Check,
+  ChevronLeft,
+  RotateCcw,
+  SwitchCamera,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -28,6 +34,9 @@ export function ProgressPhotoCaptureScreen({
   const [ghostOverlayOpacity, setGhostOverlayOpacity] = useState(0.38);
   const [phase, setPhase] = useState<"live" | "preview">("live");
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [cameraFacing, setCameraFacing] = useState<"user" | "environment">(
+    "user",
+  );
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -75,7 +84,7 @@ export function ProgressPhotoCaptureScreen({
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: "user",
+            facingMode: { ideal: cameraFacing },
             width: { ideal: 1280 },
             height: { ideal: 720 },
           },
@@ -113,7 +122,9 @@ export function ProgressPhotoCaptureScreen({
       if (videoAttach) videoAttach.srcObject = null;
       videoAttach = null;
     };
-  }, [phase]);
+  }, [cameraFacing, phase]);
+
+  const mirrorPreview = cameraFacing === "user";
 
   const captureFromVideo = useCallback(async () => {
     const video = videoRef.current;
@@ -127,8 +138,10 @@ export function ProgressPhotoCaptureScreen({
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Could not capture");
 
-    ctx.translate(w, 0);
-    ctx.scale(-1, 1);
+    if (mirrorPreview) {
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+    }
     ctx.drawImage(video, 0, 0, w, h);
 
     const raw = await new Promise<Blob>((resolve, reject) => {
@@ -141,7 +154,7 @@ export function ProgressPhotoCaptureScreen({
     const compressed = await compressProgressPhotoBlob(raw);
     setPreviewBlob(compressed);
     setPhase("preview");
-  }, []);
+  }, [mirrorPreview]);
 
   const onSave = useCallback(async () => {
     if (!previewBlob) return;
@@ -199,11 +212,24 @@ export function ProgressPhotoCaptureScreen({
                 <>
                   <video
                     ref={videoRef}
-                    className="size-full scale-x-[-1] object-cover"
+                    className={`size-full object-cover${mirrorPreview ? " scale-x-[-1]" : ""}`}
                     playsInline
                     muted
                     autoPlay
                   />
+                  <button
+                    type="button"
+                    disabled={!!cameraError || busy}
+                    onClick={() =>
+                      setCameraFacing((facing) =>
+                        facing === "user" ? "environment" : "user",
+                      )
+                    }
+                    className="absolute right-3 top-3 inline-flex size-11 items-center justify-center rounded-full border border-zinc-700/80 bg-black/55 text-white backdrop-blur-sm hover:bg-black/75 disabled:opacity-40"
+                    aria-label="Switch camera"
+                  >
+                    <SwitchCamera className="size-5" />
+                  </button>
                   {ghostDisplayUrl ? (
                     <img
                       src={ghostDisplayUrl}
