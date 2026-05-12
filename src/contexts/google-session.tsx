@@ -26,6 +26,8 @@ export type GoogleSessionContextValue = {
   signedIn: boolean;
   hasDriveAppDataScope: boolean;
   sessionReady: boolean;
+  /** Silent broker refresh in progress for a remembered Google account. */
+  reconnecting: boolean;
   error: string | null;
   signIn: (opts?: GoogleSignInOptions) => void;
   signOut: () => Promise<void>;
@@ -42,6 +44,7 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [oauthEpoch, setOauthEpoch] = useState(0);
+  const [sessionReconnectFailed, setSessionReconnectFailed] = useState(false);
 
   const refresh = useCallback(() => {
     setOauthEpoch((n) => n + 1);
@@ -54,6 +57,12 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
     hasGoogleSession() &&
     hasValidGoogleAccessToken() &&
     readHasDriveAppDataScope();
+  const reconnecting =
+    ready &&
+    signedIn &&
+    !sessionReady &&
+    hasDriveAppDataScope &&
+    !sessionReconnectFailed;
 
   useEffect(() => {
     let cancelled = false;
@@ -96,12 +105,21 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!ready || !hasGoogleSession()) return;
-    if (hasValidGoogleAccessToken() && readHasDriveAppDataScope()) return;
+    if (hasValidGoogleAccessToken() && readHasDriveAppDataScope()) {
+      setSessionReconnectFailed(false);
+      return;
+    }
 
     let cancelled = false;
+    setSessionReconnectFailed(false);
     const bump = () => {
       void ensureGoogleAccessToken().then((t) => {
-        if (cancelled || !t) return;
+        if (cancelled) return;
+        if (!t) {
+          setSessionReconnectFailed(true);
+          return;
+        }
+        setSessionReconnectFailed(false);
         refresh();
       });
     };
@@ -118,6 +136,7 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback((opts?: GoogleSignInOptions) => {
     setError(null);
+    setSessionReconnectFailed(false);
     void startGoogleOAuthRedirect(opts);
   }, []);
 
@@ -134,6 +153,7 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
       signedIn,
       hasDriveAppDataScope,
       sessionReady,
+      reconnecting,
       error,
       signIn,
       signOut,
@@ -144,6 +164,7 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
       signedIn,
       hasDriveAppDataScope,
       sessionReady,
+      reconnecting,
       error,
       signIn,
       signOut,

@@ -12,8 +12,6 @@ export type MealRecord = {
   sourceFavoriteMealId?: string;
   /** Google Drive file id (App Data folder) for the meal photo. */
   photoFileId?: string;
-  /** @deprecated Legacy second file; new saves only set {@link photoFileId}. */
-  thumbnailFileId?: string;
 };
 
 export type UserProfile = {

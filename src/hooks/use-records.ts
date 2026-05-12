@@ -167,7 +167,7 @@ export function useRecords() {
     async (
       meal: Omit<
         MealRecord,
-        "id" | "recordedAt" | "photoFileId" | "thumbnailFileId"
+        "id" | "recordedAt" | "photoFileId"
       > & {
         /**
          * Optional id for multi-phase flows (e.g. upload photo in parallel with AI).
@@ -317,7 +317,6 @@ export function useRecords() {
       const removed = prev.meals.find((m) => m.id === id);
       if (!removed) throw new Error("Meal not found");
       const photoId = removed.photoFileId;
-      const thumbId = removed.thumbnailFileId;
       const next: RecordsDocument = {
         ...prev,
         meals: prev.meals.filter((m) => m.id !== id),
@@ -327,22 +326,14 @@ export function useRecords() {
         mealsOnly: true,
         mealMonthKeysToSync: [monthKeyFromRecordedAt(removed.recordedAt)],
       });
-      if ((photoId || thumbId) && canSyncToDriveAppData()) {
+      if (photoId && canSyncToDriveAppData()) {
         const token = await ensureGoogleAccessToken();
         if (token) {
           try {
-            const photoStillReferenced =
-              !!photoId &&
-              next.meals.some(
-                (m) => m.photoFileId === photoId || m.thumbnailFileId === photoId,
-              );
-            const thumbStillReferenced =
-              !!thumbId &&
-              next.meals.some(
-                (m) => m.thumbnailFileId === thumbId || m.photoFileId === thumbId,
-              );
-            if (photoId && !photoStillReferenced) await deleteDriveFile(token, photoId);
-            if (thumbId && !thumbStillReferenced) await deleteDriveFile(token, thumbId);
+            const photoStillReferenced = next.meals.some(
+              (m) => m.photoFileId === photoId,
+            );
+            if (!photoStillReferenced) await deleteDriveFile(token, photoId);
           } catch {
             /* Snapshot may remain orphaned in App Data if delete fails. */
           }
@@ -370,7 +361,6 @@ export function useRecords() {
       > & {
         /** New Drive file id, or `null` / empty string to drop the meal photo. */
         photoFileId?: string | null;
-        thumbnailFileId?: string | null;
       },
     ) => {
       const prev = getCurrentRecords();
@@ -378,29 +368,16 @@ export function useRecords() {
       if (!hasTarget) throw new Error("Meal not found");
       const prevMeal = prev.meals.find((m) => m.id === id)!;
       const oldPhotoId = prevMeal.photoFileId;
-      const oldThumbId = prevMeal.thumbnailFileId;
 
-      const {
-        photoFileId: patchPhoto,
-        thumbnailFileId: patchThumb,
-        ...scalarPatch
-      } = patch;
+      const { photoFileId: patchPhoto, ...scalarPatch } = patch;
 
       const updated: MealRecord = { ...prevMeal, ...scalarPatch };
 
       if ("photoFileId" in patch) {
         if (patchPhoto === null || patchPhoto === "") {
           delete updated.photoFileId;
-          delete updated.thumbnailFileId;
         } else if (typeof patchPhoto === "string") {
           updated.photoFileId = patchPhoto;
-          delete updated.thumbnailFileId;
-        }
-      } else if ("thumbnailFileId" in patch) {
-        if (patchThumb === null || patchThumb === "") {
-          delete updated.thumbnailFileId;
-        } else if (typeof patchThumb === "string") {
-          updated.thumbnailFileId = patchThumb;
         }
       }
 
@@ -427,31 +404,17 @@ export function useRecords() {
       });
 
       const newPhotoId = updated.photoFileId;
-      const newThumbId = updated.thumbnailFileId;
-      const photoRefsChanged =
-        oldPhotoId !== newPhotoId || oldThumbId !== newThumbId;
-      if (photoRefsChanged && canSyncToDriveAppData()) {
+      if (oldPhotoId !== newPhotoId && canSyncToDriveAppData()) {
         const token = await ensureGoogleAccessToken();
-        if (token) {
-          const mealsAfter = next.meals;
-          const deleteIfUnreferenced = async (
-            fileId: string | undefined,
-            replacementPrimary: string | undefined,
-          ) => {
-            if (!fileId || fileId === replacementPrimary) return;
-            const still = mealsAfter.some(
-              (m) => m.photoFileId === fileId || m.thumbnailFileId === fileId,
-            );
-            if (!still) {
-              try {
-                await deleteDriveFile(token, fileId);
-              } catch {
-                /* best-effort */
-              }
+        if (token && oldPhotoId && oldPhotoId !== newPhotoId) {
+          const still = next.meals.some((m) => m.photoFileId === oldPhotoId);
+          if (!still) {
+            try {
+              await deleteDriveFile(token, oldPhotoId);
+            } catch {
+              /* best-effort */
             }
-          };
-          await deleteIfUnreferenced(oldPhotoId, newPhotoId);
-          await deleteIfUnreferenced(oldThumbId, newThumbId);
+          }
         }
       }
     },

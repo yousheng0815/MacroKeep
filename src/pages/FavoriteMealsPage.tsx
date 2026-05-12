@@ -16,7 +16,6 @@ type FavoriteTemplate = {
   carbs: number;
   sourceFavoriteMealId: string;
   sourcePhotoFileId?: string;
-  sourceThumbnailFileId?: string;
 };
 
 function getFavoriteTemplates(meals: MealRecord[]): FavoriteTemplate[] {
@@ -39,8 +38,7 @@ function getFavoriteTemplates(meals: MealRecord[]): FavoriteTemplate[] {
       fats: m.fats,
       carbs: m.carbs,
       sourceFavoriteMealId: m.id,
-      sourcePhotoFileId: m.photoFileId ?? m.thumbnailFileId,
-      sourceThumbnailFileId: m.thumbnailFileId,
+      sourcePhotoFileId: m.photoFileId,
     }));
 }
 
@@ -114,7 +112,6 @@ export function FavoriteMealsPage() {
                 >
                   <MealPhotoThumb
                     photoFileId={item.sourcePhotoFileId}
-                    thumbnailFileId={item.sourceThumbnailFileId}
                     alt={item.food_name}
                     className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
                   />

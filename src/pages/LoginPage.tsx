@@ -19,6 +19,7 @@ export function LoginPage() {
     sessionReady,
     signedIn,
     hasDriveAppDataScope,
+    reconnecting,
     error,
     signIn,
   } = useGoogleSession();
@@ -63,8 +64,6 @@ export function LoginPage() {
   }, [oauthRetrySearch, navigate]);
 
   const needsConsent = ready && signedIn && !hasDriveAppDataScope;
-  const reconnecting =
-    ready && signedIn && !sessionReady && !needsConsent;
 
   if (ready && sessionReady) {
     return <Navigate to="/" replace />;

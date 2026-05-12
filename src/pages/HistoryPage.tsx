@@ -137,7 +137,6 @@ export function HistoryPage() {
                     >
                       <MealPhotoThumb
                         photoFileId={m.photoFileId}
-                        thumbnailFileId={m.thumbnailFileId}
                         alt={m.food_name}
                         className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
                       />

@@ -3,7 +3,6 @@ import { ImagePlus } from "lucide-react";
 
 type MealPhotoThumbProps = {
   photoFileId?: string;
-  thumbnailFileId?: string;
   alt: string;
   /** Wrapper box (layout + clipping); inner `<img>` uses `size-full object-cover`. */
   className?: string;
@@ -11,13 +10,12 @@ type MealPhotoThumbProps = {
 
 export function MealPhotoThumb({
   photoFileId,
-  thumbnailFileId,
   alt,
   className = "size-10 shrink-0 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800",
 }: MealPhotoThumbProps) {
-  const src = useDrivePhotoUrl(thumbnailFileId || photoFileId);
+  const src = useDrivePhotoUrl(photoFileId);
 
-  if (!thumbnailFileId && !photoFileId) {
+  if (!photoFileId) {
     return (
       <div
         className={`flex items-center justify-center ${className}`}

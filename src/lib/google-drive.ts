@@ -81,10 +81,6 @@ function normalizeMeal(row: Partial<MealRecord> | null | undefined): MealRecord 
     typeof row.photoFileId === "string" && row.photoFileId.trim().length > 0
       ? row.photoFileId.trim()
       : undefined;
-  const thumbnailFileId =
-    typeof row.thumbnailFileId === "string" && row.thumbnailFileId.trim().length > 0
-      ? row.thumbnailFileId.trim()
-      : undefined;
   const meal: MealRecord = {
     id,
     food_name,
@@ -102,7 +98,6 @@ function normalizeMeal(row: Partial<MealRecord> | null | undefined): MealRecord 
     meal.sourceFavoriteMealId = row.sourceFavoriteMealId.trim();
   }
   if (photoFileId) meal.photoFileId = photoFileId;
-  if (thumbnailFileId) meal.thumbnailFileId = thumbnailFileId;
   return meal;
 }
 

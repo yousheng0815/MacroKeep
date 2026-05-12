@@ -160,7 +160,6 @@ export function MealDetailPage() {
         <div className="flex items-start gap-4">
           <MealPhotoThumb
             photoFileId={meal.photoFileId}
-            thumbnailFileId={meal.thumbnailFileId}
             alt={meal.food_name}
             className="size-20 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
           />
@@ -347,10 +346,9 @@ export function MealDetailPage() {
                       alt="New meal photo preview"
                       className="size-full object-cover"
                     />
-                  ) : meal.photoFileId || meal.thumbnailFileId ? (
+                  ) : meal.photoFileId ? (
                     <MealPhotoThumb
                       photoFileId={meal.photoFileId}
-                      thumbnailFileId={meal.thumbnailFileId}
                       alt={meal.food_name}
                       className="size-full shrink-0 overflow-hidden rounded-lg border border-zinc-700 bg-zinc-800"
                     />
@@ -369,9 +367,7 @@ export function MealDetailPage() {
                     className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                   >
                     <Camera className="size-4 text-emerald-400 md:size-5" />
-                    {meal.photoFileId || meal.thumbnailFileId
-                      ? "Retake"
-                      : "Take photo"}
+                    {meal.photoFileId ? "Retake" : "Take photo"}
                   </button>
                   <button
                     type="button"
@@ -380,7 +376,7 @@ export function MealDetailPage() {
                     className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                   >
                     <ImagePlus className="size-4 text-orange-500 md:size-5" />
-                    {meal.photoFileId || meal.thumbnailFileId
+                    {meal.photoFileId
                       ? "Replace from library"
                       : "Upload from library"}
                   </button>

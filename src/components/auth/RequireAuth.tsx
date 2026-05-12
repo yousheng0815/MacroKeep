@@ -81,6 +81,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     ready,
     sessionReady,
     signedIn,
+    reconnecting,
     signIn,
     error,
     hasDriveAppDataScope,
@@ -103,6 +104,16 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!sessionReady) {
     const needsConsent = signedIn && !hasDriveAppDataScope;
+
+    if (reconnecting) {
+      return (
+        <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-om-bg text-zinc-400">
+          <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
+          <p className="text-sm">Signing you back in…</p>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-om-bg px-6 text-center text-zinc-100">
         <div className="max-w-md space-y-3">

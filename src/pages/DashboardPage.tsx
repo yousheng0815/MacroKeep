@@ -281,7 +281,6 @@ export function DashboardPage() {
                       >
                         <MealPhotoThumb
                           photoFileId={m.photoFileId}
-                          thumbnailFileId={m.thumbnailFileId}
                           alt={m.food_name}
                         />
                         <div className="w-0 flex-1">
