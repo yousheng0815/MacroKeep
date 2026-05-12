@@ -446,12 +446,12 @@ export function MealDetailPage() {
               </p>
             ) : null}
 
-            <div className="flex flex-wrap items-center gap-3 pt-1">
+            <div className="btn-pair-row pt-1">
               <button
                 type="submit"
                 disabled={savePending || deletePending || favoritePending}
                 aria-busy={savePending}
-                className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+                className="relative flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <ButtonPendingContents
                   pending={savePending}
@@ -465,7 +465,7 @@ export function MealDetailPage() {
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
                 onClick={() => endEditing()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -515,7 +515,7 @@ export function MealDetailPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-1">
+            <div className="btn-pair-row pt-1">
               <button
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
@@ -523,7 +523,7 @@ export function MealDetailPage() {
                   setEditError(null);
                   setEditing(true);
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Pencil className="size-4" />
                 Edit meal
@@ -533,7 +533,7 @@ export function MealDetailPage() {
                 type="button"
                 disabled={savePending || deletePending || favoritePending}
                 aria-busy={deletePending}
-                className="relative inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="relative flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => {
                   if (!window.confirm("Delete this meal?")) return;
                   void (async () => {

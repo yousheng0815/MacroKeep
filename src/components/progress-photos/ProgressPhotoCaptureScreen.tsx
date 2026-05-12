@@ -284,7 +284,7 @@ export function ProgressPhotoCaptureScreen({
             {saveError ? (
               <p className="text-center text-sm text-red-400">{saveError}</p>
             ) : null}
-            <div className="mx-auto mt-auto flex w-full max-w-md flex-wrap gap-3 border-t border-zinc-800 pt-6">
+            <div className="btn-pair-row mx-auto mt-auto w-full max-w-md border-t border-zinc-800 pt-6">
               <button
                 type="button"
                 disabled={busy}
@@ -292,7 +292,7 @@ export function ProgressPhotoCaptureScreen({
                   setPreviewBlob(null);
                   setPhase("live");
                 }}
-                className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-600 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-900 disabled:opacity-60 sm:flex-none"
+                className="flex items-center justify-center gap-2 rounded-xl border border-zinc-600 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-900 disabled:opacity-60"
               >
                 <RotateCcw className="size-4 shrink-0" />
                 Retake
@@ -301,7 +301,7 @@ export function ProgressPhotoCaptureScreen({
                 type="button"
                 disabled={busy}
                 onClick={() => void onSave()}
-                className="relative inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-zinc-200 disabled:opacity-60 sm:flex-none"
+                className="relative flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-zinc-200 disabled:opacity-60"
               >
                 <ButtonPendingContents
                   pending={busy}

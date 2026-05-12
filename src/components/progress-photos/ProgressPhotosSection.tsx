@@ -306,18 +306,18 @@ export function ProgressPhotosSection({
           )}
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-3 border-t border-om-border pt-4">
+        <div className="btn-pair-row mt-4 border-t border-om-border pt-4">
           <Link
             to="/progress"
             search={{ capture: "1" }}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-black hover:bg-emerald-400 sm:flex-none"
+            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-black hover:bg-emerald-400"
           >
             <Camera className="size-5" />
             Add photo
           </Link>
           {photos.length < 2 ? (
             <span
-              className="inline-flex flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-white opacity-40 sm:flex-none"
+              className="flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-white opacity-40"
               aria-disabled
             >
               <Play className="size-5 text-emerald-400" />
@@ -326,7 +326,7 @@ export function ProgressPhotosSection({
           ) : (
             <Link
               to="/progress/photos/slideshow"
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-900 sm:flex-none"
+              className="flex items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-900"
             >
               <Play className="size-5 text-emerald-400" />
               Play back
