@@ -5,7 +5,10 @@ import {
 import { Card } from "@/components/Card";
 import { Logo } from "@/components/Logo";
 import { useRecords } from "@/hooks/use-records";
-import { ageYearsFromIsoBirthDate, isValidIsoBirthDate } from "@/lib/birth-date";
+import {
+  ageYearsFromIsoBirthDate,
+  isValidIsoBirthDate,
+} from "@/lib/birth-date";
 import {
   suggestMacroPlan,
   type ActivityLevel,
@@ -119,7 +122,8 @@ export function TutorialPage() {
         </h1>
         <p className="mt-1 text-sm text-om-muted">
           Add your Gemini API key, describe your goal, generate suggested
-          calories/macros, then save them as your daily targets.
+          calories/macros, then save them as your daily targets. You can always
+          change them in Settings.
         </p>
       </div>
 
@@ -171,10 +175,7 @@ export function TutorialPage() {
           }
           className="relative mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <ButtonPendingContents
-            pending={isSaving}
-            spinner={<ButtonSpinner />}
-          >
+          <ButtonPendingContents pending={isSaving} spinner={<ButtonSpinner />}>
             Save key
           </ButtonPendingContents>
         </button>
@@ -408,10 +409,6 @@ export function TutorialPage() {
       ) : null}
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
-
-      <p className="text-sm text-zinc-500">
-        You can always fine tune in Settings.
-      </p>
     </div>
   );
 }
