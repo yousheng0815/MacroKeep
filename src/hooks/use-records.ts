@@ -1,7 +1,6 @@
 import {
   canSyncToDriveAppData,
   ensureGoogleAccessToken,
-  fetchGoogleProfileBirthDate,
   getGoogleUserId,
 } from "@/lib/gapi";
 import {
@@ -66,8 +65,6 @@ export function useRecords() {
       const pulled = await pullRecordsCoreFromDrive(token);
       if (!pulled.core) {
         const initial = emptyRecords();
-        const googleBirth = await fetchGoogleProfileBirthDate(token);
-        if (googleBirth) initial.profile.birthDate = googleBirth;
         await persistRecordsToDrive(token, initial);
         return {
           core: splitNormalized(initial).core,

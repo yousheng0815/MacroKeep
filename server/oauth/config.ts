@@ -1,15 +1,11 @@
 import type { IncomingHttpHeaders } from "node:http";
 
 /** Same scopes as the SPA Drive client — see {@link src/lib/gapi.ts} `DRIVE_APPDATA_SCOPE` etc. */
-const GOOGLE_USER_BIRTHDAY_READ =
-  "https://www.googleapis.com/auth/user.birthday.read";
-
 export const GOOGLE_OAUTH_SCOPES = [
   "https://www.googleapis.com/auth/drive.appdata",
   "openid",
   "email",
   "profile",
-  GOOGLE_USER_BIRTHDAY_READ,
 ].join(" ");
 
 export const SESSION_COOKIE = "om_session";

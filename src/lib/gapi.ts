@@ -1,6 +1,5 @@
 /** Server OAuth + Firestore refresh tokens; access tokens via `/api/google/access-token`. */
 
-import { isoBirthDateFromParts } from "@/lib/birth-date";
 import {
   clearPersistedOAuth,
   loadPersistedOAuth,
@@ -23,8 +22,6 @@ let accessValidUntilMs = 0;
 let lastGrantedScopeRaw = "";
 let cachedUserSub: string | null = null;
 let cachedUserEmail: string | null = null;
-/** Primary birthday from People API (`YYYY-MM-DD`), when Google exposes year+date. */
-let cachedGoogleBirthDate: string | null = null;
 
 const EXPIRY_SKEW_MS = 60_000;
 
@@ -62,43 +59,6 @@ async function hydrateUserFromGoogle(token: string): Promise<void> {
   }
 }
 
-type PeopleBirthdayEntry = {
-  metadata?: { primary?: boolean };
-  date?: { year?: number; month?: number; day?: number };
-};
-
-async function hydrateBirthdayFromPeople(token: string): Promise<void> {
-  try {
-    const url = new URL("https://people.googleapis.com/v1/people/me");
-    url.searchParams.set("personFields", "birthdays");
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return;
-    const data = (await res.json()) as { birthdays?: PeopleBirthdayEntry[] };
-    const birthdays = data.birthdays;
-    if (!Array.isArray(birthdays) || birthdays.length === 0) {
-      cachedGoogleBirthDate = null;
-      return;
-    }
-    const chosen =
-      birthdays.find((b) => b.metadata?.primary === true) ?? birthdays[0];
-    const date = chosen?.date;
-    if (!date || typeof date.year !== "number") {
-      cachedGoogleBirthDate = null;
-      return;
-    }
-    const iso = isoBirthDateFromParts(
-      date.year,
-      typeof date.month === "number" ? date.month : 1,
-      typeof date.day === "number" ? date.day : 1,
-    );
-    cachedGoogleBirthDate = iso;
-  } catch {
-    /* People API optional */
-  }
-}
-
 async function hydrateScopesFromToken(token: string): Promise<void> {
   try {
     const res = await fetch(
@@ -120,7 +80,6 @@ function clearSession(): void {
   lastGrantedScopeRaw = "";
   cachedUserSub = null;
   cachedUserEmail = null;
-  cachedGoogleBirthDate = null;
   clearPersistedOAuth();
   notifyOAuthChanged();
 }
@@ -212,7 +171,6 @@ async function fetchSessionFromBroker(): Promise<boolean> {
     applyTokenResponse(data);
     await Promise.all([
       hydrateUserFromGoogle(data.access_token),
-      hydrateBirthdayFromPeople(data.access_token),
       data.scope ? Promise.resolve() : hydrateScopesFromToken(data.access_token),
     ]);
     if (data.scope) lastGrantedScopeRaw = data.scope;
@@ -283,7 +241,6 @@ export async function ensureGoogleAccessToken(): Promise<string | null> {
         applyTokenResponse(data);
         await Promise.all([
           hydrateUserFromGoogle(data.access_token),
-          hydrateBirthdayFromPeople(data.access_token),
           data.scope
             ? Promise.resolve()
             : hydrateScopesFromToken(data.access_token),
@@ -382,18 +339,4 @@ export function getGoogleUserEmail(): string | null {
 
 export function getGoogleUserId(): string | null {
   return cachedUserSub;
-}
-
-/** Last primary birthday fetched via People API (requires `user.birthday.read`). */
-export function getGoogleProfileBirthDate(): string | null {
-  return cachedGoogleBirthDate;
-}
-
-/**
- * Loads the signed-in user's birthday from Google People (if permitted and present).
- * Updates the in-memory cache returned by {@link getGoogleProfileBirthDate}.
- */
-export async function fetchGoogleProfileBirthDate(token: string): Promise<string | null> {
-  await hydrateBirthdayFromPeople(token);
-  return cachedGoogleBirthDate;
 }

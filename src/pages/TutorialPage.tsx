@@ -7,17 +7,11 @@ import { Logo } from "@/components/Logo";
 import { useRecords } from "@/hooks/use-records";
 import { ageYearsFromIsoBirthDate, isValidIsoBirthDate } from "@/lib/birth-date";
 import {
-  ensureGoogleAccessToken,
-  fetchGoogleProfileBirthDate,
-  getGoogleProfileBirthDate,
-} from "@/lib/gapi";
-import {
   suggestMacroPlan,
   type ActivityLevel,
   type MacroGoal,
   type MacroPlanSuggestion,
 } from "@/lib/gemini";
-import { DEFAULT_PROFILE } from "@/types/records";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
@@ -84,25 +78,6 @@ export function TutorialPage() {
       !isGenerating,
     [form, hasSavedKey, isGenerating],
   );
-
-  useEffect(() => {
-    if (didHydrateFromDraft) return;
-    if (records.onboardingDraft) return;
-    if (records.profile.birthDate !== DEFAULT_PROFILE.birthDate) return;
-
-    let cancelled = false;
-    void (async () => {
-      const token = await ensureGoogleAccessToken();
-      if (!token) return;
-      await fetchGoogleProfileBirthDate(token);
-      if (cancelled) return;
-      const google = getGoogleProfileBirthDate();
-      if (google) setForm((prev) => ({ ...prev, birthDate: google }));
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [didHydrateFromDraft, records.onboardingDraft, records.profile.birthDate]);
 
   useEffect(() => {
     if (didHydrateFromDraft) return;
