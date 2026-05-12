@@ -19,19 +19,21 @@
     @apply grid grid-cols-2 gap-3;
   }
 
+  /* Below sm: grid cells should fill each column. */
+  .btn-pair-row > * {
+    @apply min-w-0 w-full;
+  }
+
   @screen sm {
     .btn-pair-row {
       display: flex;
       flex-wrap: wrap;
     }
 
+    /* Must follow the rule above so this wins over w-full on wider viewports. */
     .btn-pair-row > * {
-      width: auto;
+      @apply w-auto flex-1 min-w-0;
     }
-  }
-
-  .btn-pair-row > * {
-    @apply min-w-0 w-full;
   }
 }
 
