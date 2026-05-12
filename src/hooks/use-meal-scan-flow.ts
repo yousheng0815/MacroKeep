@@ -7,6 +7,7 @@ import {
   ensureGoogleAccessToken,
 } from "@/lib/gapi";
 import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
+import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
@@ -96,9 +97,9 @@ export function useMealScanFlow() {
 
       if (nextMealId) {
         void navigate({
-          to: "/meals/$mealId",
+          to: paths.mealDetail,
           params: { mealId: nextMealId },
-          state: { navFrom: "/scanner" },
+          state: { navFrom: paths.add.root },
         });
       }
     },

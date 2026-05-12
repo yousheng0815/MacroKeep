@@ -3,6 +3,7 @@ import { Card } from "@/components/Card";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
+import { paths } from "@/lib/routes";
 import type { MealRecord } from "@/types/records";
 import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -71,9 +72,9 @@ export function FavoriteMealsPage() {
         },
       );
       await navigate({
-        to: "/meals/$mealId",
+        to: paths.mealDetail,
         params: { mealId },
-        state: { navFrom: "/scanner" },
+        state: { navFrom: paths.add.root },
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not add meal.");
@@ -86,7 +87,7 @@ export function FavoriteMealsPage() {
     <div className="space-y-6 overflow-x-hidden">
       <PageHeader
         title="Add From Favorites"
-        backTo="/scanner"
+        backTo={paths.add.root}
         backAriaLabel="Back to add meal"
         subtitle="Pick a favorite to quickly add it as a new meal entry."
       />

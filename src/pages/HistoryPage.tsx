@@ -12,6 +12,7 @@ import {
   isSameLocalDay,
   startOfLocalDay,
 } from "@/lib/date";
+import { paths } from "@/lib/routes";
 import type { MealRecord } from "@/types/records";
 import { Link } from "@tanstack/react-router";
 import { Loader2, Star, Tag } from "lucide-react";
@@ -130,9 +131,9 @@ export function HistoryPage() {
                 {items.map((m) => (
                   <li key={m.id} className="min-w-0 overflow-hidden">
                     <Link
-                      to="/meals/$mealId"
+                      to={paths.mealDetail}
                       params={{ mealId: m.id }}
-                      state={{ navFrom: "/history" }}
+                      state={{ navFrom: paths.history }}
                       className="flex w-full max-w-full min-w-0 items-start gap-3 py-3 overflow-hidden transition hover:bg-zinc-900/40"
                     >
                       <MealPhotoThumb

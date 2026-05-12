@@ -11,6 +11,7 @@ import { MealScanOverlays } from "@/components/scanner/MealScanOverlays";
 import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { useRecords } from "@/hooks/use-records";
 import { formatTime, isSameLocalDay, startOfLocalDay } from "@/lib/date";
+import { paths } from "@/lib/routes";
 import type { MealRecord } from "@/types/records";
 import { Link } from "@tanstack/react-router";
 import { Camera, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
@@ -274,9 +275,9 @@ export function DashboardPage() {
                   mealsToday.map((m) => (
                     <li key={m.id}>
                       <Link
-                        to="/meals/$mealId"
+                        to={paths.mealDetail}
                         params={{ mealId: m.id }}
-                        state={{ navFrom: "/" }}
+                        state={{ navFrom: paths.home }}
                         className="flex items-center gap-3 py-3 transition hover:bg-zinc-900/40"
                       >
                         <MealPhotoThumb

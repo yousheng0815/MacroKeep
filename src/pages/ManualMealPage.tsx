@@ -7,6 +7,7 @@ import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
 import { fileToBase64 } from "@/lib/file-to-base64";
+import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import { Camera, ImagePlus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -73,7 +74,7 @@ export function ManualMealPage() {
     <div className="space-y-6">
       <PageHeader
         title="Add manually"
-        backTo="/scanner"
+        backTo={paths.add.root}
         backAriaLabel="Back to add meal"
         subtitle="Enter macros yourself. Optionally attach a photo saved with the meal."
       />
@@ -115,9 +116,9 @@ export function ManualMealPage() {
                   photoOpts,
                 );
                 await navigate({
-                  to: "/meals/$mealId",
+                  to: paths.mealDetail,
                   params: { mealId },
-                  state: { navFrom: "/scanner" },
+                  state: { navFrom: paths.add.root },
                   replace: true,
                 });
               } catch (err) {

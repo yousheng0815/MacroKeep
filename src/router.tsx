@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { AddMealPage } from "@/pages/AddMealPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { DriveFilesPage } from "@/pages/DriveFilesPage";
 import { FavoriteMealsPage } from "@/pages/FavoriteMealsPage";
@@ -9,11 +10,13 @@ import { MealDetailPage } from "@/pages/MealDetailPage";
 import { ProgressPage } from "@/pages/ProgressPage";
 import { ProgressPhotoSlideshowPage } from "@/pages/ProgressPhotoSlideshowPage";
 import { ManualMealPage } from "@/pages/ManualMealPage";
-import { ScannerPage } from "@/pages/ScannerPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { TutorialPage } from "@/pages/TutorialPage";
 import { GoogleSessionProvider } from "@/contexts/google-session";
+import { legacyPaths, paths } from "@/lib/routes";
+import type { MealDetailNavFrom } from "@/lib/routes";
 import {
+  Navigate,
   Outlet,
   createRootRoute,
   createRoute,
@@ -30,7 +33,7 @@ const rootRoute = createRootRoute({
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/login",
+  path: paths.login,
   component: LoginPage,
 });
 
@@ -48,67 +51,85 @@ const appLayoutRoute = createRoute({
 
 const dashboardRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/",
+  path: paths.home,
   component: DashboardPage,
 });
 
 const historyRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/history",
+  path: paths.history,
   component: HistoryPage,
 });
 
 const mealDetailRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/meals/$mealId",
+  path: paths.mealDetail,
   component: MealDetailPage,
 });
 
-const scannerRoute = createRoute({
+const addMealRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/scanner",
-  component: ScannerPage,
+  path: paths.add.root,
+  component: AddMealPage,
 });
 
 const favoriteMealsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/scanner/favorites",
+  path: paths.add.favorites,
   component: FavoriteMealsPage,
 });
 
 const manualMealRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/scanner/manual",
+  path: paths.add.manual,
   component: ManualMealPage,
+});
+
+const legacyScannerRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: legacyPaths.scanner,
+  component: () => <Navigate to={paths.add.root} replace />,
+});
+
+const legacyScannerFavoritesRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: legacyPaths.scannerFavorites,
+  component: () => <Navigate to={paths.add.favorites} replace />,
+});
+
+const legacyScannerManualRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: legacyPaths.scannerManual,
+  component: () => <Navigate to={paths.add.manual} replace />,
 });
 
 const progressRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/progress",
+  path: paths.progress.root,
   component: ProgressPage,
 });
 
 const progressPhotoSlideshowRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/progress/photos/slideshow",
+  path: paths.progress.slideshow,
   component: ProgressPhotoSlideshowPage,
 });
 
 const driveRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/drive",
+  path: paths.drive,
   component: DriveFilesPage,
 });
 
 const settingsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/settings",
+  path: paths.settings,
   component: SettingsPage,
 });
 
 const tutorialRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: "/tutorial",
+  path: paths.tutorial,
   component: TutorialPage,
 });
 
@@ -118,9 +139,12 @@ const routeTree = rootRoute.addChildren([
     dashboardRoute,
     historyRoute,
     mealDetailRoute,
-    scannerRoute,
+    addMealRoute,
     favoriteMealsRoute,
     manualMealRoute,
+    legacyScannerRoute,
+    legacyScannerFavoritesRoute,
+    legacyScannerManualRoute,
     progressRoute,
     progressPhotoSlideshowRoute,
     driveRoute,
@@ -141,6 +165,6 @@ declare module "@tanstack/react-router" {
 
   /** Location state for highlighting the shell nav on `/meals/:id`. */
   interface HistoryState {
-    navFrom?: "/" | "/history" | "/scanner" | "/progress";
+    navFrom?: MealDetailNavFrom;
   }
 }

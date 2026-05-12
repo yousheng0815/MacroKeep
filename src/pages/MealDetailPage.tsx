@@ -14,6 +14,7 @@ import {
 } from "@/lib/gapi";
 import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
+import { paths } from "@/lib/routes";
 import {
   Link,
   useNavigate,
@@ -57,7 +58,7 @@ export function MealDetailPage() {
     if (router.history.canGoBack()) {
       router.history.back();
     } else {
-      void navigate({ to: "/history" });
+      void navigate({ to: paths.history });
     }
   };
   const meal = useMemo(
@@ -137,7 +138,7 @@ export function MealDetailPage() {
         <div className="space-y-3 py-4 text-center">
           <p className="text-sm text-om-muted">This meal could not be found.</p>
           <Link
-            to="/history"
+            to={paths.history}
             className="inline-flex items-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
@@ -539,7 +540,7 @@ export function MealDetailPage() {
                     setDeletePending(true);
                     try {
                       await deleteMeal(meal.id);
-                      await navigate({ to: "/history" });
+                      await navigate({ to: paths.history });
                     } finally {
                       setDeletePending(false);
                     }

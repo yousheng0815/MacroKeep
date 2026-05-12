@@ -3,11 +3,12 @@ import { PageHeader } from "@/components/PageHeader";
 import { MealScanOverlays } from "@/components/scanner/MealScanOverlays";
 import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { consumePendingScanPhoto } from "@/lib/pending-scan-photo";
+import { paths } from "@/lib/routes";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Camera, ImagePlus, PenLine, Star } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 
-export function ScannerPage() {
+export function AddMealPage() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -77,7 +78,7 @@ export function ScannerPage() {
           </button>
           <button
             type="button"
-            onClick={() => void navigate({ to: "/scanner/favorites" })}
+            onClick={() => void navigate({ to: paths.add.favorites })}
             className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
             <Star className="size-5 shrink-0 text-amber-400" />
@@ -85,7 +86,7 @@ export function ScannerPage() {
           </button>
           <button
             type="button"
-            onClick={() => void navigate({ to: "/scanner/manual" })}
+            onClick={() => void navigate({ to: paths.add.manual })}
             className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
             <PenLine className="size-5 shrink-0 text-sky-400" />
@@ -96,7 +97,7 @@ export function ScannerPage() {
         {!hasKey ? (
           <p className="mt-4 text-sm text-amber-400">
             Configure your Gemini API key under{" "}
-            <Link to="/tutorial" className="underline underline-offset-2">
+            <Link to={paths.tutorial} className="underline underline-offset-2">
               Setup Tutorial
             </Link>{" "}
             (or Settings) to enable photo scanning. Manual entry and favorites
