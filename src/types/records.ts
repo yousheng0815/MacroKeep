@@ -14,9 +14,12 @@ export type MealRecord = {
   photoFileId?: string;
 };
 
+export type ProfileGender = "male" | "female";
+
 export type UserProfile = {
   /** `YYYY-MM-DD` — used for accurate age (not only birth year). */
   birthDate: string;
+  gender: ProfileGender;
   heightCm: number;
   weightKg: number;
   dailyTargetKcal: number;
@@ -42,16 +45,15 @@ export type OnboardingDraft = {
   birthDate: string;
   /** Snapshot for display / APIs; always matches {@link birthDate}. */
   age: number;
+  gender: ProfileGender;
   heightCm: number;
   weightKg: number;
   goal: OnboardingMacroGoal;
   activityLevel: OnboardingActivityLevel;
-  notes?: string;
   suggestedDailyTargetKcal: number;
   suggestedProteinTargetG: number;
   suggestedFatsTargetG: number;
   suggestedCarbsTargetG: number;
-  suggestedRationale: string;
   suggestedAt: string;
 };
 
@@ -79,6 +81,7 @@ export type MealsShardDocument = {
 
 export const DEFAULT_PROFILE: UserProfile = {
   birthDate: "1990-01-01",
+  gender: "male",
   heightCm: 180,
   weightKg: 72,
   dailyTargetKcal: 2000,

@@ -8,7 +8,7 @@ import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
 import { DRIVE_APPDATA_SCOPE, getGoogleUserEmail } from "@/lib/gapi";
 import { CORE_DRIVE_FILE } from "@/lib/google-drive";
-import type { UserProfile } from "@/types/records";
+import type { ProfileGender, UserProfile } from "@/types/records";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, ChevronRight, FolderOpen } from "lucide-react";
@@ -18,6 +18,7 @@ import { useState } from "react";
 function profileSyncKey(profile: UserProfile): string {
   return [
     profile.birthDate,
+    profile.gender,
     profile.heightCm,
     profile.weightKg,
     profile.dailyTargetKcal,
@@ -114,9 +115,9 @@ function ProfileCard({
     <Card>
       <h2 className="text-sm font-semibold text-white">Profile & targets</h2>
       <p className="mt-1 text-sm text-om-muted">
-        Placeholder defaults (1990-01-01, 180cm / 72kg, 2000 kcal) until you set
-        your own values. Birthday is used to compute your age for targets and
-        AI.
+        Placeholder defaults (1990-01-01, male, 180cm / 72kg, 2000 kcal) until
+        you set your own values. Birthday and gender are used to estimate
+        targets; add a Gemini key below for photo meal scanning.
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -133,6 +134,22 @@ function ProfileCard({
             }
             className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
           />
+        </label>
+        <label className="block text-sm text-zinc-400">
+          Gender
+          <select
+            value={draft.gender}
+            onChange={(e) =>
+              setDraft((p) => ({
+                ...p,
+                gender: e.target.value as ProfileGender,
+              }))
+            }
+            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+          >
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
         </label>
         <label className="block text-sm text-zinc-400">
           Height (cm)
@@ -204,7 +221,7 @@ function ProfileCard({
             className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
           />
         </label>
-        <label className="block text-sm text-zinc-400 sm:col-span-2">
+        <label className="block text-sm text-zinc-400">
           Carbs target (g)
           <input
             inputMode="decimal"
@@ -258,6 +275,13 @@ export function SettingsPage() {
       <PageHeader
         title="Settings"
         subtitle="Authentication, AI keys, and your baseline targets."
+      />
+
+      <GeminiKeyCard
+        key={geminiKey}
+        geminiKey={geminiKey}
+        updateGeminiKey={updateGeminiKey}
+        isSaving={isSaving}
       />
 
       <Card>
@@ -416,13 +440,6 @@ export function SettingsPage() {
           </button>
         </div>
       </Card>
-
-      <GeminiKeyCard
-        key={geminiKey}
-        geminiKey={geminiKey}
-        updateGeminiKey={updateGeminiKey}
-        isSaving={isSaving}
-      />
 
       <ProfileCard
         key={profileSyncKey(records.profile)}

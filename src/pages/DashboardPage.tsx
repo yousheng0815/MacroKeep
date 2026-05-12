@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { MacroSummary } from "@/components/MacroSummary";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { ProgressArc } from "@/components/ProgressArc";
+import { MealScanErrorDialog } from "@/components/scanner/MealScanErrorDialog";
 import { MealScanOverlays } from "@/components/scanner/MealScanOverlays";
 import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { useRecords } from "@/hooks/use-records";
@@ -144,7 +145,7 @@ export function DashboardPage() {
   const { records, geminiKey, isMealsLoading, mealsError, refetchMeals } =
     useRecords();
   const quickCameraInputRef = useRef<HTMLInputElement>(null);
-  const { analyzing, error, runAnalyzeFromFile, clearError } =
+  const { analyzing, error, runAnalyzeFromFile, clearError, ensureKeyForPhotoScan } =
     useMealScanFlow();
   const today = sumToday(records.meals);
   const target = records.profile.dailyTargetKcal;
@@ -226,14 +227,12 @@ export function DashboardPage() {
               </div>
             </div>
             {!connected && (
-              <a
+              <Link
+                to={paths.settings}
                 className="mt-4 inline-block text-sm text-blue-400 underline underline-offset-4 hover:text-blue-300"
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noreferrer"
               >
-                Get a free key (AI Studio)
-              </a>
+                Add your API key in Settings
+              </Link>
             )}
           </Card>
         </div>
@@ -314,27 +313,21 @@ export function DashboardPage() {
       />
       <button
         type="button"
-        onClick={() => quickCameraInputRef.current?.click()}
-        className="fixed bottom-[5.25rem] right-4 z-30 inline-flex items-center gap-2 rounded-full bg-emerald-400 p-4 text-sm font-semibold text-black shadow-lg transition hover:bg-orange-400 lg:hidden"
+        onClick={() => {
+          if (!ensureKeyForPhotoScan()) return;
+          quickCameraInputRef.current?.click();
+        }}
+        className="fixed bottom-[5.25rem] right-4 z-30 inline-flex items-center gap-2 rounded-full bg-emerald-400 p-4 text-sm font-semibold text-black shadow-lg transition hover:bg-emerald-300 lg:hidden"
         aria-label="Quick scan meal photo"
       >
         <Camera className="size-6" />
       </button>
 
-      {error && !analyzing ? (
-        <div className="fixed bottom-[9.25rem] left-4 right-4 z-[55] lg:hidden">
-          <button
-            type="button"
-            onClick={() => clearError()}
-            className="w-full rounded-lg border border-red-500/40 bg-red-950/70 px-4 py-3 text-left text-sm text-red-200"
-          >
-            {error}
-            <span className="mt-1 block text-sm text-red-300/80">
-              Tap to dismiss
-            </span>
-          </button>
-        </div>
-      ) : null}
+      <MealScanErrorDialog
+        error={error && !analyzing ? error : null}
+        onDismiss={clearError}
+        className="lg:hidden"
+      />
 
       <MealScanOverlays analyzing={analyzing} />
 

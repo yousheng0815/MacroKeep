@@ -1,10 +1,11 @@
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
+import { MealScanErrorDialog } from "@/components/scanner/MealScanErrorDialog";
 import { MealScanOverlays } from "@/components/scanner/MealScanOverlays";
 import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { consumePendingScanPhoto } from "@/lib/pending-scan-photo";
 import { paths } from "@/lib/routes";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Camera, History, ImagePlus, PenLine, Star } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 
@@ -13,8 +14,14 @@ export function AddMealPage() {
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const { analyzing, error, hasKey, runAnalyzeSnapshot, runAnalyzeFromFile } =
-    useMealScanFlow();
+  const {
+    analyzing,
+    error,
+    runAnalyzeSnapshot,
+    runAnalyzeFromFile,
+    clearError,
+    ensureKeyForPhotoScan,
+  } = useMealScanFlow();
 
   useEffect(() => {
     const pending = consumePendingScanPhoto();
@@ -62,7 +69,10 @@ export function AddMealPage() {
         <div className="flex flex-col gap-3">
           <button
             type="button"
-            onClick={() => cameraInputRef.current?.click()}
+            onClick={() => {
+              if (!ensureKeyForPhotoScan()) return;
+              cameraInputRef.current?.click();
+            }}
             className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
             <Camera className="size-5 shrink-0 text-emerald-400" />
@@ -70,7 +80,10 @@ export function AddMealPage() {
           </button>
           <button
             type="button"
-            onClick={() => uploadInputRef.current?.click()}
+            onClick={() => {
+              if (!ensureKeyForPhotoScan()) return;
+              uploadInputRef.current?.click();
+            }}
             className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
             <ImagePlus className="size-5 shrink-0 text-orange-500" />
@@ -101,22 +114,12 @@ export function AddMealPage() {
             Enter macros manually
           </button>
         </div>
-
-        {!hasKey ? (
-          <p className="mt-4 text-sm text-amber-400">
-            Configure your Gemini API key under{" "}
-            <Link to={paths.tutorial} className="underline underline-offset-2">
-              Setup Tutorial
-            </Link>{" "}
-            (or Settings) to enable photo scanning. Manual entry, history, and
-            favorites do not need it.
-          </p>
-        ) : null}
-
-        {error && !analyzing ? (
-          <p className="mt-4 text-sm text-red-400">{error}</p>
-        ) : null}
       </Card>
+
+      <MealScanErrorDialog
+        error={error && !analyzing ? error : null}
+        onDismiss={clearError}
+      />
 
       <MealScanOverlays analyzing={analyzing} />
     </div>

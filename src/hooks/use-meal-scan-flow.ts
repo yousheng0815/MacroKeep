@@ -11,6 +11,9 @@ import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
+export const MISSING_GEMINI_API_KEY_ERROR =
+  "To estimate macros from a photo, add your Gemini API key in Settings.";
+
 export function useMealScanFlow() {
   const { geminiKey, addMeal } = useRecords();
   const navigate = useNavigate();
@@ -23,7 +26,7 @@ export function useMealScanFlow() {
     async (base64: string, mimeType: string) => {
       setError(null);
       if (!hasKey) {
-        setError("Add your Gemini API key in Settings first.");
+        setError(MISSING_GEMINI_API_KEY_ERROR);
         return;
       }
       setAnalyzing(true);
@@ -120,6 +123,12 @@ export function useMealScanFlow() {
 
   const clearError = useCallback(() => setError(null), []);
 
+  const ensureKeyForPhotoScan = useCallback(() => {
+    if (hasKey) return true;
+    setError(MISSING_GEMINI_API_KEY_ERROR);
+    return false;
+  }, [hasKey]);
+
   return {
     analyzing,
     error,
@@ -127,5 +136,6 @@ export function useMealScanFlow() {
     runAnalyzeSnapshot,
     runAnalyzeFromFile,
     clearError,
+    ensureKeyForPhotoScan,
   };
 }

@@ -136,13 +136,14 @@ function normalizeOnboardingDraft(
   const suggestedProteinTargetG = Number(draft.suggestedProteinTargetG);
   const suggestedFatsTargetG = Number(draft.suggestedFatsTargetG);
   const suggestedCarbsTargetG = Number(draft.suggestedCarbsTargetG);
-  const suggestedRationale = String(draft.suggestedRationale ?? "").trim();
   const goal = draft.goal;
   const activityLevel = draft.activityLevel;
+  const gender = draft.gender;
   if (
     !Number.isFinite(age) ||
     !Number.isFinite(heightCm) ||
     !Number.isFinite(weightKg) ||
+    (gender !== "male" && gender !== "female") ||
     !Number.isFinite(suggestedDailyTargetKcal) ||
     !Number.isFinite(suggestedProteinTargetG) ||
     !Number.isFinite(suggestedFatsTargetG) ||
@@ -162,16 +163,15 @@ function normalizeOnboardingDraft(
   return {
     birthDate: birthDateRaw,
     age: Math.max(1, Math.round(age)),
+    gender,
     heightCm: Math.max(1, Math.round(heightCm)),
     weightKg: Math.max(1, Math.round(weightKg)),
     goal,
     activityLevel,
-    notes: typeof draft.notes === "string" && draft.notes.trim() ? draft.notes : undefined,
     suggestedDailyTargetKcal: Math.max(0, Math.round(suggestedDailyTargetKcal)),
     suggestedProteinTargetG: Math.max(0, Math.round(suggestedProteinTargetG)),
     suggestedFatsTargetG: Math.max(0, Math.round(suggestedFatsTargetG)),
     suggestedCarbsTargetG: Math.max(0, Math.round(suggestedCarbsTargetG)),
-    suggestedRationale: suggestedRationale || "Generated from your profile and goal.",
     suggestedAt:
       typeof draft.suggestedAt === "string" && draft.suggestedAt.trim().length > 0
         ? draft.suggestedAt
@@ -186,6 +186,8 @@ function normalizeUserProfile(
   const p = partial && typeof partial === "object" ? partial : {};
   const raw = typeof p.birthDate === "string" ? p.birthDate.trim() : "";
   const birthDate = isValidIsoBirthDate(raw) ? raw : defaults.birthDate;
+  const gender =
+    p.gender === "male" || p.gender === "female" ? p.gender : defaults.gender;
   const heightCm = Number(p.heightCm);
   const weightKg = Number(p.weightKg);
   const dailyTargetKcal = Number(p.dailyTargetKcal);
@@ -194,6 +196,7 @@ function normalizeUserProfile(
   const carbsTargetG = Number(p.carbsTargetG);
   return {
     birthDate,
+    gender,
     heightCm:
       Number.isFinite(heightCm) && heightCm > 0 ? Math.round(heightCm) : defaults.heightCm,
     weightKg:
