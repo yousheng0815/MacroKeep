@@ -177,6 +177,14 @@ async function fetchSessionFromBroker(): Promise<boolean> {
     lastGrantedScopeRaw = p.scope ?? "";
     cachedUserSub = p.sub ?? null;
     cachedUserEmail = p.email ?? null;
+    if (
+      typeof p.accessToken === "string" &&
+      p.accessToken.length > 0 &&
+      p.expiresAtMs > Date.now()
+    ) {
+      accessToken = p.accessToken;
+      accessValidUntilMs = p.expiresAtMs;
+    }
   } else {
     lastGrantedScopeRaw = "";
     cachedUserSub = null;

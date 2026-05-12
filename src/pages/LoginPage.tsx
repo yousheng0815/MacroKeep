@@ -63,9 +63,20 @@ export function LoginPage() {
   }, [oauthRetrySearch, navigate]);
 
   const needsConsent = ready && signedIn && !hasDriveAppDataScope;
+  const reconnecting =
+    ready && signedIn && !sessionReady && !needsConsent;
 
   if (ready && sessionReady) {
     return <Navigate to="/" replace />;
+  }
+
+  if (reconnecting) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-om-bg text-zinc-400">
+        <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
+        <p className="text-sm">Signing you back in…</p>
+      </div>
+    );
   }
 
   return (

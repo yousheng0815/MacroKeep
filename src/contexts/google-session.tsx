@@ -40,15 +40,20 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   const [ready, setReady] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
-  const [hasDriveAppDataScope, setHasDriveAppDataScope] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [oauthEpoch, setOauthEpoch] = useState(0);
 
   const refresh = useCallback(() => {
-    setSignedIn(hasGoogleSession());
-    setHasDriveAppDataScope(readHasDriveAppDataScope());
+    setOauthEpoch((n) => n + 1);
   }, []);
+
+  const signedIn = ready && hasGoogleSession();
+  const hasDriveAppDataScope = ready && readHasDriveAppDataScope();
+  const sessionReady =
+    ready &&
+    hasGoogleSession() &&
+    hasValidGoogleAccessToken() &&
+    readHasDriveAppDataScope();
 
   useEffect(() => {
     let cancelled = false;
@@ -75,7 +80,6 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onOAuthChanged = () => {
       refresh();
-      setOauthEpoch((n) => n + 1);
     };
     window.addEventListener("openmacro:oauth-changed", onOAuthChanged);
     return () =>
@@ -91,7 +95,7 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
   }, [ready]);
 
   useEffect(() => {
-    if (!ready || !signedIn) return;
+    if (!ready || !hasGoogleSession()) return;
     if (hasValidGoogleAccessToken() && readHasDriveAppDataScope()) return;
 
     let cancelled = false;
@@ -99,7 +103,6 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
       void ensureGoogleAccessToken().then((t) => {
         if (cancelled || !t) return;
         refresh();
-        setOauthEpoch((n) => n + 1);
       });
     };
     bump();
@@ -111,7 +114,7 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [ready, signedIn, refresh, oauthEpoch]);
+  }, [ready, oauthEpoch, refresh]);
 
   const signIn = useCallback((opts?: GoogleSignInOptions) => {
     setError(null);
@@ -130,11 +133,7 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
       ready,
       signedIn,
       hasDriveAppDataScope,
-      sessionReady:
-        ready &&
-        hasGoogleSession() &&
-        hasValidGoogleAccessToken() &&
-        readHasDriveAppDataScope(),
+      sessionReady,
       error,
       signIn,
       signOut,
@@ -144,11 +143,11 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
       ready,
       signedIn,
       hasDriveAppDataScope,
+      sessionReady,
       error,
       signIn,
       signOut,
       refresh,
-      oauthEpoch,
     ],
   );
 
