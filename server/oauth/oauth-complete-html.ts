@@ -10,11 +10,15 @@ export function oauthSuccessHtml(payload: { nonce: string; next: string }): stri
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Signing in…</title>
 <style>
-body{font-family:system-ui,sans-serif;background:#09090b;color:#fafafa;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;}
-p{font-size:14px;opacity:.85;}
+:root{color-scheme:dark;}
+body{margin:0;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;background:#09090b;color:#a1a1aa;font-family:ui-sans-serif,system-ui,sans-serif;}
+.spinner{width:2.25rem;height:2.25rem;color:#34d399;animation:om-spin 1s linear infinite;}
+@keyframes om-spin{to{transform:rotate(360deg);}}
+#m{margin:0;font-size:.875rem;line-height:1.25rem;}
 </style>
 </head>
 <body>
+<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
 <p id="m">Completing sign-in…</p>
 <script type="application/json" id="om">${json}</script>
 <script>
