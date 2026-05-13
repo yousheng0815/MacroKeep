@@ -1,7 +1,9 @@
+import { profileBodyToMetric } from "@/lib/units";
 import type {
   OnboardingActivityLevel,
   OnboardingMacroGoal,
   ProfileGender,
+  UnitsPreference,
 } from "@/types/records";
 
 export type MacroPlanInput = {
@@ -55,6 +57,19 @@ function proteinGramsPerKg(goal: OnboardingMacroGoal): number {
       return 2;
   }
   return 1.6;
+}
+
+/** Uses {@link profileBodyToMetric} so stored height/weight match {@link UnitsPreference}. */
+export function suggestMacroPlanFromProfileBody(
+  input: Omit<MacroPlanInput, "heightCm" | "weightKg"> & {
+    unitsPreference: UnitsPreference;
+    height: number;
+    weight: number;
+  },
+): MacroPlanSuggestion {
+  const { heightCm, weightKg } = profileBodyToMetric(input);
+  const { unitsPreference: _u, height: _h, weight: _w, ...rest } = input;
+  return suggestMacroPlan({ ...rest, heightCm, weightKg });
 }
 
 export function suggestMacroPlan(input: MacroPlanInput): MacroPlanSuggestion {

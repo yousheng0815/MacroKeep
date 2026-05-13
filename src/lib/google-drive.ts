@@ -2,6 +2,7 @@ import {
   ageYearsFromIsoBirthDate,
   isValidIsoBirthDate,
 } from "@/lib/birth-date";
+import { inchesFromCm, lbFromKg } from "@/lib/units";
 import {
   clearProgressPhotosIndexedDb,
   listProgressPhotosDesc,
@@ -126,12 +127,41 @@ function normalizeOnboardingDraft(
   draft: Partial<OnboardingDraft> | null | undefined,
 ): OnboardingDraft | undefined {
   if (!draft || typeof draft !== "object") return undefined;
+  const d = draft as Record<string, unknown>;
   const birthDateRaw =
     typeof draft.birthDate === "string" ? draft.birthDate.trim() : "";
   if (!isValidIsoBirthDate(birthDateRaw)) return undefined;
   const age = ageYearsFromIsoBirthDate(birthDateRaw);
-  const heightCm = Number(draft.heightCm);
-  const weightKg = Number(draft.weightKg);
+  const unitsPreference =
+    draft.unitsPreference === "imperial" ? "imperial" : "metric";
+  const rawH = Number(d.height);
+  const rawW = Number(d.weight);
+  const legacyH = Number(d.heightCm);
+  const legacyW = Number(d.weightKg);
+  let height: number;
+  let weight: number;
+  const hasNew =
+    Number.isFinite(rawH) && Number.isFinite(rawW) && rawH > 0 && rawW > 0;
+  if (hasNew) {
+    height = Math.max(1, Math.round(rawH));
+    weight = Math.max(1, Math.round(rawW));
+  } else if (
+    Number.isFinite(legacyH) &&
+    Number.isFinite(legacyW) &&
+    legacyH > 0 &&
+    legacyW > 0
+  ) {
+    // Older drafts always stored centimetres and kilograms.
+    if (unitsPreference === "imperial") {
+      height = Math.max(1, Math.round(inchesFromCm(legacyH)));
+      weight = Math.max(1, Math.round(lbFromKg(legacyW)));
+    } else {
+      height = Math.max(1, Math.round(legacyH));
+      weight = Math.max(1, Math.round(legacyW));
+    }
+  } else {
+    return undefined;
+  }
   const suggestedDailyTargetKcal = Number(draft.suggestedDailyTargetKcal);
   const suggestedProteinTargetG = Number(draft.suggestedProteinTargetG);
   const suggestedFatsTargetG = Number(draft.suggestedFatsTargetG);
@@ -141,8 +171,6 @@ function normalizeOnboardingDraft(
   const gender = draft.gender;
   if (
     !Number.isFinite(age) ||
-    !Number.isFinite(heightCm) ||
-    !Number.isFinite(weightKg) ||
     (gender !== "male" && gender !== "female") ||
     !Number.isFinite(suggestedDailyTargetKcal) ||
     !Number.isFinite(suggestedProteinTargetG) ||
@@ -164,8 +192,9 @@ function normalizeOnboardingDraft(
     birthDate: birthDateRaw,
     age: Math.max(1, Math.round(age)),
     gender,
-    heightCm: Math.max(1, Math.round(heightCm)),
-    weightKg: Math.max(1, Math.round(weightKg)),
+    unitsPreference,
+    height,
+    weight,
     goal,
     activityLevel,
     suggestedDailyTargetKcal: Math.max(0, Math.round(suggestedDailyTargetKcal)),
@@ -183,13 +212,45 @@ function normalizeUserProfile(
   partial: Partial<UserProfile> | null | undefined,
   defaults: UserProfile,
 ): UserProfile {
-  const p = partial && typeof partial === "object" ? partial : {};
+  const p = (partial && typeof partial === "object" ? partial : {}) as Record<
+    string,
+    unknown
+  >;
   const raw = typeof p.birthDate === "string" ? p.birthDate.trim() : "";
   const birthDate = isValidIsoBirthDate(raw) ? raw : defaults.birthDate;
   const gender =
     p.gender === "male" || p.gender === "female" ? p.gender : defaults.gender;
-  const heightCm = Number(p.heightCm);
-  const weightKg = Number(p.weightKg);
+  const unitsPreference =
+    p.unitsPreference === "imperial" ? "imperial" : "metric";
+  const rawH = Number(p.height);
+  const rawW = Number(p.weight);
+  const legacyH = Number(p.heightCm);
+  const legacyW = Number(p.weightKg);
+  let height: number;
+  let weight: number;
+  const hasNew =
+    Number.isFinite(rawH) && Number.isFinite(rawW) && rawH > 0 && rawW > 0;
+  if (hasNew) {
+    height = Math.max(1, Math.round(rawH));
+    weight = Math.max(1, Math.round(rawW));
+  } else if (
+    Number.isFinite(legacyH) &&
+    Number.isFinite(legacyW) &&
+    legacyH > 0 &&
+    legacyW > 0
+  ) {
+    // Legacy `core.json` always persisted centimetres and kilograms.
+    if (unitsPreference === "imperial") {
+      height = Math.max(1, Math.round(inchesFromCm(legacyH)));
+      weight = Math.max(1, Math.round(lbFromKg(legacyW)));
+    } else {
+      height = Math.max(1, Math.round(legacyH));
+      weight = Math.max(1, Math.round(legacyW));
+    }
+  } else {
+    height = defaults.height;
+    weight = defaults.weight;
+  }
   const dailyTargetKcal = Number(p.dailyTargetKcal);
   const proteinTargetG = Number(p.proteinTargetG);
   const fatsTargetG = Number(p.fatsTargetG);
@@ -197,10 +258,9 @@ function normalizeUserProfile(
   return {
     birthDate,
     gender,
-    heightCm:
-      Number.isFinite(heightCm) && heightCm > 0 ? Math.round(heightCm) : defaults.heightCm,
-    weightKg:
-      Number.isFinite(weightKg) && weightKg > 0 ? Math.round(weightKg) : defaults.weightKg,
+    unitsPreference,
+    height,
+    weight,
     dailyTargetKcal:
       Number.isFinite(dailyTargetKcal) && dailyTargetKcal >= 0
         ? Math.round(dailyTargetKcal)

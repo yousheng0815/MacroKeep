@@ -5,8 +5,8 @@ import {
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { useGoogleSession } from "@/contexts/google-session";
-import { ensureGoogleAccessToken, getGoogleUserId } from "@/lib/gapi";
 import { useBlobObjectUrl } from "@/hooks/use-blob-object-url";
+import { ensureGoogleAccessToken, getGoogleUserId } from "@/lib/gapi";
 import {
   downloadAppDataFileBlob,
   downloadAppDataFileText,
@@ -16,7 +16,7 @@ import {
   type AppDataDriveFileListItem,
 } from "@/lib/google-drive";
 import { useQuery } from "@tanstack/react-query";
-import { FileJson, ImageIcon, Loader2, RefreshCw, X } from "lucide-react";
+import { FileJson, ImageIcon, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 function DrivePreviewImage({ blob, alt }: { blob: Blob; alt: string }) {
@@ -130,7 +130,8 @@ export function DriveFilesPage() {
   const q = useQuery({
     queryKey: ["drive-app-files", userId],
     enabled: !!userId && sessionReady,
-    staleTime: 30_000,
+    /** Refetch whenever this route remounts (e.g. after navigating away and back). */
+    staleTime: 0,
     queryFn: async ({ signal }) => {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
@@ -185,23 +186,6 @@ export function DriveFilesPage() {
             <span className="text-zinc-400">App Data</span> folder (hidden from
             My Drive).
           </>
-        }
-        actions={
-          <button
-            type="button"
-            disabled={!sessionReady || q.isFetching}
-            aria-busy={q.isFetching}
-            onClick={() => void q.refetch()}
-            className="relative inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <ButtonPendingContents
-              pending={q.isFetching}
-              spinner={<ButtonSpinner className="text-zinc-300" />}
-            >
-              <RefreshCw className="size-4" aria-hidden />
-              Refresh
-            </ButtonPendingContents>
-          </button>
         }
       />
 

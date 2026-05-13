@@ -4,16 +4,25 @@ import {
 } from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { Logo } from "@/components/Logo";
+import {
+  HeightWeightFields,
+  UnitsPreferenceSegment,
+} from "@/components/profile/body-measurement-fields";
 import { useRecords } from "@/hooks/use-records";
 import {
   ageYearsFromIsoBirthDate,
   isValidIsoBirthDate,
 } from "@/lib/birth-date";
-import { suggestMacroPlan, type MacroPlanSuggestion } from "@/lib/macro-plan";
+import { convertBodyMeasuresToUnits } from "@/lib/units";
+import {
+  suggestMacroPlanFromProfileBody,
+  type MacroPlanSuggestion,
+} from "@/lib/macro-plan";
 import type {
   OnboardingActivityLevel,
   OnboardingMacroGoal,
   ProfileGender,
+  UnitsPreference,
 } from "@/types/records";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -21,8 +30,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 type TutorialForm = {
   birthDate: string;
   gender: ProfileGender;
-  heightCm: number;
-  weightKg: number;
+  unitsPreference: UnitsPreference;
+  height: number;
+  weight: number;
   goal: OnboardingMacroGoal;
   activityLevel: OnboardingActivityLevel;
 };
@@ -63,8 +73,9 @@ export function TutorialPage() {
   const [form, setForm] = useState<TutorialForm>({
     birthDate: records.profile.birthDate,
     gender: records.profile.gender,
-    heightCm: records.profile.heightCm,
-    weightKg: records.profile.weightKg,
+    unitsPreference: records.profile.unitsPreference,
+    height: records.profile.height,
+    weight: records.profile.weight,
     goal: "gain_muscle",
     activityLevel: "moderate",
   });
@@ -79,8 +90,8 @@ export function TutorialPage() {
   const canGenerate = useMemo(
     () =>
       isValidIsoBirthDate(form.birthDate) &&
-      form.heightCm > 0 &&
-      form.weightKg > 0,
+      form.height > 0 &&
+      form.weight > 0,
     [form],
   );
 
@@ -103,8 +114,9 @@ export function TutorialPage() {
         ...prev,
         birthDate: draft.birthDate,
         gender: draft.gender,
-        heightCm: draft.heightCm,
-        weightKg: draft.weightKg,
+        unitsPreference: draft.unitsPreference,
+        height: draft.height,
+        weight: draft.weight,
         goal: draft.goal,
         activityLevel: draft.activityLevel,
       }));
@@ -131,11 +143,12 @@ export function TutorialPage() {
   const generatePlan = () => {
     setError(null);
     const isRecalculate = generatedPlan !== null;
-    const plan = suggestMacroPlan({
+    const plan = suggestMacroPlanFromProfileBody({
       age: ageYearsFromIsoBirthDate(form.birthDate),
       gender: form.gender,
-      heightCm: form.heightCm,
-      weightKg: form.weightKg,
+      unitsPreference: form.unitsPreference,
+      height: form.height,
+      weight: form.weight,
       goal: form.goal,
       activityLevel: form.activityLevel,
     });
@@ -144,8 +157,9 @@ export function TutorialPage() {
       birthDate: form.birthDate,
       age: ageYearsFromIsoBirthDate(form.birthDate),
       gender: form.gender,
-      heightCm: form.heightCm,
-      weightKg: form.weightKg,
+      unitsPreference: form.unitsPreference,
+      height: form.height,
+      weight: form.weight,
       goal: form.goal,
       activityLevel: form.activityLevel,
       suggestedDailyTargetKcal: plan.dailyTargetKcal,
@@ -223,34 +237,37 @@ export function TutorialPage() {
               ))}
             </select>
           </label>
-          <label className="block text-sm text-zinc-400">
-            Height (cm)
-            <input
-              inputMode="decimal"
-              value={form.heightCm}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  heightCm: Number(e.target.value),
-                }))
+          <div className="sm:col-span-2">
+            <span className="text-sm text-zinc-400">Height & weight units</span>
+            <UnitsPreferenceSegment
+              id="tutorial-units"
+              value={form.unitsPreference}
+              disabled={isGeneratingPlan}
+              onChange={(unitsPreference) =>
+                setForm((prev) => {
+                  if (unitsPreference === prev.unitsPreference) return prev;
+                  const { height, weight } = convertBodyMeasuresToUnits(
+                    {
+                      unitsPreference: prev.unitsPreference,
+                      height: prev.height,
+                      weight: prev.weight,
+                    },
+                    unitsPreference,
+                  );
+                  return { ...prev, unitsPreference, height, weight };
+                })
               }
-              className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
             />
-          </label>
-          <label className="block text-sm text-zinc-400">
-            Weight (kg)
-            <input
-              inputMode="decimal"
-              value={form.weightKg}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  weightKg: Number(e.target.value),
-                }))
-              }
-              className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
-            />
-          </label>
+          </div>
+          <HeightWeightFields
+            units={form.unitsPreference}
+            height={form.height}
+            weight={form.weight}
+            disabled={isGeneratingPlan}
+            onChange={({ height, weight }) =>
+              setForm((prev) => ({ ...prev, height, weight }))
+            }
+          />
           <label className="block text-sm text-zinc-400">
             Goal
             <select
@@ -402,8 +419,9 @@ export function TutorialPage() {
                   await updateProfile({
                     birthDate: form.birthDate,
                     gender: form.gender,
-                    heightCm: form.heightCm,
-                    weightKg: form.weightKg,
+                    unitsPreference: form.unitsPreference,
+                    height: form.height,
+                    weight: form.weight,
                     dailyTargetKcal: generatedPlan.dailyTargetKcal,
                     proteinTargetG: generatedPlan.proteinTargetG,
                     carbsTargetG: generatedPlan.carbsTargetG,

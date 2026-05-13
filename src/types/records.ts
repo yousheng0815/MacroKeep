@@ -16,12 +16,18 @@ export type MealRecord = {
 
 export type ProfileGender = "male" | "female";
 
+/** Body height/weight: when {@link UnitsPreference} is `metric`, cm and kg; when `imperial`, total inches and lb. */
+export type UnitsPreference = "metric" | "imperial";
+
 export type UserProfile = {
   /** `YYYY-MM-DD` — used for accurate age (not only birth year). */
   birthDate: string;
   gender: ProfileGender;
-  heightCm: number;
-  weightKg: number;
+  unitsPreference: UnitsPreference;
+  /** With `metric`: centimetres (whole). With `imperial`: total height in whole inches. */
+  height: number;
+  /** With `metric`: whole kilograms. With `imperial`: whole pounds. */
+  weight: number;
   dailyTargetKcal: number;
   proteinTargetG: number;
   fatsTargetG: number;
@@ -46,8 +52,10 @@ export type OnboardingDraft = {
   /** Snapshot for display / APIs; always matches {@link birthDate}. */
   age: number;
   gender: ProfileGender;
-  heightCm: number;
-  weightKg: number;
+  unitsPreference: UnitsPreference;
+  /** Same units as {@link UserProfile.height} / {@link UserProfile.weight}. */
+  height: number;
+  weight: number;
   goal: OnboardingMacroGoal;
   activityLevel: OnboardingActivityLevel;
   suggestedDailyTargetKcal: number;
@@ -82,8 +90,9 @@ export type MealsShardDocument = {
 export const DEFAULT_PROFILE: UserProfile = {
   birthDate: "1990-01-01",
   gender: "male",
-  heightCm: 180,
-  weightKg: 72,
+  unitsPreference: "metric",
+  height: 180,
+  weight: 72,
   dailyTargetKcal: 2000,
   proteinTargetG: 150,
   fatsTargetG: 65,

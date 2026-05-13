@@ -4,23 +4,62 @@ import {
 } from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  HeightWeightFields,
+  UnitsPreferenceSegment,
+} from "@/components/profile/body-measurement-fields";
 import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
 import { getGoogleUserEmail } from "@/lib/gapi";
 import { validateGeminiApiKey } from "@/lib/gemini";
+import { convertBodyMeasuresToUnits } from "@/lib/units";
 import type { ProfileGender, UserProfile } from "@/types/records";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, ChevronRight, FolderOpen } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
-/** Remount ProfileCard when the persisted profile replaces local drafts. */
-function profileSyncKey(profile: UserProfile): string {
+type ProfileBodyDraft = Pick<
+  UserProfile,
+  "birthDate" | "gender" | "unitsPreference" | "height" | "weight"
+>;
+
+type MacroTargetsDraft = Pick<
+  UserProfile,
+  "dailyTargetKcal" | "proteinTargetG" | "fatsTargetG" | "carbsTargetG"
+>;
+
+function profileBodyFromUser(profile: UserProfile): ProfileBodyDraft {
+  return {
+    birthDate: profile.birthDate,
+    gender: profile.gender,
+    unitsPreference: profile.unitsPreference,
+    height: profile.height,
+    weight: profile.weight,
+  };
+}
+
+function profileBodySyncKey(profile: UserProfile): string {
   return [
     profile.birthDate,
     profile.gender,
-    profile.heightCm,
-    profile.weightKg,
+    profile.unitsPreference,
+    profile.height,
+    profile.weight,
+  ].join("|");
+}
+
+function macroTargetsFromUser(profile: UserProfile): MacroTargetsDraft {
+  return {
+    dailyTargetKcal: profile.dailyTargetKcal,
+    proteinTargetG: profile.proteinTargetG,
+    fatsTargetG: profile.fatsTargetG,
+    carbsTargetG: profile.carbsTargetG,
+  };
+}
+
+function macroTargetsSyncKey(profile: UserProfile): string {
+  return [
     profile.dailyTargetKcal,
     profile.proteinTargetG,
     profile.fatsTargetG,
@@ -163,26 +202,34 @@ function GeminiKeyCard({
   );
 }
 
-function ProfileCard({
+function ProfileBodyCard({
   profile,
-  updateProfile,
-  isSaving,
+  onSave,
+  formsDisabled,
+  savePending,
 }: {
   profile: UserProfile;
-  updateProfile: (patch: Partial<UserProfile>) => Promise<void>;
-  isSaving: boolean;
+  onSave: (patch: Partial<UserProfile>) => Promise<void>;
+  formsDisabled: boolean;
+  savePending: boolean;
 }) {
-  const [draft, setDraft] = useState(profile);
+  const [draft, setDraft] = useState<ProfileBodyDraft>(() =>
+    profileBodyFromUser(profile),
+  );
 
   return (
     <Card>
-      <h2 className="text-sm font-semibold text-white">Profile & targets</h2>
+      <h2 className="text-sm font-semibold text-white">Profile</h2>
+      <p className="mt-1 text-sm text-om-muted">
+        Birthday, gender, units, and height/weight used for planning.
+      </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block text-sm text-zinc-400">
           Birthday
           <input
             type="date"
+            disabled={formsDisabled}
             value={draft.birthDate}
             onChange={(e) =>
               setDraft((p) => ({
@@ -197,6 +244,7 @@ function ProfileCard({
           Gender
           <select
             value={draft.gender}
+            disabled={formsDisabled}
             onChange={(e) =>
               setDraft((p) => ({
                 ...p,
@@ -209,38 +257,85 @@ function ProfileCard({
             <option value="female">Female</option>
           </select>
         </label>
-        <label className="block text-sm text-zinc-400">
-          Height (cm)
-          <input
-            inputMode="decimal"
-            value={draft.heightCm}
-            onChange={(e) =>
-              setDraft((p) => ({
-                ...p,
-                heightCm: Number(e.target.value),
-              }))
+        <div className="sm:col-span-2">
+          <span className="text-sm text-zinc-400">Units</span>
+          <UnitsPreferenceSegment
+            id="settings-profile-units"
+            value={draft.unitsPreference}
+            disabled={formsDisabled}
+            onChange={(unitsPreference) =>
+              setDraft((p) => {
+                if (unitsPreference === p.unitsPreference) return p;
+                const { height, weight } = convertBodyMeasuresToUnits(
+                  {
+                    unitsPreference: p.unitsPreference,
+                    height: p.height,
+                    weight: p.weight,
+                  },
+                  unitsPreference,
+                );
+                return { ...p, unitsPreference, height, weight };
+              })
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
           />
-        </label>
-        <label className="block text-sm text-zinc-400">
-          Weight (kg)
-          <input
-            inputMode="decimal"
-            value={draft.weightKg}
-            onChange={(e) =>
-              setDraft((p) => ({
-                ...p,
-                weightKg: Number(e.target.value),
-              }))
-            }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
-          />
-        </label>
+        </div>
+        <HeightWeightFields
+          units={draft.unitsPreference}
+          height={draft.height}
+          weight={draft.weight}
+          disabled={formsDisabled}
+          onChange={({ height, weight }) =>
+            setDraft((p) => ({ ...p, height, weight }))
+          }
+        />
+      </div>
+
+      <button
+        type="button"
+        disabled={formsDisabled}
+        aria-busy={savePending}
+        onClick={() => void onSave(draft)}
+        className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <ButtonPendingContents
+          pending={savePending}
+          spinner={<ButtonSpinner />}
+        >
+          Save profile
+        </ButtonPendingContents>
+      </button>
+    </Card>
+  );
+}
+
+function MacroTargetsCard({
+  profile,
+  onSave,
+  formsDisabled,
+  savePending,
+}: {
+  profile: UserProfile;
+  onSave: (patch: Partial<UserProfile>) => Promise<void>;
+  formsDisabled: boolean;
+  savePending: boolean;
+}) {
+  const [draft, setDraft] = useState<MacroTargetsDraft>(() =>
+    macroTargetsFromUser(profile),
+  );
+
+  return (
+    <Card>
+      <h2 className="text-sm font-semibold text-white">Macro targets</h2>
+      <p className="mt-1 text-sm text-om-muted">
+        Daily calories and protein, fats, and carbs in grams.
+      </p>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block text-sm text-zinc-400">
           Daily target (kcal)
           <input
             inputMode="numeric"
+            disabled={formsDisabled}
             value={draft.dailyTargetKcal}
             onChange={(e) =>
               setDraft((p) => ({
@@ -255,6 +350,7 @@ function ProfileCard({
           Protein target (g)
           <input
             inputMode="decimal"
+            disabled={formsDisabled}
             value={draft.proteinTargetG}
             onChange={(e) =>
               setDraft((p) => ({
@@ -269,6 +365,7 @@ function ProfileCard({
           Fats target (g)
           <input
             inputMode="decimal"
+            disabled={formsDisabled}
             value={draft.fatsTargetG}
             onChange={(e) =>
               setDraft((p) => ({
@@ -283,6 +380,7 @@ function ProfileCard({
           Carbs target (g)
           <input
             inputMode="decimal"
+            disabled={formsDisabled}
             value={draft.carbsTargetG}
             onChange={(e) =>
               setDraft((p) => ({
@@ -297,13 +395,16 @@ function ProfileCard({
 
       <button
         type="button"
-        disabled={isSaving}
-        aria-busy={isSaving}
-        onClick={() => void updateProfile(draft)}
+        disabled={formsDisabled}
+        aria-busy={savePending}
+        onClick={() => void onSave(draft)}
         className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <ButtonPendingContents pending={isSaving} spinner={<ButtonSpinner />}>
-          Save profile
+        <ButtonPendingContents
+          pending={savePending}
+          spinner={<ButtonSpinner />}
+        >
+          Save targets
         </ButtonPendingContents>
       </button>
 
@@ -334,6 +435,32 @@ export function SettingsPage() {
   const [wipeBusy, setWipeBusy] = useState(false);
   const [wipeError, setWipeError] = useState<string | null>(null);
   const [wipeDone, setWipeDone] = useState(false);
+  const [profileSavePending, setProfileSavePending] = useState(false);
+  const [targetsSavePending, setTargetsSavePending] = useState(false);
+
+  const saveProfilePatch = useCallback(
+    async (patch: Partial<UserProfile>) => {
+      setProfileSavePending(true);
+      try {
+        await updateProfile(patch);
+      } finally {
+        setProfileSavePending(false);
+      }
+    },
+    [updateProfile],
+  );
+
+  const saveTargetsPatch = useCallback(
+    async (patch: Partial<UserProfile>) => {
+      setTargetsSavePending(true);
+      try {
+        await updateProfile(patch);
+      } finally {
+        setTargetsSavePending(false);
+      }
+    },
+    [updateProfile],
+  );
 
   return (
     <div className="space-y-6">
@@ -495,11 +622,20 @@ export function SettingsPage() {
         </div>
       </Card>
 
-      <ProfileCard
-        key={profileSyncKey(records.profile)}
+      <ProfileBodyCard
+        key={profileBodySyncKey(records.profile)}
         profile={records.profile}
-        updateProfile={updateProfile}
-        isSaving={isSaving}
+        onSave={saveProfilePatch}
+        formsDisabled={isSaving}
+        savePending={profileSavePending}
+      />
+
+      <MacroTargetsCard
+        key={macroTargetsSyncKey(records.profile)}
+        profile={records.profile}
+        onSave={saveTargetsPatch}
+        formsDisabled={isSaving}
+        savePending={targetsSavePending}
       />
     </div>
   );
