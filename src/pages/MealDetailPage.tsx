@@ -21,7 +21,16 @@ import {
   useParams,
   useRouter,
 } from "@tanstack/react-router";
-import { ArrowLeft, Camera, ImagePlus, Pencil, Star, Tag, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  CopyPlus,
+  ImagePlus,
+  Pencil,
+  Star,
+  Tag,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type EditPhotoState =
@@ -52,7 +61,7 @@ export function MealDetailPage() {
   const { mealId } = useParams({ strict: false });
   const navigate = useNavigate();
   const router = useRouter();
-  const { records, updateMeal, deleteMeal } = useRecords();
+  const { records, addMeal, updateMeal, deleteMeal } = useRecords();
 
   const handleBack = () => {
     if (router.history.canGoBack()) {
@@ -68,6 +77,8 @@ export function MealDetailPage() {
 
   const [savePending, setSavePending] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
+  const [duplicatePending, setDuplicatePending] = useState(false);
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
   const [favoritePending, setFavoritePending] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -553,6 +564,68 @@ export function MealDetailPage() {
                 >
                   <Trash2 className="size-4" />
                   Delete meal
+                </ButtonPendingContents>
+              </button>
+            </div>
+
+            <div className="mt-4 border-t border-om-border pt-4">
+              {duplicateError ? (
+                <p className="mb-3 text-sm text-red-400" role="alert">
+                  {duplicateError}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                disabled={
+                  savePending ||
+                  deletePending ||
+                  favoritePending ||
+                  duplicatePending
+                }
+                aria-busy={duplicatePending}
+                onClick={() => {
+                  void (async () => {
+                    setDuplicateError(null);
+                    setDuplicatePending(true);
+                    try {
+                      const sourceFavoriteMealId = meal.isFavorite
+                        ? meal.id
+                        : meal.sourceFavoriteMealId;
+                      await addMeal(
+                        {
+                          food_name: meal.food_name,
+                          calories: meal.calories,
+                          protein: meal.protein,
+                          fats: meal.fats,
+                          carbs: meal.carbs,
+                          ...(sourceFavoriteMealId
+                            ? { sourceFavoriteMealId }
+                            : {}),
+                        },
+                        meal.photoFileId
+                          ? { photoFileId: meal.photoFileId }
+                          : undefined,
+                      );
+                      await navigate({ to: paths.history });
+                    } catch (err) {
+                      setDuplicateError(
+                        err instanceof Error
+                          ? err.message
+                          : "Could not add this meal again.",
+                      );
+                    } finally {
+                      setDuplicatePending(false);
+                    }
+                  })();
+                }}
+                className="relative flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-950/25 px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-950/40 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <ButtonPendingContents
+                  pending={duplicatePending}
+                  spinner={<ButtonSpinner className="text-emerald-200" />}
+                >
+                  <CopyPlus className="size-4" />
+                  Add this meal again
                 </ButtonPendingContents>
               </button>
             </div>

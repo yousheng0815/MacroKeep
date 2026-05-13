@@ -57,7 +57,7 @@ export function AddFromHistoryPage() {
     setError(null);
     setPendingKey(template.key);
     try {
-      const mealId = await addMeal(
+      await addMeal(
         {
           food_name: template.food_name,
           calories: template.calories,
@@ -72,11 +72,7 @@ export function AddFromHistoryPage() {
           photoFileId: template.sourcePhotoFileId,
         },
       );
-      await navigate({
-        to: paths.mealDetail,
-        params: { mealId },
-        state: { navFrom: paths.add.root },
-      });
+      await navigate({ to: paths.history });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not add meal.");
     } finally {
