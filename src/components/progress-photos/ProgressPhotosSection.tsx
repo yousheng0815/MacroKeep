@@ -10,7 +10,15 @@ import {
 import type { ProgressPhotoItem } from "@/types/progress-photos";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Camera, ChevronLeft, Play } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 function overlayFromSearch(search: Record<string, unknown>) {
   return {
@@ -41,7 +49,10 @@ function ProgressPhotoThumb({
           className="size-full max-h-full max-w-full object-cover"
         />
       ) : (
-        <span className="block size-full animate-pulse bg-zinc-800" aria-hidden />
+        <span
+          className="block size-full animate-pulse bg-zinc-800"
+          aria-hidden
+        />
       )}
     </Link>
   );
@@ -97,13 +108,7 @@ export function ProgressPhotosSection({
   const batchSize = useProgressPhotosBatchSize();
   const [stripVisibleCount, setStripVisibleCount] = useState(batchSize);
 
-  const {
-    photos,
-    loading,
-    error,
-    remove,
-    addPhoto,
-  } = useProgressPhotos({
+  const { photos, loading, error, remove, addPhoto } = useProgressPhotos({
     prefetchPhotoId: view,
     displayLimit: stripVisibleCount,
   });
@@ -199,8 +204,7 @@ export function ProgressPhotosSection({
 
       const { scrollLeft, scrollWidth, clientWidth } = el;
       const maxScroll = Math.max(0, scrollWidth - clientWidth);
-      const nearEnd =
-        maxScroll > 0 && scrollLeft >= maxScroll - NEAR_END_PX;
+      const nearEnd = maxScroll > 0 && scrollLeft >= maxScroll - NEAR_END_PX;
 
       if (nearEnd && stripAwayFromEndRef.current) {
         stripAwayFromEndRef.current = false;
@@ -274,7 +278,7 @@ export function ProgressPhotosSection({
                     {Array.from({ length: batchSize }).map((_, i) => (
                       <div
                         key={`photo-placeholder-${i}`}
-                        className="h-24 w-24 shrink-0 animate-pulse rounded-xl border border-zinc-700 bg-zinc-800"
+                        className="h-24 w-24 shrink-0 animate-pulse rounded-xl border border-zinc-700 bg-zinc-700"
                         aria-hidden
                       />
                     ))}
