@@ -6,9 +6,8 @@ import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
-import { DRIVE_APPDATA_SCOPE, getGoogleUserEmail } from "@/lib/gapi";
+import { getGoogleUserEmail } from "@/lib/gapi";
 import { validateGeminiApiKey } from "@/lib/gemini";
-import { CORE_DRIVE_FILE } from "@/lib/google-drive";
 import type { ProfileGender, UserProfile } from "@/types/records";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -307,6 +306,13 @@ function ProfileCard({
           Save profile
         </ButtonPendingContents>
       </button>
+
+      <Link
+        to="/tutorial"
+        className="relative mt-3 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900"
+      >
+        Calculate suggested targets again
+      </Link>
     </Card>
   );
 }
@@ -347,14 +353,6 @@ export function SettingsPage() {
         <h2 className="text-sm font-semibold text-white">
           Google account & Drive
         </h2>
-        <p className="mt-2 text-sm text-om-muted">
-          Your diary, targets, and optional Gemini key sync to the hidden{" "}
-          <span className="text-zinc-300">App Data</span> folder as{" "}
-          <span className="font-mono text-zinc-400">{CORE_DRIVE_FILE}</span>.
-          Meals use separate monthly JSON files in the same folder. Only your
-          Google OAuth session is stored locally so repeat visits stay signed
-          in.
-        </p>
 
         <Link
           to="/drive"
@@ -370,7 +368,7 @@ export function SettingsPage() {
                 Drive app data
               </span>
               <span className="mt-0.5 block text-sm font-normal text-om-muted">
-                List files and preview JSON in your App Data folder
+                Files in your App Data folder
               </span>
             </span>
           </span>
@@ -385,13 +383,13 @@ export function SettingsPage() {
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-zinc-500">Drive scope</dt>
+            <dt className="text-sm text-zinc-500">Drive access</dt>
             <dd className="mt-1 flex flex-wrap items-center gap-2">
               {sessionReady ? (
                 <>
                   <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
-                  <span className="break-all font-mono text-sm text-emerald-400/90">
-                    {DRIVE_APPDATA_SCOPE}
+                  <span className="text-sm text-emerald-400/90">
+                    Access is set up correctly.
                   </span>
                 </>
               ) : (
@@ -432,10 +430,7 @@ export function SettingsPage() {
           </h3>
           <p className="mt-1 text-sm text-om-muted">
             Permanently removes every OpenMacro file from this Google
-            account&apos;s Drive App Data folder (meals, photos,{" "}
-            <span className="font-mono text-zinc-400">{CORE_DRIVE_FILE}</span>,
-            etc.). You stay signed in; the app will create a fresh empty diary
-            on next sync. This cannot be undone. Type{" "}
+            account&apos;s Drive App Data folder. This cannot be reversed. Type{" "}
             <span className="font-mono text-zinc-300">DELETE</span> to enable
             the button.
           </p>
@@ -506,13 +501,6 @@ export function SettingsPage() {
         updateProfile={updateProfile}
         isSaving={isSaving}
       />
-
-      <Link
-        to="/tutorial"
-        className="relative inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900"
-      >
-        Calculate suggested targets again
-      </Link>
     </div>
   );
 }
