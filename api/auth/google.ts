@@ -42,7 +42,12 @@ export default function handler(req: VercelRequest, res: VercelResponse): void {
       typeof req.query.prompt_consent === "string" &&
       req.query.prompt_consent === "1";
 
-    if (!promptConsent) {
+    if (promptConsent) {
+      appendSetCookie(
+        res,
+        cookieSession(OAUTH_RT_FALLBACK_COOKIE, "1", 600),
+      );
+    } else {
       appendSetCookie(res, cookieClear(OAUTH_RT_FALLBACK_COOKIE));
     }
 
@@ -59,7 +64,7 @@ export default function handler(req: VercelRequest, res: VercelResponse): void {
       include_granted_scopes: "true",
       state,
     });
-    if (promptConsent || jsonClient) {
+    if (promptConsent) {
       params.set("prompt", "consent");
     }
 

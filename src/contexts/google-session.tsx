@@ -119,8 +119,15 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
           setSessionReconnectFailed(true);
           return;
         }
-        setSessionReconnectFailed(false);
-        refresh();
+        const nowReady =
+          hasValidGoogleAccessToken() && readHasDriveAppDataScope();
+        /** Avoid `refresh()` when still not ready (e.g. missing Drive scope): it bumps `oauthEpoch` and would retrigger this effect forever. */
+        if (nowReady) {
+          setSessionReconnectFailed(false);
+          refresh();
+        } else {
+          setSessionReconnectFailed(true);
+        }
       });
     };
     bump();

@@ -10,19 +10,36 @@ import {
 import {
   appendSetCookie,
   cookieClear,
-  cookieSession,
   parseCookies,
   safeNextPath,
 } from "../../../server/oauth/cookies.js";
 import { exchangeAuthorizationCode } from "../../../server/oauth/google-token.js";
 import { fetchGoogleProfile } from "../../../server/oauth/google-profile.js";
-import { encryptRefreshToken } from "../../../server/oauth/token-crypto.js";
 import {
+  encryptRefreshToken,
+  encryptToken,
+} from "../../../server/oauth/token-crypto.js";
+import {
+  findOAuthSessionByGoogleSub,
   saveOAuthSession,
   saveSessionHandoff,
 } from "../../../server/oauth/session-store.js";
 import { oauthSuccessHtml } from "../../../server/oauth/oauth-complete-html.js";
 import crypto from "node:crypto";
+
+const DEFAULT_GRANTED_SCOPE =
+  "https://www.googleapis.com/auth/drive.appdata openid email profile";
+const EXPIRY_SKEW_MS = 60_000;
+
+function scopeIncludesDriveAppData(scope: string): boolean {
+  return scope
+    .split(/\s+/)
+    .some(
+      (s) =>
+        s === "https://www.googleapis.com/auth/drive.appdata" ||
+        s.endsWith("/auth/drive.appdata"),
+    );
+}
 
 export default async function handler(
   req: VercelRequest,
@@ -52,39 +69,55 @@ export default async function handler(
 
     const tokenPack = await exchangeAuthorizationCode(code, oauthRedirectUri(req));
     const refreshToken = tokenPack.refresh_token;
+    const profile = await fetchGoogleProfile(tokenPack.access_token);
+    const scope = tokenPack.scope ?? DEFAULT_GRANTED_SCOPE;
 
     if (!refreshToken) {
-      if (cookies[OAUTH_RT_FALLBACK_COOKIE] === "1") {
-        throw new Error(
-          "Google did not return a refresh token. Remove OpenMacro in Google Account → Third-party access, then try again.",
+      const reusable = await findOAuthSessionByGoogleSub(profile.sub);
+      if (
+        reusable?.encryptedRefreshToken &&
+        scopeIncludesDriveAppData(reusable.scope)
+      ) {
+        appendSetCookie(res, cookieClear(OAUTH_RT_FALLBACK_COOKIE));
+        const handoffNonce = crypto.randomBytes(24).toString("hex");
+        await saveSessionHandoff(handoffNonce, reusable.sessionId);
+
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.status(200).send(
+          oauthSuccessHtml({ nonce: handoffNonce, next }),
         );
+        return;
       }
-      appendSetCookie(
-        res,
-        cookieSession(OAUTH_RT_FALLBACK_COOKIE, "1", 600),
-      );
-      res.redirect(
-        302,
-        absoluteSitePath(
-          req,
-          `/login?oauth_retry=1&prompt_consent=1&next=${encodeURIComponent(next)}`,
-        ),
+
+      const encryptionKey = requireEnv("TOKEN_ENCRYPTION_KEY");
+      const sessionId = crypto.randomUUID();
+      await saveOAuthSession(sessionId, {
+        encryptedAccessToken: encryptToken(tokenPack.access_token, encryptionKey),
+        accessTokenExpiresAtMs:
+          Date.now() + tokenPack.expires_in * 1000 - EXPIRY_SKEW_MS,
+        googleSub: profile.sub,
+        email: profile.email,
+        scope,
+      });
+
+      appendSetCookie(res, cookieClear(OAUTH_RT_FALLBACK_COOKIE));
+      const handoffNonce = crypto.randomBytes(24).toString("hex");
+      await saveSessionHandoff(handoffNonce, sessionId);
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.status(200).send(
+        oauthSuccessHtml({ nonce: handoffNonce, next }),
       );
       return;
     }
 
     appendSetCookie(res, cookieClear(OAUTH_RT_FALLBACK_COOKIE));
 
-    const profile = await fetchGoogleProfile(tokenPack.access_token);
     const encryptionKey = requireEnv("TOKEN_ENCRYPTION_KEY");
     const encryptedRefreshToken = encryptRefreshToken(
       refreshToken,
       encryptionKey,
     );
-
-    const scope =
-      tokenPack.scope ??
-      "https://www.googleapis.com/auth/drive.appdata openid email profile";
 
     const sessionId = crypto.randomUUID();
     await saveOAuthSession(sessionId, {

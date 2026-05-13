@@ -1,13 +1,40 @@
 import {
+  GOOGLE_DRIVE_APP_DATA_BLURB,
+  GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE,
+} from "@/components/auth/auth-copy";
+import { GoogleAuthPageLayout } from "@/components/auth/GoogleAuthPageLayout";
+import { GoogleGMark } from "@/components/auth/GoogleGMark";
+import {
   ButtonPendingContents,
   ButtonSpinner,
 } from "@/components/ButtonSpinner";
-import { Logo } from "@/components/Logo";
 import { useGoogleSession } from "@/contexts/google-session";
-import { DRIVE_APPDATA_SCOPE, startGoogleOAuthRedirect } from "@/lib/gapi";
+import { startGoogleOAuthRedirect } from "@/lib/gapi";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
+let oauthRetryRedirectStarted = false;
+
+function searchString(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return null;
+}
+
+function safeNextPath(value: string | null): string {
+  if (!value) return "/";
+  let decoded = value;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    /* keep original value */
+  }
+  return decoded.startsWith("/") && !decoded.startsWith("//") ? decoded : "/";
+}
+
 export function LoginPage() {
   const {
     ready,
@@ -20,43 +47,37 @@ export function LoginPage() {
   } = useGoogleSession();
 
   const navigate = useNavigate();
+  const [signInPending, setSignInPending] = useState(false);
 
-  const oauthError = useRouterState({
-    select: (s) => new URLSearchParams(s.location.search).get("oauth_error"),
-  });
-
-  /** Callback asked us to re-run OAuth with prompt=consent (refresh token retry). */
-  const oauthRetrySearch = useRouterState({
-    select: (s) => s.location.search,
+  const oauthSearch = useRouterState({
+    select: (s) => {
+      const search = s.location.search as Record<string, unknown>;
+      return {
+        error: searchString(search.oauth_error),
+        retry: searchString(search.oauth_retry),
+        promptConsent: searchString(search.prompt_consent),
+        next: searchString(search.next),
+      };
+    },
   });
 
   useEffect(() => {
-    const params = new URLSearchParams(oauthRetrySearch);
-    if (params.get("oauth_retry") !== "1") return;
-    const dedupeKey = `om_oauth_retry:${oauthRetrySearch}`;
-    try {
-      if (sessionStorage.getItem(dedupeKey) === "1") return;
-      sessionStorage.setItem(dedupeKey, "1");
-    } catch {
-      /* ignore */
-    }
+    if (oauthSearch.retry !== "1") return;
+    if (oauthRetryRedirectStarted) return;
+    oauthRetryRedirectStarted = true;
 
-    const promptConsent = params.get("prompt_consent") === "1";
-    let nextPath = "/";
-    const n = params.get("next");
-    if (n) {
-      try {
-        const decoded = decodeURIComponent(n);
-        if (decoded.startsWith("/") && !decoded.startsWith("//"))
-          nextPath = decoded;
-      } catch {
-        /* ignore */
-      }
-    }
+    const promptConsent = oauthSearch.promptConsent === "1";
+    const nextPath = safeNextPath(oauthSearch.next);
 
+    window.history.replaceState(null, "", "/login");
     void navigate({ to: "/login", replace: true });
     void startGoogleOAuthRedirect({ promptConsent, nextPath });
-  }, [oauthRetrySearch, navigate]);
+  }, [
+    oauthSearch.next,
+    oauthSearch.promptConsent,
+    oauthSearch.retry,
+    navigate,
+  ]);
 
   const needsConsent = ready && signedIn && !hasDriveAppDataScope;
 
@@ -73,72 +94,51 @@ export function LoginPage() {
     );
   }
 
-  return (
-    <div className="flex min-h-dvh flex-col justify-center bg-om-bg px-6 py-12 text-zinc-100">
-      <div className="mx-auto w-full max-w-md space-y-8">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <Logo className="scale-125" />
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            Welcome to OpenMacro
-          </h1>
-          <p className="text-sm leading-relaxed text-om-muted">
-            Sign in with Google so your diary, profile, and Gemini key live in
-            your Drive.
-          </p>
-        </div>
-
-        {oauthError ? (
-          <p className="text-center text-sm text-red-400" role="alert">
-            {oauthError}
-          </p>
-        ) : null}
-
-        {error ? (
-          <p className="text-center text-sm text-red-400">{error}</p>
-        ) : null}
-
-        {!ready ? (
-          <div className="flex justify-center py-6">
-            <Loader2 className="size-10 animate-spin text-emerald-400" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {needsConsent ? (
-              <div className="rounded-2xl border border-amber-500/40 bg-amber-950/25 px-4 py-3 text-sm text-amber-100">
-                <p className="font-medium text-amber-50">
-                  Drive permission needed
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-amber-200/90">
-                  OpenMacro needs{" "}
-                  <span className="break-all font-mono text-sm text-amber-100/90">
-                    {DRIVE_APPDATA_SCOPE}
-                  </span>{" "}
-                  to save your data in the hidden app folder. Tap below to grant
-                  access.
-                </p>
-              </div>
-            ) : null}
-
-            <button
-              type="button"
-              disabled={!ready}
-              onClick={() =>
-                signIn(needsConsent ? { promptConsent: true } : undefined)
-              }
-              className="relative flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <ButtonPendingContents
-                pending={false}
-                spinner={<ButtonSpinner />}
-              >
-                {needsConsent
-                  ? "Grant Drive app data access"
-                  : "Continue with Google"}
-              </ButtonPendingContents>
-            </button>
-          </div>
-        )}
+  if (!ready) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-om-bg text-zinc-400">
+        <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
+        <p className="text-sm">Checking Google sign-in…</p>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <GoogleAuthPageLayout
+      title={
+        needsConsent
+          ? GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE
+          : "Welcome to OpenMacro"
+      }
+      description={GOOGLE_DRIVE_APP_DATA_BLURB}
+    >
+      <div className="space-y-4">
+        <button
+          type="button"
+          disabled={signInPending}
+          aria-busy={signInPending}
+          onClick={() => {
+            setSignInPending(true);
+            signIn(needsConsent ? { promptConsent: true } : undefined);
+          }}
+          className="relative flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <ButtonPendingContents
+            pending={signInPending}
+            spinner={<ButtonSpinner />}
+          >
+            <GoogleGMark />
+            Continue with Google
+          </ButtonPendingContents>
+        </button>
+      </div>
+
+      {oauthSearch.error || error ? (
+        <div className="space-y-1.5 text-center text-sm text-red-400">
+          {oauthSearch.error ? <p role="alert">{oauthSearch.error}</p> : null}
+          {error ? <p>{error}</p> : null}
+        </div>
+      ) : null}
+    </GoogleAuthPageLayout>
   );
 }

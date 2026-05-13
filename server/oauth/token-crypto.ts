@@ -2,10 +2,7 @@ import * as crypto from "node:crypto";
 
 const ALGO = "aes-256-gcm";
 
-export function encryptRefreshToken(
-  plaintext: string,
-  keyBase64: string,
-): string {
+export function encryptToken(plaintext: string, keyBase64: string): string {
   const key = Buffer.from(keyBase64, "base64");
   if (key.length !== 32) {
     throw new Error("TOKEN_ENCRYPTION_KEY must decode to 32 bytes (base64)");
@@ -20,10 +17,7 @@ export function encryptRefreshToken(
   return Buffer.concat([iv, tag, enc]).toString("base64");
 }
 
-export function decryptRefreshToken(
-  blobBase64: string,
-  keyBase64: string,
-): string {
+export function decryptToken(blobBase64: string, keyBase64: string): string {
   const key = Buffer.from(keyBase64, "base64");
   if (key.length !== 32) {
     throw new Error("TOKEN_ENCRYPTION_KEY must decode to 32 bytes (base64)");
@@ -41,3 +35,6 @@ export function decryptRefreshToken(
     "utf8",
   );
 }
+
+export const encryptRefreshToken = encryptToken;
+export const decryptRefreshToken = decryptToken;

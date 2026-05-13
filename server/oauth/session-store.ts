@@ -69,11 +69,50 @@ function ensureFirestore(): Firestore {
 }
 
 export type StoredOAuthSession = {
-  encryptedRefreshToken: string;
+  encryptedRefreshToken?: string;
+  encryptedAccessToken?: string;
+  accessTokenExpiresAtMs?: number;
   googleSub: string;
   email: string | null;
   scope: string;
 };
+
+export type StoredOAuthSessionWithId = StoredOAuthSession & {
+  sessionId: string;
+};
+
+function normalizeStoredOAuthSession(
+  data: Record<string, unknown> | undefined,
+): StoredOAuthSession | null {
+  if (
+    !data ||
+    typeof data.googleSub !== "string" ||
+    typeof data.scope !== "string"
+  ) {
+    return null;
+  }
+  const encryptedRefreshToken =
+    typeof data.encryptedRefreshToken === "string"
+      ? data.encryptedRefreshToken
+      : undefined;
+  const encryptedAccessToken =
+    typeof data.encryptedAccessToken === "string"
+      ? data.encryptedAccessToken
+      : undefined;
+  if (!encryptedRefreshToken && !encryptedAccessToken) return null;
+
+  return {
+    encryptedRefreshToken,
+    encryptedAccessToken,
+    accessTokenExpiresAtMs:
+      typeof data.accessTokenExpiresAtMs === "number"
+        ? data.accessTokenExpiresAtMs
+        : undefined,
+    googleSub: data.googleSub,
+    email: typeof data.email === "string" ? data.email : null,
+    scope: data.scope,
+  };
+}
 
 export async function saveOAuthSession(
   sessionId: string,
@@ -92,20 +131,29 @@ export async function getOAuthSession(
   const db = ensureFirestore();
   const snap = await db.collection(FIRESTORE_SESSION_COLLECTION).doc(sessionId).get();
   if (!snap.exists) return null;
-  const d = snap.data();
-  if (
-    !d ||
-    typeof d.encryptedRefreshToken !== "string" ||
-    typeof d.googleSub !== "string" ||
-    typeof d.scope !== "string"
-  ) {
-    return null;
-  }
+  return normalizeStoredOAuthSession(snap.data());
+}
+
+export async function findOAuthSessionByGoogleSub(
+  googleSub: string,
+): Promise<StoredOAuthSessionWithId | null> {
+  const sub = googleSub.trim();
+  if (!sub) return null;
+
+  const db = ensureFirestore();
+  const snap = await db
+    .collection(FIRESTORE_SESSION_COLLECTION)
+    .where("googleSub", "==", sub)
+    .limit(1)
+    .get();
+  const doc = snap.docs[0];
+  if (!doc) return null;
+
+  const data = normalizeStoredOAuthSession(doc.data());
+  if (!data) return null;
   return {
-    encryptedRefreshToken: d.encryptedRefreshToken,
-    googleSub: d.googleSub,
-    email: typeof d.email === "string" ? d.email : null,
-    scope: d.scope,
+    sessionId: doc.id,
+    ...data,
   };
 }
 

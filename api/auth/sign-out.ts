@@ -7,9 +7,7 @@ import {
   appendSetCookie,
   cookieClear,
   cookieClearPersistedSession,
-  parseCookies,
 } from "../../server/oauth/cookies.js";
-import { deleteOAuthSession } from "../../server/oauth/session-store.js";
 
 export default async function handler(
   req: VercelRequest,
@@ -23,14 +21,8 @@ export default async function handler(
   res.setHeader("Cache-Control", "no-store");
 
   try {
-    const cookies = parseCookies(req.headers.cookie);
-    const sessionId = cookies[SESSION_COOKIE];
     appendSetCookie(res, cookieClearPersistedSession(SESSION_COOKIE));
     appendSetCookie(res, cookieClear(OAUTH_RT_FALLBACK_COOKIE));
-
-    if (sessionId) {
-      await deleteOAuthSession(sessionId);
-    }
 
     res.status(204).end();
   } catch {

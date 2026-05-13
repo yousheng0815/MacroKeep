@@ -1,4 +1,10 @@
 import {
+  GOOGLE_DRIVE_APP_DATA_BLURB,
+  GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE,
+} from "@/components/auth/auth-copy";
+import { GoogleAuthPageLayout } from "@/components/auth/GoogleAuthPageLayout";
+import { GoogleGMark } from "@/components/auth/GoogleGMark";
+import {
   ButtonPendingContents,
   ButtonSpinner,
 } from "@/components/ButtonSpinner";
@@ -88,6 +94,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   } = useGoogleSession();
   const uid = getGoogleUserId();
   const rememberedEmail = getGoogleUserEmail();
+  const [signInPending, setSignInPending] = useState(false);
 
   if (!ready) {
     return (
@@ -108,44 +115,68 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     if (reconnecting) {
       return (
         <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-om-bg text-zinc-400">
-          <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
+          <Loader2
+            className="size-9 animate-spin text-emerald-400"
+            aria-hidden
+          />
           <p className="text-sm">Signing you back in…</p>
         </div>
       );
     }
 
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-om-bg px-6 text-center text-zinc-100">
-        <div className="max-w-md space-y-3">
-          <h1 className="text-lg font-semibold tracking-tight text-white">
-            {needsConsent ? "Drive permission needed" : "Sign in again"}
-          </h1>
-          <p className="text-sm leading-relaxed text-om-muted">
-            {needsConsent
-              ? "Grant Drive app data access again so OpenMacro can load and save your diary."
-              : "Your session may have expired. Continue to sign in with Google again."}
-          </p>
-          {!needsConsent && rememberedEmail ? (
-            <p className="text-sm leading-relaxed text-zinc-500">
-              Reconnecting as <span className="font-medium text-zinc-400">{rememberedEmail}</span>
-            </p>
-          ) : null}
+      <GoogleAuthPageLayout
+        title={
+          needsConsent ? GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE : "Sign in again"
+        }
+        description={
+          needsConsent ? (
+            GOOGLE_DRIVE_APP_DATA_BLURB
+          ) : (
+            <>
+              <span className="block">
+                Your session may have expired. Continue to sign in with Google
+                again.
+              </span>
+              {rememberedEmail ? (
+                <span className="mt-2 block text-zinc-500">
+                  Reconnecting as{" "}
+                  <span className="font-medium text-zinc-400">
+                    {rememberedEmail}
+                  </span>
+                </span>
+              ) : null}
+            </>
+          )
+        }
+      >
+        <div className="space-y-4">
+          <button
+            type="button"
+            disabled={signInPending}
+            aria-busy={signInPending}
+            onClick={() => {
+              setSignInPending(true);
+              signIn(needsConsent ? { promptConsent: true } : undefined);
+            }}
+            className="relative flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <ButtonPendingContents
+              pending={signInPending}
+              spinner={<ButtonSpinner />}
+            >
+              <GoogleGMark />
+              Continue with Google
+            </ButtonPendingContents>
+          </button>
         </div>
+
         {error ? (
-          <p className="max-w-md text-sm text-red-400">{error}</p>
+          <div className="space-y-1.5 text-center text-sm text-red-400">
+            <p>{error}</p>
+          </div>
         ) : null}
-        <button
-          type="button"
-          onClick={() =>
-            signIn(needsConsent ? { promptConsent: true } : undefined)
-          }
-          className="relative flex min-w-[220px] items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <ButtonPendingContents pending={false} spinner={<ButtonSpinner />}>
-            {needsConsent ? "Grant Drive app data access" : "Continue with Google"}
-          </ButtonPendingContents>
-        </button>
-      </div>
+      </GoogleAuthPageLayout>
     );
   }
 
