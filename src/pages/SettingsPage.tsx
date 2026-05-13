@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
 import { DRIVE_APPDATA_SCOPE, getGoogleUserEmail } from "@/lib/gapi";
+import { validateGeminiApiKey } from "@/lib/gemini";
 import { CORE_DRIVE_FILE } from "@/lib/google-drive";
 import type { ProfileGender, UserProfile } from "@/types/records";
 import { useQueryClient } from "@tanstack/react-query";
@@ -38,37 +39,72 @@ function GeminiKeyCard({
   isSaving: boolean;
 }) {
   const [draft, setDraft] = useState(geminiKey);
+  const [keyFlowBusy, setKeyFlowBusy] = useState(false);
+  const [keyFlowError, setKeyFlowError] = useState<string | null>(null);
 
   return (
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-white">
-            BYOK — Gemini API Key
-          </h2>
+          <h2 className="text-sm font-semibold text-white">Gemini API Key</h2>
           <p className="mt-1 text-sm text-om-muted">
-            Saved inside your Drive{" "}
-            <span className="font-mono text-zinc-400">{CORE_DRIVE_FILE}</span>{" "}
-            (targets and this key — meals stay in monthly shard files).
+            Add an API key to estimate macros from photos. The key is saved in
+            your own Google Drive.
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          {geminiKey.trim() ? (
+          {geminiKey.trim() && (
             <>
               <CheckCircle2 className="size-4 text-emerald-400" />
               <span className="text-emerald-400">Connected</span>
             </>
-          ) : (
-            <span className="text-zinc-400">Not set</span>
           )}
         </div>
       </div>
+
+      {!geminiKey.trim() && (
+        <div className="mt-4 rounded-xl border border-om-border bg-zinc-950/40 px-4 py-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            How to get a key
+          </h3>
+          <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-om-muted marker:text-zinc-500">
+            <li>
+              Open{" "}
+              <a
+                className="font-medium text-blue-400 underline decoration-blue-400/40 underline-offset-2 hover:text-blue-300"
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Google AI Studio → API keys
+              </a>{" "}
+              and sign in with Google.
+            </li>
+            <li>
+              Click <span className="text-zinc-300">Create API key</span>. Pick
+              an existing Cloud project or let Google create one when prompted.
+            </li>
+            <li>
+              Copy the new key — it starts with{" "}
+              <span className="font-mono text-zinc-400">AIza</span> — then paste
+              it in the field below.
+            </li>
+            <li>
+              Press <span className="text-zinc-300">Save key</span>. We verify
+              the key with Google before storing it in Drive.
+            </li>
+          </ol>
+        </div>
+      )}
 
       <label className="mt-4 block text-sm text-zinc-400">
         API key
         <input
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setKeyFlowError(null);
+          }}
           placeholder="AIza…"
           autoComplete="off"
           className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 font-mono text-base text-white outline-none focus:border-emerald-400/60"
@@ -78,12 +114,35 @@ function GeminiKeyCard({
       <div className="mt-3 flex flex-wrap gap-3">
         <button
           type="button"
-          disabled={isSaving}
-          aria-busy={isSaving}
-          onClick={() => void updateGeminiKey(draft)}
+          disabled={isSaving || keyFlowBusy}
+          aria-busy={isSaving || keyFlowBusy}
+          onClick={() =>
+            void (async () => {
+              setKeyFlowError(null);
+              const trimmed = draft.trim();
+              if (!trimmed) {
+                await updateGeminiKey("");
+                return;
+              }
+              setKeyFlowBusy(true);
+              try {
+                await validateGeminiApiKey(trimmed);
+                await updateGeminiKey(trimmed);
+              } catch (e) {
+                setKeyFlowError(
+                  e instanceof Error ? e.message : "Could not verify key.",
+                );
+              } finally {
+                setKeyFlowBusy(false);
+              }
+            })()
+          }
           className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <ButtonPendingContents pending={isSaving} spinner={<ButtonSpinner />}>
+          <ButtonPendingContents
+            pending={isSaving || keyFlowBusy}
+            spinner={<ButtonSpinner />}
+          >
             Save key
           </ButtonPendingContents>
         </button>
@@ -93,9 +152,14 @@ function GeminiKeyCard({
           target="_blank"
           rel="noreferrer"
         >
-          Get a free key from Google AI Studio
+          Open Google AI Studio
         </a>
       </div>
+      {keyFlowError ? (
+        <p className="mt-3 text-sm text-red-300" role="alert">
+          {keyFlowError}
+        </p>
+      ) : null}
     </Card>
   );
 }
@@ -114,11 +178,6 @@ function ProfileCard({
   return (
     <Card>
       <h2 className="text-sm font-semibold text-white">Profile & targets</h2>
-      <p className="mt-1 text-sm text-om-muted">
-        Placeholder defaults (1990-01-01, male, 180cm / 72kg, 2000 kcal) until
-        you set your own values. Birthday and gender are used to estimate
-        targets; add a Gemini key below for photo meal scanning.
-      </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block text-sm text-zinc-400">

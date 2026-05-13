@@ -145,8 +145,13 @@ export function DashboardPage() {
   const { records, geminiKey, isMealsLoading, mealsError, refetchMeals } =
     useRecords();
   const quickCameraInputRef = useRef<HTMLInputElement>(null);
-  const { analyzing, error, runAnalyzeFromFile, clearError, ensureKeyForPhotoScan } =
-    useMealScanFlow();
+  const {
+    analyzing,
+    error,
+    runAnalyzeFromFile,
+    clearError,
+    ensureKeyForPhotoScan,
+  } = useMealScanFlow();
   const today = sumToday(records.meals);
   const target = records.profile.dailyTargetKcal;
   const connected = geminiKey.trim().length > 0;
@@ -208,7 +213,7 @@ export function DashboardPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-white">
-                  BYOK — Gemini API Key
+                  Gemini API Key
                 </h2>
                 <p className="mt-1 text-sm text-om-muted">
                   Needed for photo meal scanning. Configure under Settings —

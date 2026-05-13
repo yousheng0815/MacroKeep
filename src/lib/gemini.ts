@@ -15,6 +15,62 @@ type MealScanGenerationConfig = GenerationConfig & {
   thinkingConfig?: { thinkingBudget?: number };
 };
 
+/**
+ * Lightweight `generateContent` ping using the same model as meal scans.
+ * Call before persisting a BYOK key so invalid or restricted keys are not saved.
+ */
+export async function validateGeminiApiKey(apiKey: string): Promise<void> {
+  const trimmed = apiKey.trim();
+  if (!trimmed) return;
+
+  const genAI = new GoogleGenerativeAI(trimmed);
+  const model = genAI.getGenerativeModel({
+    model: DEFAULT_GEMINI_MODEL,
+    generationConfig: {
+      maxOutputTokens: 16,
+      temperature: 0,
+      thinkingConfig: { thinkingBudget: 0 },
+    } as MealScanGenerationConfig,
+  });
+
+  try {
+    const result = await model.generateContent(
+      'Reply with exactly the two letters "ok" in lowercase and nothing else.',
+    );
+    const text = result.response.text().trim().toLowerCase();
+    if (!text.startsWith("ok")) {
+      throw new Error(
+        "Gemini responded, but the reply was unexpected. Try again or create a new API key.",
+      );
+    }
+  } catch (e) {
+    const raw = e instanceof Error ? e.message : String(e);
+    if (
+      /API[_ ]?KEY|API key not valid|invalid api key|API_KEY_INVALID/i.test(raw)
+    ) {
+      throw new Error(
+        "That key is invalid. Try pasting it again, or create a new one in Google AI Studio.",
+      );
+    }
+    if (/403|PERMISSION_DENIED|permission denied/i.test(raw)) {
+      throw new Error(
+        "This key cannot call Gemini (blocked or restricted). Check API key restrictions in Google Cloud.",
+      );
+    }
+    if (/404|NOT_FOUND|not found/i.test(raw)) {
+      throw new Error(
+        "The Gemini model is unavailable for this key or region. Try again later.",
+      );
+    }
+    if (/429|RESOURCE_EXHAUSTED|quota/i.test(raw)) {
+      throw new Error(
+        "Gemini rate limit or quota exceeded. Wait a bit and try again.",
+      );
+    }
+    throw new Error(raw.length > 220 ? `${raw.slice(0, 220)}…` : raw);
+  }
+}
+
 export type AiMealEstimate = {
   food_name: string;
   calories: number;
