@@ -18,6 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, ChevronRight, FolderOpen } from "lucide-react";
 import { useCallback, useState } from "react";
+import { toast } from "sonner";
 
 type ProfileBodyDraft = Pick<
   UserProfile,
@@ -78,7 +79,6 @@ function GeminiKeyCard({
 }) {
   const [draft, setDraft] = useState(geminiKey);
   const [keyFlowBusy, setKeyFlowBusy] = useState(false);
-  const [keyFlowError, setKeyFlowError] = useState<string | null>(null);
 
   return (
     <Card>
@@ -141,7 +141,6 @@ function GeminiKeyCard({
           value={draft}
           onChange={(e) => {
             setDraft(e.target.value);
-            setKeyFlowError(null);
           }}
           placeholder="AIza…"
           autoComplete="off"
@@ -156,18 +155,19 @@ function GeminiKeyCard({
           aria-busy={isSaving || keyFlowBusy}
           onClick={() =>
             void (async () => {
-              setKeyFlowError(null);
               const trimmed = draft.trim();
               if (!trimmed) {
                 await updateGeminiKey("");
+                toast.success("API key removed");
                 return;
               }
               setKeyFlowBusy(true);
               try {
                 await validateGeminiApiKey(trimmed);
                 await updateGeminiKey(trimmed);
+                toast.success("API key saved");
               } catch (e) {
-                setKeyFlowError(
+                toast.error(
                   e instanceof Error ? e.message : "Could not verify key.",
                 );
               } finally {
@@ -193,11 +193,6 @@ function GeminiKeyCard({
           Open Google AI Studio
         </a>
       </div>
-      {keyFlowError ? (
-        <p className="mt-3 text-sm text-red-300" role="alert">
-          {keyFlowError}
-        </p>
-      ) : null}
     </Card>
   );
 }
@@ -433,8 +428,6 @@ export function SettingsPage() {
   const email = getGoogleUserEmail();
   const [wipePhrase, setWipePhrase] = useState("");
   const [wipeBusy, setWipeBusy] = useState(false);
-  const [wipeError, setWipeError] = useState<string | null>(null);
-  const [wipeDone, setWipeDone] = useState(false);
   const [profileSavePending, setProfileSavePending] = useState(false);
   const [targetsSavePending, setTargetsSavePending] = useState(false);
 
@@ -567,8 +560,6 @@ export function SettingsPage() {
               value={wipePhrase}
               onChange={(e) => {
                 setWipePhrase(e.target.value);
-                setWipeError(null);
-                setWipeDone(false);
               }}
               autoComplete="off"
               placeholder="DELETE"
@@ -576,14 +567,6 @@ export function SettingsPage() {
               className="mt-1 w-full max-w-xs rounded-xl border border-om-border bg-om-bg px-4 py-3 font-mono text-base text-white outline-none placeholder:text-zinc-600 focus:border-red-400/50"
             />
           </label>
-          {wipeError ? (
-            <p className="mt-2 text-sm text-red-300">{wipeError}</p>
-          ) : null}
-          {wipeDone ? (
-            <p className="mt-2 text-sm text-emerald-400">
-              All App Data files were removed. Your diary will reload empty.
-            </p>
-          ) : null}
           <button
             type="button"
             disabled={
@@ -592,15 +575,15 @@ export function SettingsPage() {
             aria-busy={wipeBusy}
             onClick={() =>
               void (async () => {
-                setWipeError(null);
-                setWipeDone(false);
                 setWipeBusy(true);
                 try {
                   await wipeAllRemoteData();
                   setWipePhrase("");
-                  setWipeDone(true);
+                  toast.success("All Drive data deleted", {
+                    description: "Your diary will reload empty.",
+                  });
                 } catch (e) {
-                  setWipeError(
+                  toast.error(
                     e instanceof Error
                       ? e.message
                       : "Could not delete all data.",

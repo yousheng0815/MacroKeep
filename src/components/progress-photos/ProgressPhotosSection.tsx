@@ -19,6 +19,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 
 function overlayFromSearch(search: Record<string, unknown>) {
   return {
@@ -112,6 +113,11 @@ export function ProgressPhotosSection({
     prefetchPhotoId: view,
     displayLimit: stripVisibleCount,
   });
+
+  useEffect(() => {
+    if (!error) return;
+    toast.error(error);
+  }, [error]);
 
   const photoIdsKey = useMemo(
     () => photos.map((p) => p.id).join("\0"),
@@ -265,7 +271,9 @@ export function ProgressPhotosSection({
 
         <div className="mt-4">
           {error ? (
-            <p className="text-sm text-red-400">{error}</p>
+            <p className="text-sm text-om-muted">
+              Couldn&apos;t load progress photos. Try again later.
+            </p>
           ) : (
             <div className="min-h-28">
               {loading ? (
@@ -356,7 +364,9 @@ export function ProgressPhotosSection({
 
       {showViewerShell && error ? (
         <ViewerFallbackChrome title="Progress photo" onDismiss={dismissOverlay}>
-          <p className="max-w-sm text-center text-sm text-red-400">{error}</p>
+          <p className="max-w-sm text-center text-sm text-zinc-400">
+            Couldn&apos;t open this photo. Check the notification for details.
+          </p>
           <button
             type="button"
             onClick={dismissOverlay}

@@ -6,11 +6,19 @@ export type MealRecord = {
   fats: number;
   carbs: number;
   recordedAt: string;
-  /** User-marked favorite meal. */
-  isFavorite?: boolean;
-  /** When present, this entry was created from another favorite meal. */
-  sourceFavoriteMealId?: string;
   /** Google Drive file id (App Data folder) for the meal photo. */
+  photoFileId?: string;
+};
+
+/** Quick-add snapshot in Drive `saved-meals.json` — not tied to a history meal row. */
+export type SavedMealRecord = {
+  id: string;
+  food_name: string;
+  calories: number;
+  protein: number;
+  fats: number;
+  carbs: number;
+  /** Google Drive App Data image for this saved meal (optional). */
   photoFileId?: string;
 };
 

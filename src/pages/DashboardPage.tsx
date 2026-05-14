@@ -7,7 +7,6 @@ import { Footer } from "@/components/Footer";
 import { MacroSummary } from "@/components/MacroSummary";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { ProgressArc } from "@/components/ProgressArc";
-import { MealScanErrorDialog } from "@/components/scanner/MealScanErrorDialog";
 import { MealScanOverlays } from "@/components/scanner/MealScanOverlays";
 import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { useRecords } from "@/hooks/use-records";
@@ -147,9 +146,7 @@ export function DashboardPage() {
   const quickCameraInputRef = useRef<HTMLInputElement>(null);
   const {
     analyzing,
-    error,
     runAnalyzeFromFile,
-    clearError,
     ensureKeyForPhotoScan,
   } = useMealScanFlow();
   const today = sumToday(records.meals);
@@ -327,12 +324,6 @@ export function DashboardPage() {
       >
         <Camera className="size-6" />
       </button>
-
-      <MealScanErrorDialog
-        error={error && !analyzing ? error : null}
-        onDismiss={clearError}
-        className="lg:hidden"
-      />
 
       <MealScanOverlays analyzing={analyzing} />
 

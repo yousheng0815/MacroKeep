@@ -14,7 +14,8 @@ import { getGoogleUserEmail, getGoogleUserId } from "@/lib/gapi";
 import { Navigate, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 function recordsLoadErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -96,6 +97,13 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const rememberedEmail = getGoogleUserEmail();
   const [signInPending, setSignInPending] = useState(false);
 
+  useEffect(() => {
+    if (!signedIn) return;
+    if (sessionReady) return;
+    if (!error) return;
+    toast.error(error);
+  }, [signedIn, sessionReady, error]);
+
   if (!ready) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-om-bg text-zinc-400">
@@ -170,12 +178,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
             </ButtonPendingContents>
           </button>
         </div>
-
-        {error ? (
-          <div className="space-y-1.5 text-center text-sm text-red-400">
-            <p>{error}</p>
-          </div>
-        ) : null}
       </GoogleAuthPageLayout>
     );
   }

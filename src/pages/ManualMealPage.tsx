@@ -11,6 +11,7 @@ import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import { Camera, ImagePlus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 function toLocalDateTimeInput(iso: string): string {
   const d = new Date(iso);
@@ -36,7 +37,6 @@ export function ManualMealPage() {
   const navigate = useNavigate();
   const { addMeal } = useRecords();
   const [savePending, setSavePending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [photoChoice, setPhotoChoice] = useState<{
     file: File;
     previewUrl: string;
@@ -85,11 +85,10 @@ export function ManualMealPage() {
           onSubmit={(e) => {
             e.preventDefault();
             void (async () => {
-              setError(null);
               const form = new FormData(e.currentTarget);
               const foodName = String(form.get("foodName") ?? "").trim();
               if (!foodName) {
-                setError("Enter a food name.");
+                toast.error("Enter a food name.");
                 return;
               }
               const calories = String(form.get("calories") ?? "0");
@@ -115,6 +114,7 @@ export function ManualMealPage() {
                   },
                   photoOpts,
                 );
+                toast.success("Meal saved");
                 await navigate({
                   to: paths.mealDetail,
                   params: { mealId },
@@ -122,7 +122,7 @@ export function ManualMealPage() {
                   replace: true,
                 });
               } catch (err) {
-                setError(
+                toast.error(
                   err instanceof Error ? err.message : "Could not add meal.",
                 );
               } finally {
@@ -265,12 +265,6 @@ export function ManualMealPage() {
               />
             </label>
           </div>
-
-          {error ? (
-            <p className="text-sm text-red-400" role="alert">
-              {error}
-            </p>
-          ) : null}
 
           <button
             type="submit"

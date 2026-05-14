@@ -16,7 +16,7 @@ import {
 import { paths } from "@/lib/routes";
 import type { MealRecord } from "@/types/records";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Star, Tag } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
@@ -41,16 +41,12 @@ export function HistoryPage() {
     isMealsLoading,
     mealsError,
     refetchMeals,
-    updateMeal,
     loadMoreMealMonths,
     allMealShardsLoaded,
     isLoadingMoreMeals,
   } = useRecords();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [retryPending, setRetryPending] = useState(false);
-  const [favoritePendingId, setFavoritePendingId] = useState<string | null>(
-    null,
-  );
   const groups = groupByDay(records.meals);
 
   useEffect(() => {
@@ -208,62 +204,10 @@ export function HistoryPage() {
                         className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
                       />
                       <div className="w-0 flex-1 overflow-hidden">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="block max-w-full truncate font-medium text-white">
-                              {m.food_name}
-                            </div>
+                        <div className="min-w-0">
+                          <div className="block max-w-full truncate font-medium text-white">
+                            {m.food_name}
                           </div>
-                          {m.sourceFavoriteMealId ? (
-                            <span
-                              className="mt-0.5 inline-flex size-5 shrink-0 text-emerald-300"
-                              aria-label="Added from favorite meal"
-                              title="Added from favorite meal"
-                            >
-                              <Tag className="size-3.5" />
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              disabled={favoritePendingId !== null}
-                              aria-busy={favoritePendingId === m.id}
-                              aria-label={
-                                m.isFavorite
-                                  ? "Marked as favorite"
-                                  : "Add to favorites"
-                              }
-                              title={
-                                m.isFavorite ? "Favorite" : "Add to favorites"
-                              }
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                void (async () => {
-                                  setFavoritePendingId(m.id);
-                                  try {
-                                    await updateMeal(m.id, {
-                                      isFavorite: !m.isFavorite,
-                                    });
-                                  } finally {
-                                    setFavoritePendingId(null);
-                                  }
-                                })();
-                              }}
-                              className={`relative mt-0.5 mr-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full transition before:absolute before:-inset-2 before:content-[''] disabled:cursor-not-allowed disabled:opacity-60 ${
-                                m.isFavorite
-                                  ? "text-amber-300 hover:text-amber-200"
-                                  : "text-zinc-300 hover:text-zinc-100"
-                              }`}
-                            >
-                              {favoritePendingId === m.id ? (
-                                <ButtonSpinner size="sm" />
-                              ) : (
-                                <Star
-                                  className={`size-3.5 ${m.isFavorite ? "fill-current" : ""}`}
-                                />
-                              )}
-                            </button>
-                          )}
                         </div>
                         <div className="mt-1 truncate text-sm text-om-muted">
                           {formatTime(new Date(m.recordedAt))} ·{" "}

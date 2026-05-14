@@ -1,12 +1,11 @@
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
-import { MealScanErrorDialog } from "@/components/scanner/MealScanErrorDialog";
 import { MealScanOverlays } from "@/components/scanner/MealScanOverlays";
 import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { consumePendingScanPhoto } from "@/lib/pending-scan-photo";
 import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
-import { Camera, History, ImagePlus, PenLine, Star } from "lucide-react";
+import { Bookmark, Camera, History, ImagePlus, PenLine } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 
 export function AddMealPage() {
@@ -16,10 +15,8 @@ export function AddMealPage() {
 
   const {
     analyzing,
-    error,
     runAnalyzeSnapshot,
     runAnalyzeFromFile,
-    clearError,
     ensureKeyForPhotoScan,
   } = useMealScanFlow();
 
@@ -91,11 +88,11 @@ export function AddMealPage() {
           </button>
           <button
             type="button"
-            onClick={() => void navigate({ to: paths.add.favorites })}
+            onClick={() => void navigate({ to: paths.add.savedMeals })}
             className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
-            <Star className="size-5 shrink-0 text-amber-400" />
-            Add from favorites
+            <Bookmark className="size-5 shrink-0 text-amber-400" />
+            Add from saved meals
           </button>
           <button
             type="button"
@@ -115,11 +112,6 @@ export function AddMealPage() {
           </button>
         </div>
       </Card>
-
-      <MealScanErrorDialog
-        error={error && !analyzing ? error : null}
-        onDismiss={clearError}
-      />
 
       <MealScanOverlays analyzing={analyzing} />
     </div>

@@ -26,6 +26,7 @@ import type {
 } from "@/types/records";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type TutorialForm = {
   birthDate: string;
@@ -81,7 +82,6 @@ export function TutorialPage() {
   });
   const [generatedPlan, setGeneratedPlan] =
     useState<MacroPlanSuggestion | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [didHydrateFromDraft, setDidHydrateFromDraft] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const step2Ref = useRef<HTMLDivElement>(null);
@@ -141,7 +141,6 @@ export function TutorialPage() {
   }, [generatedPlan]);
 
   const generatePlan = () => {
-    setError(null);
     const isRecalculate = generatedPlan !== null;
     const plan = suggestMacroPlanFromProfileBody({
       age: ageYearsFromIsoBirthDate(form.birthDate),
@@ -175,7 +174,7 @@ export function TutorialPage() {
         }
       })
       .catch((e) => {
-        setError(
+        toast.error(
           e instanceof Error ? e.message : "Could not save suggested targets.",
         );
       })
@@ -414,7 +413,6 @@ export function TutorialPage() {
             aria-busy={isSaving}
             onClick={() =>
               void (async () => {
-                setError(null);
                 try {
                   await updateProfile({
                     birthDate: form.birthDate,
@@ -431,7 +429,7 @@ export function TutorialPage() {
                   await completeOnboarding();
                   await navigate({ to: "/" });
                 } catch (e) {
-                  setError(
+                  toast.error(
                     e instanceof Error ? e.message : "Could not save targets.",
                   );
                 }
@@ -449,8 +447,6 @@ export function TutorialPage() {
         </Card>
         </div>
       ) : null}
-
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
     </div>
   );
 }

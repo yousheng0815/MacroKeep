@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 
 export function ProgressPhotoCaptureScreen({
   onDismiss,
@@ -39,7 +40,6 @@ export function ProgressPhotoCaptureScreen({
   );
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   const ghostBlob = useMemo(() => {
     return photosForGhost[0]?.blob ?? null;
@@ -159,7 +159,6 @@ export function ProgressPhotoCaptureScreen({
   const onSave = useCallback(async () => {
     if (!previewBlob) return;
     setBusy(true);
-    setSaveError(null);
     try {
       const record: ProgressPhotoRecord = {
         id: crypto.randomUUID(),
@@ -170,7 +169,7 @@ export function ProgressPhotoCaptureScreen({
       onSaved?.();
       onDismiss();
     } catch (e) {
-      setSaveError(
+      toast.error(
         e instanceof Error ? e.message : "Could not save this photo.",
       );
     } finally {
@@ -276,17 +275,13 @@ export function ProgressPhotoCaptureScreen({
               ) : null}
             </div>
 
-            {saveError ? (
-              <p className="text-center text-sm text-red-400">{saveError}</p>
-            ) : null}
-
             <div className="mx-auto mt-auto flex w-full max-w-md flex-wrap gap-3 border-t border-zinc-800 pt-6">
               <button
                 type="button"
                 disabled={!!cameraError || busy}
                 onClick={() =>
                   void captureFromVideo().catch(() =>
-                    setSaveError("Could not capture frame."),
+                    toast.error("Could not capture frame."),
                   )
                 }
                 className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-black hover:bg-emerald-400 disabled:opacity-40"
@@ -307,9 +302,6 @@ export function ProgressPhotoCaptureScreen({
                 />
               ) : null}
             </div>
-            {saveError ? (
-              <p className="text-center text-sm text-red-400">{saveError}</p>
-            ) : null}
             <div className="btn-pair-row mx-auto mt-auto w-full max-w-md border-t border-zinc-800 pt-6">
               <button
                 type="button"

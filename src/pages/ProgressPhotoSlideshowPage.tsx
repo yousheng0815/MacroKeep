@@ -3,12 +3,19 @@ import { PageHeader } from "@/components/PageHeader";
 import { ProgressPhotoSlideshowViewer } from "@/components/progress-photos/ProgressPhotoSlideshowViewer";
 import { useProgressPhotos } from "@/hooks/use-progress-photos";
 import { useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export function ProgressPhotoSlideshowPage() {
   const navigate = useNavigate();
   const { photos, loading, allBlobsLoaded, error } = useProgressPhotos({
     continuousBlobFetch: true,
   });
+
+  useEffect(() => {
+    if (!error) return;
+    toast.error(error);
+  }, [error]);
 
   const goBack = () => {
     void navigate({ to: "/progress" });
@@ -39,7 +46,10 @@ export function ProgressPhotoSlideshowPage() {
           backAriaLabel="Back to Progress"
         />
         <div className="space-y-4 py-8 text-center">
-          <p className="text-sm text-red-400">{error}</p>
+          <p className="text-sm text-zinc-400">
+            Couldn&apos;t load progress photos. Check the notification for
+            details.
+          </p>
           <button
             type="button"
             onClick={goBack}

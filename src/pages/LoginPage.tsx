@@ -13,6 +13,7 @@ import { startGoogleOAuthRedirect } from "@/lib/gapi";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 let oauthRetryRedirectStarted = false;
 
@@ -79,6 +80,16 @@ export function LoginPage() {
     navigate,
   ]);
 
+  useEffect(() => {
+    if (!oauthSearch.error) return;
+    toast.error(oauthSearch.error);
+  }, [oauthSearch.error]);
+
+  useEffect(() => {
+    if (!error) return;
+    toast.error(error);
+  }, [error]);
+
   const needsConsent = ready && signedIn && !hasDriveAppDataScope;
 
   if (ready && sessionReady) {
@@ -132,13 +143,6 @@ export function LoginPage() {
           </ButtonPendingContents>
         </button>
       </div>
-
-      {oauthSearch.error || error ? (
-        <div className="space-y-1.5 text-center text-sm text-red-400">
-          {oauthSearch.error ? <p role="alert">{oauthSearch.error}</p> : null}
-          {error ? <p>{error}</p> : null}
-        </div>
-      ) : null}
     </GoogleAuthPageLayout>
   );
 }

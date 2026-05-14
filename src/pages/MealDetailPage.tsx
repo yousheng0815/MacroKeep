@@ -21,15 +21,15 @@ import {
   useParams,
   useRouter,
 } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   ArrowLeft,
+  Bookmark,
   Camera,
   CopyPlus,
   ImagePlus,
   Loader2,
   Pencil,
-  Star,
-  Tag,
   Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -62,7 +62,7 @@ export function MealDetailPage() {
   const { mealId } = useParams({ strict: false });
   const navigate = useNavigate();
   const router = useRouter();
-  const { records, addMeal, updateMeal, deleteMeal, ensureMealIdLoaded } =
+  const { records, addMeal, updateMeal, deleteMeal, ensureMealIdLoaded, addSavedMealFromMeal } =
     useRecords();
 
   const [mealLookup, setMealLookup] = useState<"pending" | "ready">("pending");
@@ -106,9 +106,7 @@ export function MealDetailPage() {
   const [savePending, setSavePending] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
   const [duplicatePending, setDuplicatePending] = useState(false);
-  const [duplicateError, setDuplicateError] = useState<string | null>(null);
-  const [favoritePending, setFavoritePending] = useState(false);
-  const [editError, setEditError] = useState<string | null>(null);
+  const [saveToSavedPending, setSaveToSavedPending] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editPhoto, setEditPhoto] = useState<EditPhotoState>({ mode: "unchanged" });
   const [fileInputKey, setFileInputKey] = useState(0);
@@ -163,7 +161,6 @@ export function MealDetailPage() {
   }, []);
 
   const endEditing = useCallback(() => {
-    setEditError(null);
     setEditPhoto((prev) => {
       revokeEditPhotoPreview(prev);
       return { mode: "unchanged" };
@@ -224,44 +221,6 @@ export function MealDetailPage() {
               {formatLocalDateLabel(new Date(meal.recordedAt))} at{" "}
               {formatTime(new Date(meal.recordedAt))}
             </p>
-            {meal.sourceFavoriteMealId ? (
-              <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 text-sm font-semibold text-emerald-300">
-                <Tag className="size-3.5" />
-                From favorite
-              </div>
-            ) : (
-              <button
-                type="button"
-                disabled={savePending || deletePending || favoritePending}
-                aria-busy={favoritePending}
-                onClick={() => {
-                  void (async () => {
-                    setFavoritePending(true);
-                    try {
-                      await updateMeal(meal.id, {
-                        isFavorite: !meal.isFavorite,
-                      });
-                    } finally {
-                      setFavoritePending(false);
-                    }
-                  })();
-                }}
-                className={`mt-2 inline-flex items-center justify-center gap-1 rounded-full border px-3 py-1 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                  meal.isFavorite
-                    ? "border-amber-400/40 bg-amber-500/15 text-amber-200 hover:bg-amber-500/20"
-                    : "border-om-border bg-om-bg text-zinc-200 hover:bg-zinc-900"
-                }`}
-              >
-                {favoritePending ? (
-                  <ButtonSpinner size="sm" />
-                ) : (
-                  <Star
-                    className={`size-3.5 ${meal.isFavorite ? "fill-current" : ""}`}
-                  />
-                )}
-                {meal.isFavorite ? "Favorite" : "Add to favorites"}
-              </button>
-            )}
           </div>
         </div>
       </Card>
@@ -275,7 +234,6 @@ export function MealDetailPage() {
               e.preventDefault();
               void (async () => {
                 setSavePending(true);
-                setEditError(null);
                 let orphanUploadId: string | null = null;
                 try {
                   const form = new FormData(e.currentTarget);
@@ -329,6 +287,7 @@ export function MealDetailPage() {
                   revokeEditPhotoPreview(editPhoto);
                   setEditPhoto({ mode: "unchanged" });
                   setEditing(false);
+                  toast.success("Meal saved");
                 } catch (err) {
                   if (orphanUploadId) {
                     try {
@@ -339,7 +298,7 @@ export function MealDetailPage() {
                       /* best-effort */
                     }
                   }
-                  setEditError(
+                  toast.error(
                     err instanceof Error ? err.message : "Could not save meal.",
                   );
                 } finally {
@@ -492,16 +451,10 @@ export function MealDetailPage() {
               </label>
             </div>
 
-            {editError ? (
-              <p className="text-sm text-red-400" role="alert">
-                {editError}
-              </p>
-            ) : null}
-
             <div className="btn-pair-row pt-1">
               <button
                 type="submit"
-                disabled={savePending || deletePending || favoritePending}
+                disabled={savePending || deletePending || saveToSavedPending}
                 aria-busy={savePending}
                 className="relative flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -515,7 +468,7 @@ export function MealDetailPage() {
 
               <button
                 type="button"
-                disabled={savePending || deletePending || favoritePending}
+                disabled={savePending || deletePending || saveToSavedPending}
                 onClick={() => endEditing()}
                 className="flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -570,9 +523,8 @@ export function MealDetailPage() {
             <div className="btn-pair-row pt-1">
               <button
                 type="button"
-                disabled={savePending || deletePending || favoritePending}
+                disabled={savePending || deletePending || saveToSavedPending}
                 onClick={() => {
-                  setEditError(null);
                   setEditing(true);
                 }}
                 className="flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
@@ -583,7 +535,7 @@ export function MealDetailPage() {
 
               <button
                 type="button"
-                disabled={savePending || deletePending || favoritePending}
+                disabled={savePending || deletePending || saveToSavedPending}
                 aria-busy={deletePending}
                 className="relative flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => {
@@ -610,28 +562,19 @@ export function MealDetailPage() {
             </div>
 
             <div className="mt-4 border-t border-om-border pt-4">
-              {duplicateError ? (
-                <p className="mb-3 text-sm text-red-400" role="alert">
-                  {duplicateError}
-                </p>
-              ) : null}
               <button
                 type="button"
                 disabled={
                   savePending ||
                   deletePending ||
-                  favoritePending ||
+                  saveToSavedPending ||
                   duplicatePending
                 }
                 aria-busy={duplicatePending}
                 onClick={() => {
                   void (async () => {
-                    setDuplicateError(null);
                     setDuplicatePending(true);
                     try {
-                      const sourceFavoriteMealId = meal.isFavorite
-                        ? meal.id
-                        : meal.sourceFavoriteMealId;
                       await addMeal(
                         {
                           food_name: meal.food_name,
@@ -639,17 +582,15 @@ export function MealDetailPage() {
                           protein: meal.protein,
                           fats: meal.fats,
                           carbs: meal.carbs,
-                          ...(sourceFavoriteMealId
-                            ? { sourceFavoriteMealId }
-                            : {}),
                         },
                         meal.photoFileId
                           ? { photoFileId: meal.photoFileId }
                           : undefined,
                       );
+                      toast.success("Meal logged again");
                       await navigate({ to: paths.history });
                     } catch (err) {
-                      setDuplicateError(
+                      toast.error(
                         err instanceof Error
                           ? err.message
                           : "Could not add this meal again.",
@@ -667,6 +608,45 @@ export function MealDetailPage() {
                 >
                   <CopyPlus className="size-4" />
                   Add this meal again
+                </ButtonPendingContents>
+              </button>
+              <button
+                type="button"
+                disabled={
+                  savePending ||
+                  deletePending ||
+                  saveToSavedPending ||
+                  duplicatePending
+                }
+                aria-busy={saveToSavedPending}
+                onClick={() => {
+                  void (async () => {
+                    setSaveToSavedPending(true);
+                    try {
+                      await addSavedMealFromMeal(meal);
+                      toast.success("Added to saved meals", {
+                        description:
+                          "Use Add → Add from saved meals to log it again anytime.",
+                      });
+                    } catch (err) {
+                      toast.error(
+                        err instanceof Error
+                          ? err.message
+                          : "Could not add to saved meals.",
+                      );
+                    } finally {
+                      setSaveToSavedPending(false);
+                    }
+                  })();
+                }}
+                className="relative mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-950/20 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-950/35 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <ButtonPendingContents
+                  pending={saveToSavedPending}
+                  spinner={<ButtonSpinner className="text-amber-200" />}
+                >
+                  <Bookmark className="size-4" />
+                  Add to saved meals
                 </ButtonPendingContents>
               </button>
             </div>

@@ -9,6 +9,7 @@ import type { MealRecord } from "@/types/records";
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type HistoryTemplate = {
   key: string;
@@ -18,7 +19,6 @@ type HistoryTemplate = {
   fats: number;
   carbs: number;
   sourcePhotoFileId?: string;
-  sourceFavoriteMealId?: string;
 };
 
 function getHistoryTemplates(meals: MealRecord[]): HistoryTemplate[] {
@@ -40,7 +40,6 @@ function getHistoryTemplates(meals: MealRecord[]): HistoryTemplate[] {
       fats: m.fats,
       carbs: m.carbs,
       sourcePhotoFileId: m.photoFileId,
-      sourceFavoriteMealId: m.isFavorite ? m.id : m.sourceFavoriteMealId,
     }));
 }
 
@@ -58,12 +57,20 @@ export function AddFromHistoryPage() {
   } = useRecords();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const templates = useMemo(
     () => getHistoryTemplates(records.meals),
     [records.meals],
   );
+
+  useEffect(() => {
+    if (!mealsError) return;
+    toast.error(
+      mealsError instanceof Error
+        ? mealsError.message
+        : "Could not load meals from Drive.",
+    );
+  }, [mealsError]);
 
   useEffect(() => {
     if (allMealShardsLoaded || isMealsLoading || mealsError) return;
@@ -110,7 +117,6 @@ export function AddFromHistoryPage() {
   ]);
 
   const onPickHistoryMeal = async (template: HistoryTemplate) => {
-    setError(null);
     setPendingKey(template.key);
     try {
       await addMeal(
@@ -120,17 +126,15 @@ export function AddFromHistoryPage() {
           protein: template.protein,
           fats: template.fats,
           carbs: template.carbs,
-          ...(template.sourceFavoriteMealId
-            ? { sourceFavoriteMealId: template.sourceFavoriteMealId }
-            : {}),
         },
-        {
-          photoFileId: template.sourcePhotoFileId,
-        },
+        template.sourcePhotoFileId
+          ? { photoFileId: template.sourcePhotoFileId }
+          : undefined,
       );
+      toast.success("Meal added");
       await navigate({ to: paths.history });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not add meal.");
+      toast.error(e instanceof Error ? e.message : "Could not add meal.");
     } finally {
       setPendingKey(null);
     }
@@ -157,10 +161,9 @@ export function AddFromHistoryPage() {
         {isMealsLoading ? (
           <p className="text-sm text-om-muted">Loading meals…</p>
         ) : mealsError ? (
-          <p className="text-sm text-red-300">
-            {mealsError instanceof Error
-              ? mealsError.message
-              : "Could not load meals from Drive."}
+          <p className="text-sm text-om-muted">
+            Couldn&apos;t load meal history. Check your connection or try
+            refreshing the app.
           </p>
         ) : allMealShardsLoaded && templates.length === 0 ? (
           <p className="text-sm text-om-muted">
@@ -233,7 +236,6 @@ export function AddFromHistoryPage() {
             )}
           </div>
         ) : null}
-        {error ? <p className="mt-3 text-sm text-red-400">{error}</p> : null}
       </Card>
     </div>
   );

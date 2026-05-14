@@ -4,8 +4,10 @@ import {
   getGoogleUserId,
 } from "@/lib/gapi";
 import {
+  copyAppDataPhotoForSavedMeal,
   deleteAllAppDataFiles,
   deleteDriveFile,
+  ensureSavedMealsMigrated,
   hydrateMealMonthsForPersist,
   listMealShardFilesSortedDesc,
   monthKeyFromRecordedAt,
@@ -13,8 +15,10 @@ import {
   persistRecordsToDrive,
   pullMealsFromShardRefs,
   pullRecordsCoreFromDrive,
+  pullSavedMealsFromDrive,
   resolveMealsShardDriveFileId,
   uploadMealPhotoToAppData,
+  upsertSavedMealsToDrive,
 } from "@/lib/google-drive";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import type { PreparedMealPhoto } from "@/types/meal-scan";
@@ -23,9 +27,11 @@ import type {
   OnboardingDraft,
   RecordsCoreDocument,
   RecordsDocument,
+  SavedMealRecord,
   UserProfile,
 } from "@/types/records";
 import { emptyRecords } from "@/types/records";
+import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef, useState } from "react";
 
@@ -71,6 +77,15 @@ function mergeMealRecordsById(a: MealRecord[], b: MealRecord[]): MealRecord[] {
   const out = [...byId.values()];
   out.sort((x, y) => Date.parse(y.recordedAt) - Date.parse(x.recordedAt));
   return out;
+}
+
+function savedMealsReferencePhoto(
+  qc: QueryClient,
+  userId: string,
+  photoId: string,
+): boolean {
+  const saved = qc.getQueryData<SavedMealRecord[]>(["saved-meals", userId]);
+  return saved?.some((s) => s.photoFileId === photoId) ?? false;
 }
 
 function pickInitialMealShards(
@@ -141,6 +156,7 @@ export function useRecords() {
     queryFn: async ({ signal }): Promise<RecordsMealsQueryData> => {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
+      await ensureSavedMealsMigrated(token, signal);
       const shardsOnDriveDesc = await listMealShardFilesSortedDesc(token, signal);
       const initialRefs = pickInitialMealShards(
         shardsOnDriveDesc,
@@ -157,6 +173,25 @@ export function useRecords() {
         shardsOnDriveDesc,
         allShardsLoaded: computeAllShardsLoaded(shardsOnDriveDesc, loadedMonthKeys),
       };
+    },
+  });
+
+  const savedMealsQuery = useQuery({
+    queryKey: ["saved-meals", userId],
+    enabled: !!userId && coreQuery.isSuccess,
+    staleTime: 60_000,
+    queryFn: async ({ signal }) => {
+      const token = await ensureGoogleAccessToken();
+      if (!token) throw new Error("Missing Google access token");
+      const { savedMeals, didMigrate } = await pullSavedMealsFromDrive(
+        token,
+        signal,
+      );
+      const uid = getGoogleUserId() ?? "";
+      if (didMigrate && uid) {
+        void qc.invalidateQueries({ queryKey: ["records-meals", uid] });
+      }
+      return savedMeals;
     },
   });
 
@@ -362,10 +397,6 @@ export function useRecords() {
             carbs: meal.carbs,
             recordedAt,
             photoFileId: options.photoFileId,
-            ...(meal.isFavorite ? { isFavorite: true } : {}),
-            ...(meal.sourceFavoriteMealId
-              ? { sourceFavoriteMealId: meal.sourceFavoriteMealId }
-              : {}),
           };
 
           const nextWithPhoto: RecordsDocument = {
@@ -413,10 +444,6 @@ export function useRecords() {
             carbs: meal.carbs,
             recordedAt,
             photoFileId: uploadedPhotoId,
-            ...(meal.isFavorite ? { isFavorite: true } : {}),
-            ...(meal.sourceFavoriteMealId
-              ? { sourceFavoriteMealId: meal.sourceFavoriteMealId }
-              : {}),
           };
 
           const nextWithPhoto: RecordsDocument = {
@@ -441,10 +468,6 @@ export function useRecords() {
           fats: meal.fats,
           carbs: meal.carbs,
           recordedAt,
-          ...(meal.isFavorite ? { isFavorite: true } : {}),
-          ...(meal.sourceFavoriteMealId
-            ? { sourceFavoriteMealId: meal.sourceFavoriteMealId }
-            : {}),
         };
 
         const next: RecordsDocument = {
@@ -483,9 +506,10 @@ export function useRecords() {
         const token = await ensureGoogleAccessToken();
         if (token) {
           try {
-            const photoStillReferenced = next.meals.some(
-              (m) => m.photoFileId === photoId,
-            );
+            const uid = getGoogleUserId() ?? "";
+            const photoStillReferenced =
+              next.meals.some((m) => m.photoFileId === photoId) ||
+              savedMealsReferencePhoto(qc, uid, photoId);
             if (!photoStillReferenced) await deleteDriveFile(token, photoId);
           } catch {
             /* Snapshot may remain orphaned in App Data if delete fails. */
@@ -493,7 +517,7 @@ export function useRecords() {
         }
       }
     },
-    [getCurrentRecords, replaceMutation],
+    [getCurrentRecords, replaceMutation, qc],
   );
 
   const updateMeal = useCallback(
@@ -508,8 +532,6 @@ export function useRecords() {
           | "fats"
           | "carbs"
           | "recordedAt"
-          | "isFavorite"
-          | "sourceFavoriteMealId"
         >
       > & {
         /** New Drive file id, or `null` / empty string to drop the meal photo. */
@@ -560,7 +582,10 @@ export function useRecords() {
       if (oldPhotoId !== newPhotoId && canSyncToDriveAppData()) {
         const token = await ensureGoogleAccessToken();
         if (token && oldPhotoId && oldPhotoId !== newPhotoId) {
-          const still = next.meals.some((m) => m.photoFileId === oldPhotoId);
+          const uid = getGoogleUserId() ?? "";
+          const still =
+            next.meals.some((m) => m.photoFileId === oldPhotoId) ||
+            savedMealsReferencePhoto(qc, uid, oldPhotoId);
           if (!still) {
             try {
               await deleteDriveFile(token, oldPhotoId);
@@ -571,7 +596,38 @@ export function useRecords() {
         }
       }
     },
-    [getCurrentRecords, replaceMutation],
+    [getCurrentRecords, replaceMutation, qc],
+  );
+
+  const addSavedMealFromMeal = useCallback(
+    async (meal: MealRecord) => {
+      if (!canSyncToDriveAppData()) {
+        throw new Error("Not signed in or Drive scope unavailable");
+      }
+      const token = await ensureGoogleAccessToken();
+      if (!token) throw new Error("Missing access token");
+      const uid = getGoogleUserId() ?? "";
+      await ensureSavedMealsMigrated(token);
+      const { savedMeals: prev } = await pullSavedMealsFromDrive(token);
+      const newId = crypto.randomUUID?.() ?? String(Date.now());
+      let photoFileId = meal.photoFileId;
+      if (photoFileId) {
+        photoFileId = await copyAppDataPhotoForSavedMeal(token, photoFileId, newId);
+      }
+      const row: SavedMealRecord = {
+        id: newId,
+        food_name: meal.food_name,
+        calories: meal.calories,
+        protein: meal.protein,
+        fats: meal.fats,
+        carbs: meal.carbs,
+        ...(photoFileId ? { photoFileId } : {}),
+      };
+      const next = [row, ...prev];
+      await upsertSavedMealsToDrive(token, next);
+      qc.setQueryData<SavedMealRecord[]>(["saved-meals", uid], next);
+    },
+    [qc],
   );
 
   const updateProfile = useCallback(
@@ -644,6 +700,7 @@ export function useRecords() {
     if (uid) {
       qc.invalidateQueries({ queryKey: ["records-core", uid] });
       qc.invalidateQueries({ queryKey: ["records-meals", uid] });
+      qc.invalidateQueries({ queryKey: ["saved-meals", uid] });
       qc.invalidateQueries({ queryKey: ["drive-app-files", uid] });
     }
   }, [qc]);
@@ -727,22 +784,32 @@ export function useRecords() {
   const refetch = useCallback(async () => {
     const cr = await coreQuery.refetch();
     if (cr.error) return cr;
+    void savedMealsQuery.refetch();
     return mealsQuery.refetch();
-  }, [coreQuery, mealsQuery]);
+  }, [coreQuery, mealsQuery, savedMealsQuery]);
 
   const isMealsLoading =
     coreQuery.isSuccess &&
     (!mealsQuery.isFetched || mealsQuery.isFetching);
+
+  const isSavedMealsLoading =
+    coreQuery.isSuccess &&
+    (!savedMealsQuery.isFetched || savedMealsQuery.isFetching);
 
   const allMealShardsLoaded = mealsQuery.data?.allShardsLoaded ?? false;
 
   return {
     records,
     userId,
+    savedMeals: savedMealsQuery.data ?? [],
     /** True once core Drive JSON (`core.json`) has been loaded or created for this account. */
     isRecordsReady: coreQuery.isSuccess,
     /** Meal shards still syncing from Drive — show placeholders for meal-derived UI. */
     isMealsLoading,
+    /** `saved-meals.json` still loading from Drive. */
+    isSavedMealsLoading,
+    savedMealsError: savedMealsQuery.error,
+    refetchSavedMeals: savedMealsQuery.refetch,
     /** True when every meal month shard on Drive has been downloaded into the client cache. */
     allMealShardsLoaded,
     /** Fetches the next batch of older month shards from Drive (for infinite history). */
@@ -755,12 +822,16 @@ export function useRecords() {
     refetchMeals: mealsQuery.refetch,
     isLoading: coreQuery.isLoading,
     isFetching:
-      coreQuery.isFetching || mealsQuery.isFetching || loadingMoreMeals,
+      coreQuery.isFetching ||
+      mealsQuery.isFetching ||
+      savedMealsQuery.isFetching ||
+      loadingMoreMeals,
     refetch,
     error: coreQuery.error,
     geminiKey,
     updateGeminiKey,
     addMeal,
+    addSavedMealFromMeal,
     deleteMeal,
     updateMeal,
     updateProfile,

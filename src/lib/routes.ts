@@ -6,6 +6,8 @@ export const paths = {
   mealDetail: "/meals/$mealId",
   add: {
     root: "/add",
+    savedMeals: "/add/saved-meals",
+    /** @deprecated Use {@link paths.add.savedMeals}. */
     favorites: "/add/favorites",
     history: "/add/history",
     manual: "/add/manual",

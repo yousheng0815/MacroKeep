@@ -10,6 +10,7 @@ import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
 import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export const MISSING_GEMINI_API_KEY_ERROR =
   "To estimate macros from a photo, add your Gemini API key in Settings.";
@@ -18,15 +19,13 @@ export function useMealScanFlow() {
   const { geminiKey, addMeal } = useRecords();
   const navigate = useNavigate();
   const [analyzing, setAnalyzing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const hasKey = useMemo(() => geminiKey.trim().length > 0, [geminiKey]);
 
   const runAnalyzeSnapshot = useCallback(
     async (base64: string, mimeType: string) => {
-      setError(null);
       if (!hasKey) {
-        setError(MISSING_GEMINI_API_KEY_ERROR);
+        toast.error(MISSING_GEMINI_API_KEY_ERROR);
         return;
       }
       setAnalyzing(true);
@@ -84,7 +83,7 @@ export function useMealScanFlow() {
           { photoFileId: uploadedPhotoId ?? undefined },
         );
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Analysis failed");
+        toast.error(e instanceof Error ? e.message : "Analysis failed");
         // If the photo uploaded but meal persistence failed, best-effort clean up.
         if (uploadedPhotoId) {
           try {
@@ -115,27 +114,23 @@ export function useMealScanFlow() {
         const { base64, mimeType } = await fileToBase64(file);
         await runAnalyzeSnapshot(base64, mimeType);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Analysis failed");
+        toast.error(e instanceof Error ? e.message : "Analysis failed");
       }
     },
     [runAnalyzeSnapshot],
   );
 
-  const clearError = useCallback(() => setError(null), []);
-
   const ensureKeyForPhotoScan = useCallback(() => {
     if (hasKey) return true;
-    setError(MISSING_GEMINI_API_KEY_ERROR);
+    toast.error(MISSING_GEMINI_API_KEY_ERROR);
     return false;
   }, [hasKey]);
 
   return {
     analyzing,
-    error,
     hasKey,
     runAnalyzeSnapshot,
     runAnalyzeFromFile,
-    clearError,
     ensureKeyForPhotoScan,
   };
 }

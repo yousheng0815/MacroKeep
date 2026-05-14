@@ -4,7 +4,7 @@ import { AddFromHistoryPage } from "@/pages/AddFromHistoryPage";
 import { AddMealPage } from "@/pages/AddMealPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { DriveFilesPage } from "@/pages/DriveFilesPage";
-import { FavoriteMealsPage } from "@/pages/FavoriteMealsPage";
+import { SavedMealsPage } from "@/pages/SavedMealsPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MealDetailPage } from "@/pages/MealDetailPage";
@@ -74,10 +74,16 @@ const addMealRoute = createRoute({
   component: AddMealPage,
 });
 
-const favoriteMealsRoute = createRoute({
+const savedMealsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.add.savedMeals,
+  component: SavedMealsPage,
+});
+
+const legacyFavoriteMealsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: paths.add.favorites,
-  component: FavoriteMealsPage,
+  component: () => <Navigate to={paths.add.savedMeals} replace />,
 });
 
 const addFromHistoryRoute = createRoute({
@@ -101,7 +107,7 @@ const legacyScannerRoute = createRoute({
 const legacyScannerFavoritesRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: legacyPaths.scannerFavorites,
-  component: () => <Navigate to={paths.add.favorites} replace />,
+  component: () => <Navigate to={paths.add.savedMeals} replace />,
 });
 
 const legacyScannerManualRoute = createRoute({
@@ -147,7 +153,8 @@ const routeTree = rootRoute.addChildren([
     historyRoute,
     mealDetailRoute,
     addMealRoute,
-    favoriteMealsRoute,
+    savedMealsRoute,
+    legacyFavoriteMealsRoute,
     addFromHistoryRoute,
     manualMealRoute,
     legacyScannerRoute,

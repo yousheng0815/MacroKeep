@@ -1,3 +1,4 @@
+import { AppToaster } from "@/components/AppToaster";
 import { router } from "@/router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
@@ -52,6 +53,7 @@ void unregisterLegacyServiceWorkers().then(() => {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <AppToaster />
       </QueryClientProvider>
     </StrictMode>,
   );

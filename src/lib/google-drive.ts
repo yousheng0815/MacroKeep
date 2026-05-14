@@ -3,6 +3,7 @@ import {
   isValidIsoBirthDate,
 } from "@/lib/birth-date";
 import { inchesFromCm, lbFromKg } from "@/lib/units";
+import { blobToBase64 } from "@/lib/file-to-base64";
 import {
   clearProgressPhotosIndexedDb,
   listProgressPhotosDesc,
@@ -12,6 +13,7 @@ import type {
   OnboardingDraft,
   RecordsCoreDocument,
   RecordsDocument,
+  SavedMealRecord,
   UserProfile,
 } from "@/types/records";
 import { emptyRecords } from "@/types/records";
@@ -26,6 +28,9 @@ export const CORE_DRIVE_FILE = "core.json";
 
 /** Index of body progress shots; JPEG files named `progress-photo-<id>.jpg` in the same folder. */
 export const PROGRESS_PHOTOS_MANIFEST_FILE = "progress-photos.json";
+
+/** Quick-add meal snapshots (not tied to `meals-YYYY-MM.json` rows). */
+export const SAVED_MEALS_DRIVE_FILE = "saved-meals.json";
 
 /** From `pullRecordsCoreFromDrive`: loaded core document and whether Drive already uses `core.json`. */
 export type PullRecordsCoreFromDriveResult = {
@@ -91,13 +96,6 @@ function normalizeMeal(row: Partial<MealRecord> | null | undefined): MealRecord 
     carbs: Number.isFinite(carbs) ? carbs : 0,
     recordedAt,
   };
-  if (row.isFavorite === true) meal.isFavorite = true;
-  if (
-    typeof row.sourceFavoriteMealId === "string" &&
-    row.sourceFavoriteMealId.trim().length > 0
-  ) {
-    meal.sourceFavoriteMealId = row.sourceFavoriteMealId.trim();
-  }
   if (photoFileId) meal.photoFileId = photoFileId;
   return meal;
 }
@@ -1056,6 +1054,193 @@ export async function uploadMealPhotoToAppData(
   const data = (await res.json()) as { id?: string };
   if (!data.id) throw new Error("Drive meal photo upload missing id");
   return data.id;
+}
+
+export function normalizeSavedMeal(row: unknown): SavedMealRecord | null {
+  if (!row || typeof row !== "object") return null;
+  const r = row as Record<string, unknown>;
+  const id = typeof r.id === "string" ? r.id.trim() : "";
+  if (!id) return null;
+  const rawName = typeof r.food_name === "string" ? r.food_name.trim() : "";
+  const food_name = rawName.length > 0 ? rawName : "Meal";
+  const calories = Number(r.calories);
+  const protein = Number(r.protein);
+  const fats = Number(r.fats);
+  const carbs = Number(r.carbs);
+  const photoFileId =
+    typeof r.photoFileId === "string" && r.photoFileId.trim().length > 0
+      ? r.photoFileId.trim()
+      : undefined;
+  const out: SavedMealRecord = {
+    id,
+    food_name,
+    calories: Number.isFinite(calories) ? calories : 0,
+    protein: Number.isFinite(protein) ? protein : 0,
+    fats: Number.isFinite(fats) ? fats : 0,
+    carbs: Number.isFinite(carbs) ? carbs : 0,
+  };
+  if (photoFileId) out.photoFileId = photoFileId;
+  return out;
+}
+
+function parseSavedMealsFromJsonText(text: string): SavedMealRecord[] {
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    if (!parsed || typeof parsed !== "object") return [];
+    const arr = (parsed as { savedMeals?: unknown }).savedMeals;
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((row) => normalizeSavedMeal(row))
+      .filter(Boolean) as SavedMealRecord[];
+  } catch {
+    return [];
+  }
+}
+
+type RawMealRow = Record<string, unknown>;
+
+function rawMealRowsFromShardPayload(payload: unknown): RawMealRow[] {
+  if (!payload || typeof payload !== "object") return [];
+  const meals = (payload as { meals?: unknown }).meals;
+  if (!Array.isArray(meals)) return [];
+  return meals.filter(
+    (x): x is RawMealRow => !!x && typeof x === "object",
+  ) as RawMealRow[];
+}
+
+export async function upsertSavedMealsToDrive(
+  token: string,
+  savedMeals: SavedMealRecord[],
+): Promise<void> {
+  const body = JSON.stringify({ version: 1, savedMeals });
+  const existingId = await findAppDataJsonFileIdByName(token, SAVED_MEALS_DRIVE_FILE);
+  if (existingId) await updateJsonMedia(token, existingId, body);
+  else await createMultipartJsonAppData(token, SAVED_MEALS_DRIVE_FILE, body);
+}
+
+async function executeFirstRunSavedMealsMigration(
+  token: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  const shards = await listMealShardFiles(token, signal);
+  const favoriteCandidates: MealRecord[] = [];
+  let anyLegacy = false;
+
+  for (const s of shards) {
+    const text = await downloadAppDataFileText(token, s.id, signal);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text) as unknown;
+    } catch {
+      continue;
+    }
+    for (const raw of rawMealRowsFromShardPayload(parsed)) {
+      if (raw.isFavorite === true) {
+        const m = normalizeMeal(raw as Partial<MealRecord>);
+        if (m) favoriteCandidates.push(m);
+      }
+      if ("isFavorite" in raw || "sourceFavoriteMealId" in raw) {
+        anyLegacy = true;
+      }
+    }
+  }
+
+  favoriteCandidates.sort(
+    (a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt),
+  );
+  const seenNames = new Set<string>();
+  const migratedSaved: SavedMealRecord[] = [];
+  for (const m of favoriteCandidates) {
+    const k = m.food_name.trim().toLowerCase();
+    if (!k || seenNames.has(k)) continue;
+    seenNames.add(k);
+    migratedSaved.push({
+      id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
+      food_name: m.food_name,
+      calories: m.calories,
+      protein: m.protein,
+      fats: m.fats,
+      carbs: m.carbs,
+      ...(m.photoFileId ? { photoFileId: m.photoFileId } : {}),
+    });
+  }
+
+  await upsertSavedMealsToDrive(token, migratedSaved);
+
+  if (!anyLegacy || shards.length === 0) return;
+
+  for (const s of shards) {
+    const text = await downloadAppDataFileText(token, s.id, signal);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text) as unknown;
+    } catch {
+      continue;
+    }
+    const cleaned: MealRecord[] = [];
+    for (const raw of rawMealRowsFromShardPayload(parsed)) {
+      const copy: RawMealRow = { ...raw };
+      delete copy.isFavorite;
+      delete copy.sourceFavoriteMealId;
+      const m = normalizeMeal(copy as Partial<MealRecord>);
+      if (m) cleaned.push(m);
+    }
+    await upsertMealsShardToDrive(token, s.monthKey, cleaned);
+  }
+}
+
+export type EnsureSavedMealsMigratedResult = { didMigrate: boolean };
+
+let savedMealsMigrationChain: Promise<EnsureSavedMealsMigratedResult> =
+  Promise.resolve({ didMigrate: false });
+
+async function runSavedMealsMigrationOnce(
+  token: string,
+  signal?: AbortSignal,
+): Promise<EnsureSavedMealsMigratedResult> {
+  if (await findAppDataJsonFileIdByName(token, SAVED_MEALS_DRIVE_FILE)) {
+    return { didMigrate: false };
+  }
+  await executeFirstRunSavedMealsMigration(token, signal);
+  return { didMigrate: true };
+}
+
+/** Ensures `saved-meals.json` exists; on first run may migrate legacy favorites and strip old fields from shards. */
+export async function ensureSavedMealsMigrated(
+  token: string,
+  signal?: AbortSignal,
+): Promise<EnsureSavedMealsMigratedResult> {
+  const next = savedMealsMigrationChain.then(() =>
+    runSavedMealsMigrationOnce(token, signal),
+  );
+  savedMealsMigrationChain = next.catch(() => ({ didMigrate: false }));
+  return next;
+}
+
+export async function pullSavedMealsFromDrive(
+  token: string,
+  signal?: AbortSignal,
+): Promise<{ savedMeals: SavedMealRecord[]; didMigrate: boolean }> {
+  const { didMigrate } = await ensureSavedMealsMigrated(token, signal);
+  const id = await findAppDataJsonFileIdByName(token, SAVED_MEALS_DRIVE_FILE);
+  if (!id) return { savedMeals: [], didMigrate };
+  const text = await downloadAppDataFileText(token, id, signal);
+  return {
+    savedMeals: parseSavedMealsFromJsonText(text),
+    didMigrate,
+  };
+}
+
+/** Copies an App Data meal image to a new file for a saved-meal id (independent of the log row). */
+export async function copyAppDataPhotoForSavedMeal(
+  token: string,
+  sourcePhotoFileId: string,
+  savedMealId: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  const blob = await downloadAppDataFileBlob(token, sourcePhotoFileId, signal);
+  const { base64, mimeType } = await blobToBase64(blob);
+  return uploadMealPhotoToAppData(token, savedMealId, base64, mimeType);
 }
 
 function normalizeProgressPhotosManifestDoc(parsed: unknown): {
