@@ -739,7 +739,8 @@ export async function listMealShardFiles(
   return out;
 }
 
-async function downloadMealsShard(
+/** Downloads one `meals-YYYY-MM.json` shard from Drive App Data. */
+export async function pullMealsShardRecords(
   token: string,
   fileId: string,
   signal?: AbortSignal,
@@ -753,6 +754,63 @@ async function downloadMealsShard(
   } catch {
     return [];
   }
+}
+
+/** Meal shard rows from Drive, newest `recordedAt` first. */
+export async function pullMealsFromShardRefs(
+  token: string,
+  shards: readonly { id: string; monthKey: string }[],
+  signal?: AbortSignal,
+): Promise<MealRecord[]> {
+  if (shards.length === 0) return [];
+  const nested = await Promise.all(
+    shards.map((s) => pullMealsShardRecords(token, s.id, signal)),
+  );
+  const meals = nested.flat();
+  meals.sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
+  return meals;
+}
+
+/** Lists meal shards then sorts by `YYYY-MM` descending (newest calendar month first). */
+export async function listMealShardFilesSortedDesc(
+  token: string,
+  signal?: AbortSignal,
+): Promise<{ id: string; monthKey: string }[]> {
+  const shards = await listMealShardFiles(token, signal);
+  shards.sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+  return shards;
+}
+
+/**
+ * Merges Drive rows for months that exist on the server but are not yet in `loadedMonthKeys`,
+ * so shard sync does not treat unknown months as empty (which would delete remote data).
+ */
+export async function hydrateMealMonthsForPersist(
+  token: string,
+  meals: MealRecord[],
+  monthKeysNeeded: readonly string[],
+  loadedMonthKeys: ReadonlySet<string>,
+  shardsOnDriveDesc: readonly { id: string; monthKey: string }[],
+  signal?: AbortSignal,
+): Promise<{ meals: MealRecord[]; hydratedMonthKeys: string[] }> {
+  const hydratedMonthKeys: string[] = [];
+  const byId = new Map(meals.map((m) => [m.id, m]));
+  const shardByMonth = new Map(shardsOnDriveDesc.map((s) => [s.monthKey, s]));
+
+  for (const mk of monthKeysNeeded) {
+    if (loadedMonthKeys.has(mk)) continue;
+    const shard = shardByMonth.get(mk);
+    if (!shard) continue;
+    const rows = await pullMealsShardRecords(token, shard.id, signal);
+    hydratedMonthKeys.push(mk);
+    for (const r of rows) {
+      if (!byId.has(r.id)) byId.set(r.id, r);
+    }
+  }
+
+  const merged = [...byId.values()];
+  merged.sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
+  return { meals: merged, hydratedMonthKeys };
 }
 
 /** Groups meals by local calendar month `YYYY-MM`. */
@@ -933,13 +991,8 @@ export async function pullMealsFromDriveShards(
   token: string,
   signal?: AbortSignal,
 ): Promise<MealRecord[]> {
-  const shards = await listMealShardFiles(token, signal);
-  const mealsNested = await Promise.all(
-    shards.map((s) => downloadMealsShard(token, s.id, signal)),
-  );
-  const meals = mealsNested.flat();
-  meals.sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
-  return meals;
+  const shards = await listMealShardFilesSortedDesc(token, signal);
+  return pullMealsFromShardRefs(token, shards, signal);
 }
 
 export async function pullRecordsFromDrive(

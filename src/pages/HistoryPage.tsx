@@ -5,6 +5,7 @@ import {
 import { Card } from "@/components/Card";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { PageHeader } from "@/components/PageHeader";
+import { useMealMonthsViewportFill } from "@/hooks/use-meal-months-viewport-fill";
 import { useRecords } from "@/hooks/use-records";
 import {
   formatLocalDateLabel,
@@ -17,7 +18,7 @@ import type { MealRecord } from "@/types/records";
 import { Link } from "@tanstack/react-router";
 import { Loader2, Star, Tag } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function groupByDay(meals: MealRecord[]): Map<number, MealRecord[]> {
   const map = new Map<number, MealRecord[]>();
@@ -34,13 +35,66 @@ function groupByDay(meals: MealRecord[]): Map<number, MealRecord[]> {
 }
 
 export function HistoryPage() {
-  const { records, isMealsLoading, mealsError, refetchMeals, updateMeal } =
-    useRecords();
+  const {
+    records,
+    userId,
+    isMealsLoading,
+    mealsError,
+    refetchMeals,
+    updateMeal,
+    loadMoreMealMonths,
+    allMealShardsLoaded,
+    isLoadingMoreMeals,
+  } = useRecords();
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [retryPending, setRetryPending] = useState(false);
   const [favoritePendingId, setFavoritePendingId] = useState<string | null>(
     null,
   );
   const groups = groupByDay(records.meals);
+
+  useEffect(() => {
+    if (allMealShardsLoaded || isMealsLoading || mealsError) return;
+    if (records.meals.length > 0) return;
+    void loadMoreMealMonths();
+  }, [
+    allMealShardsLoaded,
+    isMealsLoading,
+    mealsError,
+    records.meals.length,
+    loadMoreMealMonths,
+  ]);
+
+  useEffect(() => {
+    if (allMealShardsLoaded || isMealsLoading || mealsError) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const ob = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        void loadMoreMealMonths();
+      },
+      { root: null, rootMargin: "240px", threshold: 0 },
+    );
+    ob.observe(el);
+    return () => ob.disconnect();
+  }, [
+    allMealShardsLoaded,
+    isMealsLoading,
+    mealsError,
+    loadMoreMealMonths,
+    groups.size,
+  ]);
+
+  useMealMonthsViewportFill({
+    userId,
+    allMealShardsLoaded,
+    isMealsLoading,
+    mealsError,
+    loadMoreMealMonths,
+    when: groups.size > 0,
+    contentKey: records.meals.length + groups.size,
+  });
 
   let body: ReactNode;
   if (isMealsLoading) {
@@ -87,6 +141,18 @@ export function HistoryPage() {
               Retry
             </ButtonPendingContents>
           </button>
+        </div>
+      </Card>
+    );
+  } else if (groups.size === 0 && !allMealShardsLoaded) {
+    body = (
+      <Card>
+        <div className="flex flex-col items-center justify-center gap-3 py-16">
+          <Loader2
+            className="size-8 animate-spin text-emerald-400"
+            aria-hidden
+          />
+          <p className="text-sm text-om-muted">Loading meal history…</p>
         </div>
       </Card>
     );
@@ -213,6 +279,24 @@ export function HistoryPage() {
             </Card>
           );
         })}
+        {!allMealShardsLoaded || isLoadingMoreMeals ? (
+          <div
+            ref={sentinelRef}
+            className="flex min-h-14 flex-col items-center justify-center gap-2 py-8"
+          >
+            {isLoadingMoreMeals ? (
+              <>
+                <Loader2
+                  className="size-6 animate-spin text-emerald-400"
+                  aria-hidden
+                />
+                <p className="text-xs text-om-muted">Loading more meals…</p>
+              </>
+            ) : (
+              <p className="text-xs text-om-muted">Scroll for more history</p>
+            )}
+          </div>
+        ) : null}
       </div>
     );
   }

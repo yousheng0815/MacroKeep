@@ -6,10 +6,12 @@ import {
 import {
   deleteAllAppDataFiles,
   deleteDriveFile,
+  hydrateMealMonthsForPersist,
+  listMealShardFilesSortedDesc,
   monthKeyFromRecordedAt,
   normalizeRecordsDocument,
   persistRecordsToDrive,
-  pullMealsFromDriveShards,
+  pullMealsFromShardRefs,
   pullRecordsCoreFromDrive,
   resolveMealsShardDriveFileId,
   uploadMealPhotoToAppData,
@@ -25,7 +27,12 @@ import type {
 } from "@/types/records";
 import { emptyRecords } from "@/types/records";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+
+/** How many newest month shards to download on first meals sync. */
+const INITIAL_MEAL_SHARD_MONTHS = 4;
+/** How many additional month shards to fetch per history scroll / batch. */
+const MEALS_PAGE_MONTH_COUNT = 3;
 
 /** Lets React paint loading UI before CPU-heavy image encode / network upload in `addMeal`. */
 function yieldForUiPaint(): Promise<void> {
@@ -46,6 +53,55 @@ function splitNormalized(doc: RecordsDocument): {
 type RecordsCoreQueryData = {
   core: RecordsCoreDocument;
   coreOnPrimaryDriveFile: boolean;
+};
+
+export type RecordsMealsQueryData = {
+  meals: MealRecord[];
+  /** Months whose shard JSON was fully downloaded. */
+  loadedMonthKeys: string[];
+  /** All meal shard files on Drive (metadata only), newest month first. */
+  shardsOnDriveDesc: { id: string; monthKey: string }[];
+  allShardsLoaded: boolean;
+};
+
+function mergeMealRecordsById(a: MealRecord[], b: MealRecord[]): MealRecord[] {
+  const byId = new Map<string, MealRecord>();
+  for (const m of a) byId.set(m.id, m);
+  for (const m of b) if (!byId.has(m.id)) byId.set(m.id, m);
+  const out = [...byId.values()];
+  out.sort((x, y) => Date.parse(y.recordedAt) - Date.parse(x.recordedAt));
+  return out;
+}
+
+function pickInitialMealShards(
+  sortedDesc: { id: string; monthKey: string }[],
+  initialCount: number,
+): { id: string; monthKey: string }[] {
+  if (sortedDesc.length === 0) return [];
+  const byKey = new Map(sortedDesc.map((s) => [s.monthKey, s]));
+  const picked = new Map<string, { id: string; monthKey: string }>();
+  for (let i = 0; i < Math.min(initialCount, sortedDesc.length); i++) {
+    const s = sortedDesc[i];
+    picked.set(s.monthKey, s);
+  }
+  const currentMk = monthKeyFromRecordedAt(new Date().toISOString());
+  const cur = byKey.get(currentMk);
+  if (cur) picked.set(currentMk, cur);
+  return [...picked.values()].sort((a, b) => b.monthKey.localeCompare(a.monthKey));
+}
+
+function computeAllShardsLoaded(
+  shardsOnDriveDesc: readonly { monthKey: string }[],
+  loadedMonthKeys: readonly string[],
+): boolean {
+  if (shardsOnDriveDesc.length === 0) return true;
+  const loaded = new Set(loadedMonthKeys);
+  return shardsOnDriveDesc.every((s) => loaded.has(s.monthKey));
+}
+
+type ReplaceMutationResult = {
+  doc: RecordsDocument;
+  hydratedMonthKeysForSync: string[];
 };
 
 export function useRecords() {
@@ -82,10 +138,25 @@ export function useRecords() {
     queryKey: ["records-meals", userId],
     enabled: !!userId && coreQuery.isSuccess,
     staleTime: 60_000,
-    queryFn: async ({ signal }): Promise<MealRecord[]> => {
+    queryFn: async ({ signal }): Promise<RecordsMealsQueryData> => {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
-      return pullMealsFromDriveShards(token, signal);
+      const shardsOnDriveDesc = await listMealShardFilesSortedDesc(token, signal);
+      const initialRefs = pickInitialMealShards(
+        shardsOnDriveDesc,
+        INITIAL_MEAL_SHARD_MONTHS,
+      );
+      const meals =
+        initialRefs.length > 0
+          ? await pullMealsFromShardRefs(token, initialRefs, signal)
+          : [];
+      const loadedMonthKeys = initialRefs.map((r) => r.monthKey);
+      return {
+        meals,
+        loadedMonthKeys,
+        shardsOnDriveDesc,
+        allShardsLoaded: computeAllShardsLoaded(shardsOnDriveDesc, loadedMonthKeys),
+      };
     },
   });
 
@@ -96,7 +167,7 @@ export function useRecords() {
       mealsOnly?: boolean;
       mealMonthKeysToSync?: string[];
       shardFileIdsPrefetched?: Readonly<Record<string, string | null>>;
-    }) => {
+    }): Promise<ReplaceMutationResult> => {
       if (!canSyncToDriveAppData()) {
         throw new Error("Not signed in or Drive scope unavailable");
       }
@@ -104,7 +175,29 @@ export function useRecords() {
       if (!token) throw new Error("Missing access token");
       const uid = getGoogleUserId() ?? "";
       const boot = qc.getQueryData<RecordsCoreQueryData>(["records-core", uid]);
-      await persistRecordsToDrive(token, payload.next, {
+
+      let nextDoc = payload.next;
+      let hydratedMonthKeysForSync: string[] = [];
+      if (payload.mealsOnly && payload.mealMonthKeysToSync?.length) {
+        const mealsState = qc.getQueryData<RecordsMealsQueryData>([
+          "records-meals",
+          uid,
+        ]);
+        if (mealsState) {
+          const { meals: merged, hydratedMonthKeys } =
+            await hydrateMealMonthsForPersist(
+              token,
+              nextDoc.meals,
+              payload.mealMonthKeysToSync,
+              new Set(mealsState.loadedMonthKeys),
+              mealsState.shardsOnDriveDesc,
+            );
+          nextDoc = { ...nextDoc, meals: merged };
+          hydratedMonthKeysForSync = hydratedMonthKeys;
+        }
+      }
+
+      await persistRecordsToDrive(token, nextDoc, {
         coreOnly: payload.coreOnly,
         mealsOnly: payload.mealsOnly,
         mealMonthKeysToSync: payload.mealMonthKeysToSync,
@@ -112,28 +205,88 @@ export function useRecords() {
           !!(payload.mealsOnly && boot?.coreOnPrimaryDriveFile),
         shardFileIdsPrefetched: payload.shardFileIdsPrefetched,
       });
-      return payload.next;
+      return { doc: nextDoc, hydratedMonthKeysForSync };
     },
     onMutate: async () => {
       const uid = getGoogleUserId();
       if (uid) await qc.cancelQueries({ queryKey: ["records-meals", uid] });
     },
-    onSuccess: (doc) => {
+    onSuccess: (data, variables) => {
       const uid = getGoogleUserId();
       if (!uid) return;
+      const doc = data.doc;
       const { core, meals } = splitNormalized(doc);
       qc.setQueryData<RecordsCoreQueryData>(["records-core", uid], {
         core,
         coreOnPrimaryDriveFile: true,
       });
-      qc.setQueryData(["records-meals", uid], meals);
+
+      if (!variables.coreOnly && !variables.mealsOnly) {
+        void qc.invalidateQueries({ queryKey: ["records-meals", uid] });
+        return;
+      }
+
+      if (variables.coreOnly) {
+        qc.setQueryData<RecordsMealsQueryData>(["records-meals", uid], (prev) => {
+          if (!prev) {
+            return {
+              meals,
+              loadedMonthKeys: [],
+              shardsOnDriveDesc: [],
+              allShardsLoaded: true,
+            };
+          }
+          return { ...prev, meals };
+        });
+        return;
+      }
+
+      const touched = variables.mealMonthKeysToSync ?? [];
+      const loaded = new Set([
+        ...(qc.getQueryData<RecordsMealsQueryData>(["records-meals", uid])
+          ?.loadedMonthKeys ?? []),
+        ...touched,
+        ...data.hydratedMonthKeysForSync,
+      ]);
+
+      qc.setQueryData<RecordsMealsQueryData>(["records-meals", uid], (prev) => {
+        const shards = prev?.shardsOnDriveDesc ?? [];
+        const loadedMonthKeys = [...loaded];
+        return {
+          meals,
+          loadedMonthKeys,
+          shardsOnDriveDesc: shards,
+          allShardsLoaded: computeAllShardsLoaded(shards, loadedMonthKeys),
+        };
+      });
+
+      void (async () => {
+        try {
+          const token = await ensureGoogleAccessToken();
+          if (!token) return;
+          const sorted = await listMealShardFilesSortedDesc(token);
+          qc.setQueryData<RecordsMealsQueryData>(["records-meals", uid], (prev) => {
+            if (!prev) return prev;
+            const loadedMonthKeys = [
+              ...new Set([...prev.loadedMonthKeys, ...touched]),
+            ];
+            return {
+              ...prev,
+              shardsOnDriveDesc: sorted,
+              allShardsLoaded: computeAllShardsLoaded(sorted, loadedMonthKeys),
+            };
+          });
+        } catch {
+          /* keep prior shard index */
+        }
+      })();
     },
   });
 
   const records = useMemo((): RecordsDocument => {
     const boot = coreQuery.data;
     if (!boot) return emptyRecords();
-    const meals = mealsQuery.data ?? [];
+    const meals = mealsQuery.data?.meals ?? [];
     return normalizeRecordsDocument({ ...boot.core, meals });
   }, [coreQuery.data, mealsQuery.data]);
 
@@ -144,8 +297,11 @@ export function useRecords() {
     if (!uid) return emptyRecords();
     const boot = qc.getQueryData<RecordsCoreQueryData>(["records-core", uid]);
     if (!boot?.core) return emptyRecords();
-    const meals = qc.getQueryData<MealRecord[]>(["records-meals", uid]);
-    return normalizeRecordsDocument({ ...boot.core, meals: meals ?? [] });
+    const mealsState = qc.getQueryData<RecordsMealsQueryData>(["records-meals", uid]);
+    return normalizeRecordsDocument({
+      ...boot.core,
+      meals: mealsState?.meals ?? [],
+    });
   }, [qc]);
 
   const updateGeminiKey = useCallback(
@@ -492,6 +648,82 @@ export function useRecords() {
     }
   }, [qc]);
 
+  const [loadingMoreMeals, setLoadingMoreMeals] = useState(false);
+  /**
+   * Serializes `loadMoreMealMonths` so overlapping callers queue instead of
+   * racing duplicate Drive fetches.
+   */
+  const loadMoreMealsSerialRef = useRef<Promise<void>>(Promise.resolve());
+
+  const loadMoreMealMonths = useCallback(async () => {
+    const task = async (): Promise<void> => {
+      const uid = getGoogleUserId();
+      if (!uid) return;
+      const prev = qc.getQueryData<RecordsMealsQueryData>(["records-meals", uid]);
+      if (!prev || prev.allShardsLoaded) return;
+      const loaded = new Set(prev.loadedMonthKeys);
+      const toFetch = prev.shardsOnDriveDesc
+        .filter((s) => !loaded.has(s.monthKey))
+        .slice(0, MEALS_PAGE_MONTH_COUNT);
+      if (toFetch.length === 0) return;
+
+      setLoadingMoreMeals(true);
+      try {
+        const token = await ensureGoogleAccessToken();
+        if (!token) throw new Error("Missing access token");
+        const newMeals = await pullMealsFromShardRefs(token, toFetch);
+        qc.setQueryData<RecordsMealsQueryData>(["records-meals", uid], (cur) => {
+          if (!cur) return cur;
+          const merged = mergeMealRecordsById(cur.meals, newMeals);
+          const loadedMonthKeys = [
+            ...new Set([...cur.loadedMonthKeys, ...toFetch.map((t) => t.monthKey)]),
+          ];
+          return {
+            ...cur,
+            meals: merged,
+            loadedMonthKeys,
+            allShardsLoaded: computeAllShardsLoaded(
+              cur.shardsOnDriveDesc,
+              loadedMonthKeys,
+            ),
+          };
+        });
+      } finally {
+        setLoadingMoreMeals(false);
+      }
+    };
+
+    const next = loadMoreMealsSerialRef.current.then(task, task);
+    loadMoreMealsSerialRef.current = next;
+    await next;
+  }, [qc]);
+
+  const ensureMealIdLoaded = useCallback(
+    async (mealId: string | undefined): Promise<boolean> => {
+      if (!mealId) return false;
+      const uid = getGoogleUserId();
+      if (!uid) return false;
+      const hasMeal = () =>
+        qc
+          .getQueryData<RecordsMealsQueryData>(["records-meals", uid])
+          ?.meals.some((m) => m.id === mealId) ?? false;
+      if (hasMeal()) return true;
+      for (;;) {
+        const prev = qc.getQueryData<RecordsMealsQueryData>(["records-meals", uid]);
+        if (!prev) return false;
+        if (prev.meals.some((m) => m.id === mealId)) return true;
+        if (prev.allShardsLoaded) return false;
+        await loadMoreMealMonths();
+        if (hasMeal()) return true;
+        const next = qc.getQueryData<RecordsMealsQueryData>(["records-meals", uid]);
+        if (!next) return false;
+        if (next.allShardsLoaded) return false;
+        if (next.loadedMonthKeys.length === prev.loadedMonthKeys.length) return false;
+      }
+    },
+    [qc, loadMoreMealMonths],
+  );
+
   const refetch = useCallback(async () => {
     const cr = await coreQuery.refetch();
     if (cr.error) return cr;
@@ -502,6 +734,8 @@ export function useRecords() {
     coreQuery.isSuccess &&
     (!mealsQuery.isFetched || mealsQuery.isFetching);
 
+  const allMealShardsLoaded = mealsQuery.data?.allShardsLoaded ?? false;
+
   return {
     records,
     userId,
@@ -509,10 +743,19 @@ export function useRecords() {
     isRecordsReady: coreQuery.isSuccess,
     /** Meal shards still syncing from Drive — show placeholders for meal-derived UI. */
     isMealsLoading,
+    /** True when every meal month shard on Drive has been downloaded into the client cache. */
+    allMealShardsLoaded,
+    /** Fetches the next batch of older month shards from Drive (for infinite history). */
+    loadMoreMealMonths,
+    /** Loads older shards until the given meal id appears, or returns false if it does not exist. */
+    ensureMealIdLoaded,
+    /** True while a background batch of older meal months is loading. */
+    isLoadingMoreMeals: loadingMoreMeals,
     mealsError: mealsQuery.error,
     refetchMeals: mealsQuery.refetch,
     isLoading: coreQuery.isLoading,
-    isFetching: coreQuery.isFetching || mealsQuery.isFetching,
+    isFetching:
+      coreQuery.isFetching || mealsQuery.isFetching || loadingMoreMeals,
     refetch,
     error: coreQuery.error,
     geminiKey,

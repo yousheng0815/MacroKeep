@@ -26,6 +26,7 @@ import {
   Camera,
   CopyPlus,
   ImagePlus,
+  Loader2,
   Pencil,
   Star,
   Tag,
@@ -61,7 +62,34 @@ export function MealDetailPage() {
   const { mealId } = useParams({ strict: false });
   const navigate = useNavigate();
   const router = useRouter();
-  const { records, addMeal, updateMeal, deleteMeal } = useRecords();
+  const { records, addMeal, updateMeal, deleteMeal, ensureMealIdLoaded } =
+    useRecords();
+
+  const [mealLookup, setMealLookup] = useState<"pending" | "ready">("pending");
+
+  useEffect(() => {
+    if (!mealId) {
+      void Promise.resolve().then(() => {
+        setMealLookup("ready");
+      });
+      return;
+    }
+    void Promise.resolve().then(() => {
+      setMealLookup("pending");
+    });
+    let cancelled = false;
+    void (async () => {
+      await ensureMealIdLoaded(mealId);
+      if (!cancelled) {
+        void Promise.resolve().then(() => {
+          setMealLookup("ready");
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mealId, ensureMealIdLoaded]);
 
   const handleBack = () => {
     if (router.history.canGoBack()) {
@@ -144,6 +172,19 @@ export function MealDetailPage() {
   }, [revokeEditPhotoPreview]);
 
   if (!meal) {
+    if (mealLookup === "pending") {
+      return (
+        <Card>
+          <div className="flex flex-col items-center justify-center gap-3 py-16">
+            <Loader2
+              className="size-8 animate-spin text-emerald-400"
+              aria-hidden
+            />
+            <p className="text-sm text-om-muted">Loading meal…</p>
+          </div>
+        </Card>
+      );
+    }
     return (
       <Card>
         <div className="space-y-3 py-4 text-center">
