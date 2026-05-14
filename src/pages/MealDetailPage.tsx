@@ -6,12 +6,10 @@ import { Card } from "@/components/Card";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
+import { toast } from "@/lib/app-toast";
 import { formatLocalDateLabel, formatTime } from "@/lib/date";
 import { fileToBase64 } from "@/lib/file-to-base64";
-import {
-  canSyncToDriveAppData,
-  ensureGoogleAccessToken,
-} from "@/lib/gapi";
+import { canSyncToDriveAppData, ensureGoogleAccessToken } from "@/lib/gapi";
 import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import { paths } from "@/lib/routes";
@@ -21,7 +19,6 @@ import {
   useParams,
   useRouter,
 } from "@tanstack/react-router";
-import { toast } from "@/lib/app-toast";
 import {
   ArrowLeft,
   Bookmark,
@@ -62,8 +59,14 @@ export function MealDetailPage() {
   const { mealId } = useParams({ strict: false });
   const navigate = useNavigate();
   const router = useRouter();
-  const { records, addMeal, updateMeal, deleteMeal, ensureMealIdLoaded, addSavedMealFromMeal } =
-    useRecords();
+  const {
+    records,
+    addMeal,
+    updateMeal,
+    deleteMeal,
+    ensureMealIdLoaded,
+    addSavedMealFromMeal,
+  } = useRecords();
 
   const [mealLookup, setMealLookup] = useState<"pending" | "ready">("pending");
 
@@ -108,7 +111,9 @@ export function MealDetailPage() {
   const [duplicatePending, setDuplicatePending] = useState(false);
   const [saveToSavedPending, setSaveToSavedPending] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [editPhoto, setEditPhoto] = useState<EditPhotoState>({ mode: "unchanged" });
+  const [editPhoto, setEditPhoto] = useState<EditPhotoState>({
+    mode: "unchanged",
+  });
   const [fileInputKey, setFileInputKey] = useState(0);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -292,8 +297,7 @@ export function MealDetailPage() {
                   if (orphanUploadId) {
                     try {
                       const token = await ensureGoogleAccessToken();
-                      if (token)
-                        await deleteDriveFile(token, orphanUploadId);
+                      if (token) await deleteDriveFile(token, orphanUploadId);
                     } catch {
                       /* best-effort */
                     }
@@ -340,7 +344,9 @@ export function MealDetailPage() {
                 accept="image/*"
                 capture="environment"
                 className="hidden"
-                onChange={(e) => onPickEditPhoto(e.target.files, e.currentTarget)}
+                onChange={(e) =>
+                  onPickEditPhoto(e.target.files, e.currentTarget)
+                }
               />
               <input
                 key={`lib-${fileInputKey}`}
@@ -348,7 +354,9 @@ export function MealDetailPage() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => onPickEditPhoto(e.target.files, e.currentTarget)}
+                onChange={(e) =>
+                  onPickEditPhoto(e.target.files, e.currentTarget)
+                }
               />
               <div className="flex items-start gap-3 rounded-xl border border-om-border bg-om-bg p-3 md:items-center md:gap-5 md:p-4">
                 <div className="size-20 shrink-0 overflow-hidden rounded-lg border border-zinc-700 md:size-28">
@@ -379,7 +387,7 @@ export function MealDetailPage() {
                     className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                   >
                     <Camera className="size-4 text-emerald-400 md:size-5" />
-                    {meal.photoFileId ? "Retake" : "Take photo"}
+                    Take a photo
                   </button>
                   <button
                     type="button"
@@ -388,9 +396,7 @@ export function MealDetailPage() {
                     className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                   >
                     <ImagePlus className="size-4 text-orange-500 md:size-5" />
-                    {meal.photoFileId
-                      ? "Replace from library"
-                      : "Upload from library"}
+                    Choose a photo
                   </button>
                 </div>
               </div>
@@ -509,7 +515,9 @@ export function MealDetailPage() {
                 <p className="text-sm text-zinc-100">{meal.protein}</p>
               </div>
               <div>
-                <span className="mb-1 block text-sm text-om-muted">Fats (g)</span>
+                <span className="mb-1 block text-sm text-om-muted">
+                  Fats (g)
+                </span>
                 <p className="text-sm text-zinc-100">{meal.fats}</p>
               </div>
               <div>

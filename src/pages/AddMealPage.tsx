@@ -73,7 +73,7 @@ export function AddMealPage() {
             className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
             <Camera className="size-5 shrink-0 text-emerald-400" />
-            Take photo to estimate
+            Take a photo to estimate
           </button>
           <button
             type="button"
@@ -84,7 +84,7 @@ export function AddMealPage() {
             className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
           >
             <ImagePlus className="size-5 shrink-0 text-orange-500" />
-            Choose photo to estimate
+            Choose a photo to estimate
           </button>
           <button
             type="button"

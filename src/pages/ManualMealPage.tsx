@@ -6,12 +6,12 @@ import { Card } from "@/components/Card";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
+import { toast } from "@/lib/app-toast";
 import { fileToBase64 } from "@/lib/file-to-base64";
 import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import { Camera, ImagePlus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "@/lib/app-toast";
 
 function toLocalDateTimeInput(iso: string): string {
   const d = new Date(iso);
@@ -76,7 +76,7 @@ export function ManualMealPage() {
         title="Add manually"
         backTo={paths.add.root}
         backAriaLabel="Back to add meal"
-        subtitle="Enter macros yourself. Optionally attach a photo saved with the meal."
+        subtitle="Enter macros and attach a photo manually."
       />
 
       <Card>
@@ -132,9 +132,7 @@ export function ManualMealPage() {
           }}
         >
           <label className="block">
-            <span className="mb-1 block text-sm text-om-muted">
-              Food name
-            </span>
+            <span className="mb-1 block text-sm text-om-muted">Food name</span>
             <input
               name="foodName"
               type="text"
@@ -157,7 +155,9 @@ export function ManualMealPage() {
           </label>
 
           <div className="space-y-2">
-            <span className="block text-sm text-om-muted">Photo (optional)</span>
+            <span className="block text-sm text-om-muted">
+              Photo (optional)
+            </span>
             <input
               key={`cam-${photoInputKey}`}
               ref={cameraInputRef}
@@ -185,7 +185,7 @@ export function ManualMealPage() {
                   />
                 ) : (
                   <MealPhotoThumb
-                    alt="No meal photo yet — use Take photo or Upload to add one"
+                    alt="No meal photo yet"
                     className="size-full shrink-0 overflow-hidden rounded-lg border-0 bg-zinc-800/80"
                   />
                 )}
@@ -198,7 +198,7 @@ export function ManualMealPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[11rem]"
                 >
                   <Camera className="size-4 text-emerald-400 md:size-5" />
-                  {photoChoice ? "Retake photo" : "Take photo"}
+                  Take a photo
                 </button>
                 <button
                   type="button"
@@ -207,7 +207,7 @@ export function ManualMealPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[11rem]"
                 >
                   <ImagePlus className="size-4 text-orange-500 md:size-5" />
-                  {photoChoice ? "Replace from library" : "Upload from library"}
+                  Choose a photo
                 </button>
               </div>
             </div>
@@ -215,9 +215,7 @@ export function ManualMealPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="mb-1 block text-sm text-om-muted">
-                Calories
-              </span>
+              <span className="mb-1 block text-sm text-om-muted">Calories</span>
               <input
                 name="calories"
                 type="number"

@@ -144,11 +144,8 @@ export function DashboardPage() {
   const { records, geminiKey, isMealsLoading, mealsError, refetchMeals } =
     useRecords();
   const quickCameraInputRef = useRef<HTMLInputElement>(null);
-  const {
-    analyzing,
-    runAnalyzeFromFile,
-    ensureKeyForPhotoScan,
-  } = useMealScanFlow();
+  const { analyzing, runAnalyzeFromFile, ensureKeyForPhotoScan } =
+    useMealScanFlow();
   const today = sumToday(records.meals);
   const target = records.profile.dailyTargetKcal;
   const connected = geminiKey.trim().length > 0;

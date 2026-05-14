@@ -10,6 +10,7 @@ import {
 } from "@/components/profile/body-measurement-fields";
 import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
+import { toast } from "@/lib/app-toast";
 import { getGoogleUserEmail } from "@/lib/gapi";
 import { validateGeminiApiKey } from "@/lib/gemini";
 import { convertBodyMeasuresToUnits } from "@/lib/units";
@@ -17,8 +18,7 @@ import type { ProfileGender, UserProfile } from "@/types/records";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, ChevronRight, FolderOpen } from "lucide-react";
-import { useCallback, useState } from "react";
-import { toast } from "@/lib/app-toast";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type ProfileBodyDraft = Pick<
   UserProfile,
@@ -123,13 +123,12 @@ function GeminiKeyCard({
               an existing Cloud project or let Google create one when prompted.
             </li>
             <li>
-              Copy the new key — it starts with{" "}
-              <span className="font-mono text-zinc-400">AIza</span> — then paste
+              Copy the new key, which starts with{" "}
+              <span className="font-mono text-zinc-400">AIza</span>, then paste
               it in the field below.
             </li>
             <li>
-              Press <span className="text-zinc-300">Save key</span>. We verify
-              the key with Google before storing it in Drive.
+              Press <span className="text-zinc-300">Save key</span>.
             </li>
           </ol>
         </div>
@@ -215,9 +214,6 @@ function ProfileBodyCard({
   return (
     <Card>
       <h2 className="text-sm font-semibold text-white">Profile</h2>
-      <p className="mt-1 text-sm text-om-muted">
-        Birthday, gender, units, and height/weight used for planning.
-      </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block text-sm text-zinc-400">
@@ -321,9 +317,6 @@ function MacroTargetsCard({
   return (
     <Card>
       <h2 className="text-sm font-semibold text-white">Macro targets</h2>
-      <p className="mt-1 text-sm text-om-muted">
-        Daily calories and protein, fats, and carbs in grams.
-      </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block text-sm text-zinc-400">
@@ -413,10 +406,230 @@ function MacroTargetsCard({
   );
 }
 
+const ADVANCED_DRIVE_TAP_WINDOW_MS = 3000;
+const ADVANCED_DRIVE_TAP_COUNT = 10;
+const ADVANCED_DRIVE_HINT_MIN_TAPS = 5;
+const ADVANCED_DRIVE_TAP_HINT_TOAST_ID = "settings-advanced-drive-tap-hint";
+
+function GoogleAccountDriveCard({
+  email,
+  sessionReady,
+  signOut,
+  qc,
+  isSaving,
+  wipeAllRemoteData,
+}: {
+  email: string | null;
+  sessionReady: boolean;
+  signOut: () => Promise<void>;
+  qc: ReturnType<typeof useQueryClient>;
+  isSaving: boolean;
+  wipeAllRemoteData: () => Promise<void>;
+}) {
+  const [signOutBusy, setSignOutBusy] = useState(false);
+  const [wipePhrase, setWipePhrase] = useState("");
+  const [wipeBusy, setWipeBusy] = useState(false);
+  const [advancedDriveUnlocked, setAdvancedDriveUnlocked] = useState(false);
+  const advancedDriveTapTimesRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    return () => {
+      toast.dismiss(ADVANCED_DRIVE_TAP_HINT_TOAST_ID);
+    };
+  }, []);
+
+  const onSignedInRowTap = useCallback(() => {
+    if (advancedDriveUnlocked) return;
+    const now = Date.now();
+    const cutoff = now - ADVANCED_DRIVE_TAP_WINDOW_MS;
+    const recent = advancedDriveTapTimesRef.current.filter((t) => t >= cutoff);
+    recent.push(now);
+    advancedDriveTapTimesRef.current = recent;
+
+    if (recent.length >= ADVANCED_DRIVE_TAP_COUNT) {
+      toast.dismiss(ADVANCED_DRIVE_TAP_HINT_TOAST_ID);
+      setAdvancedDriveUnlocked(true);
+      advancedDriveTapTimesRef.current = [];
+      return;
+    }
+
+    if (recent.length >= ADVANCED_DRIVE_HINT_MIN_TAPS) {
+      const remaining = ADVANCED_DRIVE_TAP_COUNT - recent.length;
+      toast.info(
+        `You are now ${remaining} tap${remaining === 1 ? "" : "s"} away from advanced Drive options.`,
+        {
+          id: ADVANCED_DRIVE_TAP_HINT_TOAST_ID,
+          duration: 2200,
+        },
+      );
+    }
+  }, [advancedDriveUnlocked]);
+
+  return (
+    <Card>
+      <h2 className="text-sm font-semibold text-white">
+        Google account & Drive
+      </h2>
+
+      <dl className="mt-4 space-y-3 text-sm">
+        <div
+          className="cursor-default"
+          onClick={onSignedInRowTap}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSignedInRowTap();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={
+            email ? `Signed in as ${email}` : "Signed in as unknown account"
+          }
+        >
+          <dt className="text-sm text-zinc-500">Signed in as</dt>
+          <dd className="mt-0.5 font-medium text-white">
+            {email ?? "Unknown"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-sm text-zinc-500">Drive access</dt>
+          <dd className="mt-1 flex flex-wrap items-center gap-2">
+            {sessionReady ? (
+              <>
+                <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
+                <span className="text-sm text-emerald-400/90">
+                  Access is set up correctly.
+                </span>
+              </>
+            ) : (
+              <span className="text-zinc-400">Not connected</span>
+            )}
+          </dd>
+        </div>
+      </dl>
+
+      <button
+        type="button"
+        disabled={signOutBusy}
+        aria-busy={signOutBusy}
+        onClick={() =>
+          void (async () => {
+            setSignOutBusy(true);
+            try {
+              await signOut();
+              qc.removeQueries({ queryKey: ["records"] });
+            } finally {
+              setSignOutBusy(false);
+            }
+          })()
+        }
+        className="relative mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <ButtonPendingContents
+          pending={signOutBusy}
+          spinner={<ButtonSpinner className="text-zinc-200" />}
+        >
+          Sign out
+        </ButtonPendingContents>
+      </button>
+
+      {advancedDriveUnlocked && (
+        <>
+          <div className="mt-8 border-t border-om-border pt-6">
+            <Link
+              to="/drive"
+              className="flex w-full items-center justify-between gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-left text-sm transition hover:bg-zinc-900"
+            >
+              <span className="flex min-w-0 items-start gap-3">
+                <FolderOpen
+                  className="mt-0.5 size-5 shrink-0 text-zinc-400"
+                  aria-hidden
+                />
+                <span className="min-w-0">
+                  <span className="block font-medium text-zinc-100">
+                    Drive app data
+                  </span>
+                  <span className="mt-0.5 block text-sm font-normal text-om-muted">
+                    Files in your App Data folder
+                  </span>
+                </span>
+              </span>
+              <ChevronRight
+                className="size-5 shrink-0 text-zinc-500"
+                aria-hidden
+              />
+            </Link>
+          </div>
+
+          <div className="mt-6 border-t border-red-500/15 pt-6">
+            <h3 className="text-sm font-semibold text-red-300">
+              Delete all cloud data
+            </h3>
+            <p className="mt-1 text-sm text-om-muted">
+              Permanently removes every OpenMacro file from this Google
+              account&apos;s Drive App Data folder. This cannot be reversed.
+              Type <span className="font-mono text-zinc-300">DELETE</span> to
+              enable the button.
+            </p>
+            <label className="mt-3 block text-sm text-zinc-500">
+              Confirmation
+              <input
+                value={wipePhrase}
+                onChange={(e) => {
+                  setWipePhrase(e.target.value);
+                }}
+                autoComplete="off"
+                placeholder="DELETE"
+                disabled={!sessionReady || wipeBusy}
+                className="mt-1 w-full max-w-xs rounded-xl border border-om-border bg-om-bg px-4 py-3 font-mono text-base text-white outline-none placeholder:text-zinc-600 focus:border-red-400/50"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={
+                !sessionReady || wipeBusy || wipePhrase !== "DELETE" || isSaving
+              }
+              aria-busy={wipeBusy}
+              onClick={() =>
+                void (async () => {
+                  setWipeBusy(true);
+                  try {
+                    await wipeAllRemoteData();
+                    setWipePhrase("");
+                    toast.success("All Drive data deleted", {
+                      description: "Your diary will reload empty.",
+                    });
+                  } catch (e) {
+                    toast.error(
+                      e instanceof Error
+                        ? e.message
+                        : "Could not delete all data.",
+                    );
+                  } finally {
+                    setWipeBusy(false);
+                  }
+                })()
+              }
+              className="relative mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-950/40 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-950/70 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ButtonPendingContents
+                pending={wipeBusy}
+                spinner={<ButtonSpinner className="text-red-100" />}
+              >
+                Delete all data in Drive
+              </ButtonPendingContents>
+            </button>
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
 export function SettingsPage() {
   const qc = useQueryClient();
   const { sessionReady, signOut } = useGoogleSession();
-  const [signOutBusy, setSignOutBusy] = useState(false);
   const {
     records,
     geminiKey,
@@ -426,8 +639,6 @@ export function SettingsPage() {
     wipeAllRemoteData,
   } = useRecords();
   const email = getGoogleUserEmail();
-  const [wipePhrase, setWipePhrase] = useState("");
-  const [wipeBusy, setWipeBusy] = useState(false);
   const [profileSavePending, setProfileSavePending] = useState(false);
   const [targetsSavePending, setTargetsSavePending] = useState(false);
 
@@ -469,141 +680,15 @@ export function SettingsPage() {
         isSaving={isSaving}
       />
 
-      <Card>
-        <h2 className="text-sm font-semibold text-white">
-          Google account & Drive
-        </h2>
-
-        <Link
-          to="/drive"
-          className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-left text-sm transition hover:bg-zinc-900"
-        >
-          <span className="flex min-w-0 items-start gap-3">
-            <FolderOpen
-              className="mt-0.5 size-5 shrink-0 text-zinc-400"
-              aria-hidden
-            />
-            <span className="min-w-0">
-              <span className="block font-medium text-zinc-100">
-                Drive app data
-              </span>
-              <span className="mt-0.5 block text-sm font-normal text-om-muted">
-                Files in your App Data folder
-              </span>
-            </span>
-          </span>
-          <ChevronRight className="size-5 shrink-0 text-zinc-500" aria-hidden />
-        </Link>
-
-        <dl className="mt-4 space-y-3 text-sm">
-          <div>
-            <dt className="text-sm text-zinc-500">Signed in as</dt>
-            <dd className="mt-0.5 font-medium text-white">
-              {email ?? "Unknown"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm text-zinc-500">Drive access</dt>
-            <dd className="mt-1 flex flex-wrap items-center gap-2">
-              {sessionReady ? (
-                <>
-                  <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
-                  <span className="text-sm text-emerald-400/90">
-                    Access is set up correctly.
-                  </span>
-                </>
-              ) : (
-                <span className="text-zinc-400">Not connected</span>
-              )}
-            </dd>
-          </div>
-        </dl>
-
-        <button
-          type="button"
-          disabled={signOutBusy}
-          aria-busy={signOutBusy}
-          onClick={() =>
-            void (async () => {
-              setSignOutBusy(true);
-              try {
-                await signOut();
-                qc.removeQueries({ queryKey: ["records"] });
-              } finally {
-                setSignOutBusy(false);
-              }
-            })()
-          }
-          className="relative mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <ButtonPendingContents
-            pending={signOutBusy}
-            spinner={<ButtonSpinner className="text-zinc-200" />}
-          >
-            Sign out
-          </ButtonPendingContents>
-        </button>
-
-        <div className="mt-8 border-t border-red-500/15 pt-6">
-          <h3 className="text-sm font-semibold text-red-300">
-            Delete all cloud data
-          </h3>
-          <p className="mt-1 text-sm text-om-muted">
-            Permanently removes every OpenMacro file from this Google
-            account&apos;s Drive App Data folder. This cannot be reversed. Type{" "}
-            <span className="font-mono text-zinc-300">DELETE</span> to enable
-            the button.
-          </p>
-          <label className="mt-3 block text-sm text-zinc-500">
-            Confirmation
-            <input
-              value={wipePhrase}
-              onChange={(e) => {
-                setWipePhrase(e.target.value);
-              }}
-              autoComplete="off"
-              placeholder="DELETE"
-              disabled={!sessionReady || wipeBusy}
-              className="mt-1 w-full max-w-xs rounded-xl border border-om-border bg-om-bg px-4 py-3 font-mono text-base text-white outline-none placeholder:text-zinc-600 focus:border-red-400/50"
-            />
-          </label>
-          <button
-            type="button"
-            disabled={
-              !sessionReady || wipeBusy || wipePhrase !== "DELETE" || isSaving
-            }
-            aria-busy={wipeBusy}
-            onClick={() =>
-              void (async () => {
-                setWipeBusy(true);
-                try {
-                  await wipeAllRemoteData();
-                  setWipePhrase("");
-                  toast.success("All Drive data deleted", {
-                    description: "Your diary will reload empty.",
-                  });
-                } catch (e) {
-                  toast.error(
-                    e instanceof Error
-                      ? e.message
-                      : "Could not delete all data.",
-                  );
-                } finally {
-                  setWipeBusy(false);
-                }
-              })()
-            }
-            className="relative mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-950/40 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-950/70 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <ButtonPendingContents
-              pending={wipeBusy}
-              spinner={<ButtonSpinner className="text-red-100" />}
-            >
-              Delete all data in Drive
-            </ButtonPendingContents>
-          </button>
-        </div>
-      </Card>
+      <GoogleAccountDriveCard
+        key={email ?? ""}
+        email={email}
+        sessionReady={sessionReady}
+        signOut={signOut}
+        qc={qc}
+        isSaving={isSaving}
+        wipeAllRemoteData={wipeAllRemoteData}
+      />
 
       <ProfileBodyCard
         key={profileBodySyncKey(records.profile)}

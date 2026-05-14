@@ -13,7 +13,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-om-bg text-zinc-100">
-      <div className="mx-auto flex min-h-dvh max-w-6xl lg:max-w-none">
+      <div className="mx-auto flex min-h-dvh max-w-6xl lg:max-w-screen-2xl">
         {!inOnboarding ? <DesktopSidebar /> : null}
         <div
           className={`relative flex min-h-dvh min-w-0 flex-1 flex-col ${!inOnboarding ? "lg:pl-60" : ""}`}
