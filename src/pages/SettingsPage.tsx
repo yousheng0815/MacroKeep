@@ -18,7 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, ChevronRight, FolderOpen } from "lucide-react";
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 
 type ProfileBodyDraft = Pick<
   UserProfile,

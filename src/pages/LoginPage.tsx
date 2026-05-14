@@ -13,7 +13,7 @@ import { startGoogleOAuthRedirect } from "@/lib/gapi";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 
 let oauthRetryRedirectStarted = false;
 

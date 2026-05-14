@@ -1,16 +1,13 @@
 import { useRecords } from "@/hooks/use-records";
 import { fileToBase64 } from "@/lib/file-to-base64";
+import { canSyncToDriveAppData, ensureGoogleAccessToken } from "@/lib/gapi";
 import { analyzeFoodPhoto } from "@/lib/gemini";
-import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
-import {
-  canSyncToDriveAppData,
-  ensureGoogleAccessToken,
-} from "@/lib/gapi";
 import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
+import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 
 export const MISSING_GEMINI_API_KEY_ERROR =
   "To estimate macros from a photo, add your Gemini API key in Settings.";
@@ -22,10 +19,21 @@ export function useMealScanFlow() {
 
   const hasKey = useMemo(() => geminiKey.trim().length > 0, [geminiKey]);
 
+  const showMissingGeminiKeyToast = useCallback(() => {
+    toast.error(MISSING_GEMINI_API_KEY_ERROR, {
+      action: {
+        label: "Open Settings",
+        onClick: () => {
+          void navigate({ to: paths.settings });
+        },
+      },
+    });
+  }, [navigate]);
+
   const runAnalyzeSnapshot = useCallback(
     async (base64: string, mimeType: string) => {
       if (!hasKey) {
-        toast.error(MISSING_GEMINI_API_KEY_ERROR);
+        showMissingGeminiKeyToast();
         return;
       }
       setAnalyzing(true);
@@ -105,7 +113,7 @@ export function useMealScanFlow() {
         });
       }
     },
-    [addMeal, geminiKey, hasKey, navigate],
+    [addMeal, geminiKey, hasKey, navigate, showMissingGeminiKeyToast],
   );
 
   const runAnalyzeFromFile = useCallback(
@@ -122,9 +130,9 @@ export function useMealScanFlow() {
 
   const ensureKeyForPhotoScan = useCallback(() => {
     if (hasKey) return true;
-    toast.error(MISSING_GEMINI_API_KEY_ERROR);
+    showMissingGeminiKeyToast();
     return false;
-  }, [hasKey]);
+  }, [hasKey, showMissingGeminiKeyToast]);
 
   return {
     analyzing,

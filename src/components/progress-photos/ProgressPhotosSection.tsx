@@ -19,7 +19,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 
 function overlayFromSearch(search: Record<string, unknown>) {
   return {

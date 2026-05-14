@@ -15,7 +15,7 @@ import { Navigate, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 
 function recordsLoadErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;

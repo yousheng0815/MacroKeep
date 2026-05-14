@@ -630,6 +630,56 @@ export function useRecords() {
     [qc],
   );
 
+  /**
+   * Replaces the full saved-meals list on Drive (order + removals in one write).
+   * Rows are re-read from the server by id so client payloads stay in sync.
+   */
+  const commitSavedMeals = useCallback(
+    async (nextFromClient: SavedMealRecord[]) => {
+      if (!canSyncToDriveAppData()) {
+        throw new Error("Not signed in or Drive scope unavailable");
+      }
+      const token = await ensureGoogleAccessToken();
+      if (!token) throw new Error("Missing access token");
+      const uid = getGoogleUserId() ?? "";
+      await ensureSavedMealsMigrated(token);
+      const { savedMeals: prev } = await pullSavedMealsFromDrive(token);
+      const prevById = new Map(prev.map((s) => [s.id, s]));
+      const seen = new Set<string>();
+      const merged: SavedMealRecord[] = [];
+      for (const row of nextFromClient) {
+        if (seen.has(row.id)) {
+          throw new Error("Invalid order: duplicate entries.");
+        }
+        seen.add(row.id);
+        const fresh = prevById.get(row.id);
+        if (!fresh) {
+          throw new Error("Saved meals list changed; try again.");
+        }
+        merged.push(fresh);
+      }
+      const nextIds = new Set(merged.map((s) => s.id));
+      const removed = prev.filter((s) => !nextIds.has(s.id));
+      await upsertSavedMealsToDrive(token, merged);
+      qc.setQueryData<SavedMealRecord[]>(["saved-meals", uid], merged);
+
+      for (const r of removed) {
+        const photoId = r.photoFileId;
+        if (!photoId) continue;
+        try {
+          const meals = getCurrentRecords().meals;
+          const stillReferenced =
+            meals.some((m) => m.photoFileId === photoId) ||
+            merged.some((s) => s.photoFileId === photoId);
+          if (!stillReferenced) await deleteDriveFile(token, photoId);
+        } catch {
+          /* best-effort */
+        }
+      }
+    },
+    [qc, getCurrentRecords],
+  );
+
   const updateProfile = useCallback(
     async (patch: Partial<UserProfile>) => {
       const prev = getCurrentRecords();
@@ -832,6 +882,7 @@ export function useRecords() {
     updateGeminiKey,
     addMeal,
     addSavedMealFromMeal,
+    commitSavedMeals,
     deleteMeal,
     updateMeal,
     updateProfile,

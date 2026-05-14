@@ -4,7 +4,7 @@ import { ProgressPhotoSlideshowViewer } from "@/components/progress-photos/Progr
 import { useProgressPhotos } from "@/hooks/use-progress-photos";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 
 export function ProgressPhotoSlideshowPage() {
   const navigate = useNavigate();

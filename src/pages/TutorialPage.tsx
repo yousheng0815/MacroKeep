@@ -26,7 +26,7 @@ import type {
 } from "@/types/records";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 
 type TutorialForm = {
   birthDate: string;

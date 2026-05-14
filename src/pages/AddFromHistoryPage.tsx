@@ -9,7 +9,7 @@ import type { MealRecord } from "@/types/records";
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 
 type HistoryTemplate = {
   key: string;

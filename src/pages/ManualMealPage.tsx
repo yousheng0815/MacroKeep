@@ -11,7 +11,7 @@ import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import { Camera, ImagePlus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 
 function toLocalDateTimeInput(iso: string): string {
   const d = new Date(iso);

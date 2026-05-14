@@ -21,7 +21,7 @@ import {
   useParams,
   useRouter,
 } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import {
   ArrowLeft,
   Bookmark,
