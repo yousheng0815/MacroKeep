@@ -8,6 +8,7 @@ import { SavedMealsPage } from "@/pages/SavedMealsPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MealDetailPage } from "@/pages/MealDetailPage";
+import { MealEditPage } from "@/pages/MealEditPage";
 import { ProgressPage } from "@/pages/ProgressPage";
 import { ProgressPhotoSlideshowPage } from "@/pages/ProgressPhotoSlideshowPage";
 import { ManualMealPage } from "@/pages/ManualMealPage";
@@ -60,6 +61,12 @@ const historyRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: paths.history,
   component: HistoryPage,
+});
+
+const mealEditRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.mealEdit,
+  component: MealEditPage,
 });
 
 const mealDetailRoute = createRoute({
@@ -151,6 +158,7 @@ const routeTree = rootRoute.addChildren([
   appLayoutRoute.addChildren([
     dashboardRoute,
     historyRoute,
+    mealEditRoute,
     mealDetailRoute,
     addMealRoute,
     savedMealsRoute,

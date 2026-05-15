@@ -21,6 +21,7 @@ import {
   upsertSavedMealsToDrive,
 } from "@/lib/google-drive";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
+import { isMealAlreadySavedAsTemplate } from "@/lib/saved-meals-snapshot-match";
 import type { PreparedMealPhoto } from "@/types/meal-scan";
 import type {
   MealRecord,
@@ -609,6 +610,9 @@ export function useRecords() {
       const uid = getGoogleUserId() ?? "";
       await ensureSavedMealsMigrated(token);
       const { savedMeals: prev } = await pullSavedMealsFromDrive(token);
+      if (isMealAlreadySavedAsTemplate(meal, prev)) {
+        throw new Error("This meal is already in your saved meals.");
+      }
       const newId = crypto.randomUUID?.() ?? String(Date.now());
       let photoFileId = meal.photoFileId;
       if (photoFileId) {

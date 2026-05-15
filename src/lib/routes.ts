@@ -4,6 +4,7 @@ export const paths = {
   home: "/",
   history: "/history",
   mealDetail: "/meals/$mealId",
+  mealEdit: "/meals/$mealId/edit",
   add: {
     root: "/add",
     savedMeals: "/add/saved-meals",
