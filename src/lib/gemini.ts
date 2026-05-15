@@ -79,6 +79,30 @@ export type AiMealEstimate = {
   carbs: number;
 };
 
+/** Atwater general factors; calories are derived from these grams for consistency. */
+const KCAL_PER_PROTEIN = 4;
+const KCAL_PER_CARB = 4;
+const KCAL_PER_FAT = 9;
+
+/**
+ * Meal-scan instructions: decomposition, assumptions, then one JSON object.
+ * Output shape is unchanged — reasoning stays implicit.
+ */
+const MEAL_SCAN_PROMPT = `You are an expert at estimating nutrition from a single meal photo.
+
+Work through this mentally before you answer (do not output these steps as text):
+1) List each distinct food you can see (including sauces, oils, cheese, drinks if they are clearly part of the meal).
+2) For each item, estimate plausible grams for the portion actually visible. Account for depth: bowls and layered dishes are often larger than they look from one angle.
+3) Sum protein, carbs, and fat in grams across items. Prefer cooked weights unless the food is clearly raw.
+4) If cooking fat, dressing, or gravy is visible or very likely, include a realistic amount — this is a common source of underestimation.
+
+Rules for the JSON you return:
+- food_name: short human label (e.g. "Chicken rice bowl" or "Toast, eggs, avocado"). Max about 80 characters.
+- protein, fats, carbs: non-negative numbers in grams; use your best single estimate (one decimal is fine).
+- calories: MUST equal (${KCAL_PER_PROTEIN} × protein) + (${KCAL_PER_CARB} × carbs) + (${KCAL_PER_FAT} × fats) in kilocalories, rounded to the nearest whole number. Do not pick calories independently of these macros.
+
+Return only one JSON object with keys: food_name, calories, protein, fats, carbs.`;
+
 function stripCodeFence(text: string): string {
   let t = text.trim();
   if (t.startsWith("```")) {
@@ -107,11 +131,20 @@ export function parseAiMealJson(text: string): AiMealEstimate {
         : `${cleaned.slice(0, 200)}…`;
     throw new Error(`Could not parse meal JSON: ${hint}`);
   }
-  const food_name = String(parsed.food_name ?? "Meal");
-  const calories = Number(parsed.calories ?? 0);
-  const protein = Number(parsed.protein ?? 0);
-  const fats = Number(parsed.fats ?? 0);
-  const carbs = Number(parsed.carbs ?? 0);
+  const nonNeg = (n: unknown): number => {
+    const v = Number(n);
+    if (!Number.isFinite(v) || v < 0) return 0;
+    return v;
+  };
+  const food_name = String(parsed.food_name ?? "Meal").trim() || "Meal";
+  const protein = nonNeg(parsed.protein);
+  const fats = nonNeg(parsed.fats);
+  const carbs = nonNeg(parsed.carbs);
+  const calories = Math.round(
+    KCAL_PER_PROTEIN * protein +
+      KCAL_PER_CARB * carbs +
+      KCAL_PER_FAT * fats,
+  );
   return { food_name, calories, protein, fats, carbs };
 }
 
@@ -122,7 +155,7 @@ export async function analyzeFoodPhoto(
 ): Promise<AiMealEstimate> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const mealGenerationConfig: MealScanGenerationConfig = {
-    temperature: 0.2,
+    temperature: 0.15,
     responseMimeType: "application/json",
     responseSchema: {
       type: SchemaType.OBJECT,
@@ -141,13 +174,8 @@ export async function analyzeFoodPhoto(
     model: DEFAULT_GEMINI_MODEL,
     generationConfig: mealGenerationConfig,
   });
-  const prompt =
-    "You are a nutrition assistant. Estimate the meal in the image.\n" +
-    "Return a JSON object with: food_name (short label), calories (whole number kcal), protein / fats / carbs (grams, numbers).\n" +
-    "Use reasonable estimates for the serving visible.";
-
   const result = await model.generateContent([
-    { text: prompt },
+    { text: MEAL_SCAN_PROMPT },
     {
       inlineData: {
         mimeType,
