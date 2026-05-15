@@ -381,27 +381,29 @@ function MacroTargetsCard({
         </label>
       </div>
 
-      <button
-        type="button"
-        disabled={formsDisabled}
-        aria-busy={savePending}
-        onClick={() => void onSave(draft)}
-        className="relative mt-4 btn-mobile-block-lg gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <ButtonPendingContents
-          pending={savePending}
-          spinner={<ButtonSpinner />}
+      <div className="mt-4 flex flex-col gap-3 md:flex-row md:flex-wrap md:gap-3">
+        <button
+          type="button"
+          disabled={formsDisabled}
+          aria-busy={savePending}
+          onClick={() => void onSave(draft)}
+          className="relative btn-mobile-block-lg gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Save targets
-        </ButtonPendingContents>
-      </button>
+          <ButtonPendingContents
+            pending={savePending}
+            spinner={<ButtonSpinner />}
+          >
+            Save targets
+          </ButtonPendingContents>
+        </button>
 
-      <Link
-        to="/tutorial"
-        className="relative mt-3 btn-mobile-block-lg cursor-pointer gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900"
-      >
-        Calculate suggested targets again
-      </Link>
+        <Link
+          to="/tutorial"
+          className="relative btn-mobile-block-lg cursor-pointer gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900"
+        >
+          Calculate suggested targets again
+        </Link>
+      </div>
     </Card>
   );
 }

@@ -30,19 +30,25 @@
     flex: 1 1 calc((100% - 0.75rem) / 2);
     min-width: min(max-content, 100%);
     max-width: 100%;
+    /*
+     * From md up, do not grow flex items to fill the row — keep natural button
+     * width (pair with btn-mobile-block-* md:w-auto). Narrow viewports keep
+     * flex growth so two short actions can still share one row when they fit.
+     */
+    @apply md:flex-none md:min-w-0;
   }
 
   /*
    * Primary controls: full width in the default stacked / narrow layout, then
-   * shrink to content when the surrounding layout goes horizontal (sm) or when
-   * the desktop sidebar is visible (lg), matching AppShell breakpoints.
+   * shrink to content from md up (tablet / desktop content width). Pair rows
+   * use .btn-pair-row > * md:flex-none so actions are not stretched edge to edge.
    */
   .btn-mobile-block-sm {
     @apply flex w-full min-w-0 items-center justify-center sm:inline-flex sm:w-auto;
   }
 
   .btn-mobile-block-lg {
-    @apply flex w-full min-w-0 items-center justify-center lg:inline-flex lg:w-auto;
+    @apply flex w-full min-w-0 items-center justify-center md:inline-flex md:w-auto;
   }
 
   /** Text fields: shared surface, padding, and inset emerald focus ring. */

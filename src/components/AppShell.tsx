@@ -2,24 +2,28 @@ import { Footer } from "@/components/Footer";
 import { Logo } from "@/components/Logo";
 import { DesktopSidebar } from "@/components/nav/DesktopSidebar";
 import { MobileBottomNav } from "@/components/nav/MobileBottomNav";
+import { useRecords } from "@/hooks/use-records";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const inOnboarding = pathname === "/tutorial";
+  const { records } = useRecords();
+  /** First-run setup only: hide shell nav so users focus on completing the flow. */
+  const inFirstRunTutorial =
+    pathname === "/tutorial" && !records.onboardingCompleted;
   const settingsActive = pathname.startsWith("/settings");
 
   return (
     <div className="min-h-dvh bg-om-bg text-zinc-100">
       <div className="mx-auto flex min-h-dvh max-w-6xl lg:max-w-screen-2xl">
-        {!inOnboarding ? <DesktopSidebar /> : null}
+        {!inFirstRunTutorial ? <DesktopSidebar /> : null}
         <div
-          className={`relative flex min-h-dvh min-w-0 flex-1 flex-col ${!inOnboarding ? "lg:pl-60" : ""}`}
+          className={`relative flex min-h-dvh min-w-0 flex-1 flex-col ${!inFirstRunTutorial ? "lg:pl-60" : ""}`}
         >
           <header
-            className={`sticky top-0 z-30 flex items-center justify-between border-b border-om-border bg-om-bg/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur lg:hidden ${inOnboarding ? "hidden" : ""}`}
+            className={`sticky top-0 z-30 flex items-center justify-between border-b border-om-border bg-om-bg/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur lg:hidden ${inFirstRunTutorial ? "hidden" : ""}`}
           >
             <Link to="/" className="flex items-center gap-2">
               <Logo />
@@ -39,16 +43,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
 
           <main
-            className={`min-w-0 flex-1 px-4 pt-4 ${inOnboarding ? "pb-6 lg:px-4 lg:pt-6 lg:pb-6" : "pb-28 lg:px-8 lg:pt-8 lg:pb-10"}`}
+            className={`min-w-0 flex-1 px-4 pt-4 ${inFirstRunTutorial ? "pb-6 lg:px-4 lg:pt-6 lg:pb-6" : "pb-28 lg:px-8 lg:pt-8 lg:pb-10"}`}
           >
             {children}
           </main>
 
-          <div className={`hidden lg:block ${inOnboarding ? "hidden" : ""}`}>
+          <div className={`hidden lg:block ${inFirstRunTutorial ? "hidden" : ""}`}>
             <Footer />
           </div>
 
-          {!inOnboarding ? <MobileBottomNav /> : null}
+          {!inFirstRunTutorial ? <MobileBottomNav /> : null}
         </div>
       </div>
     </div>

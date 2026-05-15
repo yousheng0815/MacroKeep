@@ -20,7 +20,7 @@ export function GoogleAuthPageLayout({
           <h1 className="text-2xl font-bold tracking-tight text-white">{title}</h1>
           <p className="text-sm leading-relaxed text-om-muted">{description}</p>
         </div>
-        <div className="flex flex-col gap-3">{children}</div>
+        <div className="flex flex-col items-center gap-3">{children}</div>
       </div>
     </div>
   );

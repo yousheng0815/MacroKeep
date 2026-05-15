@@ -60,7 +60,7 @@ function ImperialHeightRow({
 
   return (
     <>
-      <div className="block text-sm text-zinc-400 sm:col-span-2">
+      <div className="block min-w-0 text-sm text-zinc-400">
         <span className="block">Height</span>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <input

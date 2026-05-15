@@ -4,29 +4,31 @@ import {
 } from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { Logo } from "@/components/Logo";
+import { PageHeader } from "@/components/PageHeader";
 import {
   HeightWeightFields,
   UnitsPreferenceSegment,
 } from "@/components/profile/body-measurement-fields";
 import { useRecords } from "@/hooks/use-records";
+import { toast } from "@/lib/app-toast";
 import {
   ageYearsFromIsoBirthDate,
   isValidIsoBirthDate,
 } from "@/lib/birth-date";
-import { convertBodyMeasuresToUnits } from "@/lib/units";
 import {
   suggestMacroPlanFromProfileBody,
   type MacroPlanSuggestion,
 } from "@/lib/macro-plan";
+import { paths } from "@/lib/routes";
+import { convertBodyMeasuresToUnits } from "@/lib/units";
 import type {
   OnboardingActivityLevel,
   OnboardingMacroGoal,
   ProfileGender,
   UnitsPreference,
 } from "@/types/records";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "@/lib/app-toast";
 
 type TutorialForm = {
   birthDate: string;
@@ -71,6 +73,7 @@ export function TutorialPage() {
     isSaving,
   } = useRecords();
   const navigate = useNavigate();
+  const router = useRouter();
   const [form, setForm] = useState<TutorialForm>({
     birthDate: records.profile.birthDate,
     gender: records.profile.gender,
@@ -89,9 +92,7 @@ export function TutorialPage() {
 
   const canGenerate = useMemo(
     () =>
-      isValidIsoBirthDate(form.birthDate) &&
-      form.height > 0 &&
-      form.weight > 0,
+      isValidIsoBirthDate(form.birthDate) && form.height > 0 && form.weight > 0,
     [form],
   );
 
@@ -104,6 +105,8 @@ export function TutorialPage() {
       generatedPlan.carbsTargetG >= 0
     );
   }, [generatedPlan]);
+
+  const isRevisit = records.onboardingCompleted === true;
 
   useEffect(() => {
     if (didHydrateFromDraft) return;
@@ -139,6 +142,14 @@ export function TutorialPage() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [generatedPlan]);
+
+  const handleBack = () => {
+    if (router.history.canGoBack()) {
+      router.history.back();
+    } else {
+      void navigate({ to: paths.home });
+    }
+  };
 
   const generatePlan = () => {
     const isRecalculate = generatedPlan !== null;
@@ -184,269 +195,298 @@ export function TutorialPage() {
   };
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-6">
-      <Card>
-        <div className="flex items-center justify-between gap-3">
-          <Logo />
-          <span className="rounded-full border border-om-border bg-om-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
-            Setup
-          </span>
-        </div>
-        <h1 className="mt-4 text-xl font-bold tracking-tight text-white">
-          Set your targets
-        </h1>
-        <p className="mt-1 text-sm leading-relaxed text-om-muted">
-          Enter your profile and goal, generate suggested calories and macros,
-          then save them as your daily targets.
-        </p>
-      </Card>
-
-      <Card>
-        <h2 className="text-sm font-semibold text-white">
-          Step 1: Profile + goal
-        </h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm text-zinc-400">
-            Birthday
-            <input
-              type="date"
-              value={form.birthDate}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, birthDate: e.target.value }))
-              }
-              className="mt-1 w-full om-text-input"
-            />
-          </label>
-          <label className="block text-sm text-zinc-400">
-            Gender
-            <select
-              value={form.gender}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  gender: e.target.value as ProfileGender,
-                }))
-              }
-              className="mt-1 w-full om-text-input"
-            >
-              {GENDER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="sm:col-span-2">
-            <span className="text-sm text-zinc-400">Height & weight units</span>
-            <UnitsPreferenceSegment
-              id="tutorial-units"
-              value={form.unitsPreference}
-              disabled={isGeneratingPlan}
-              onChange={(unitsPreference) =>
-                setForm((prev) => {
-                  if (unitsPreference === prev.unitsPreference) return prev;
-                  const { height, weight } = convertBodyMeasuresToUnits(
-                    {
-                      unitsPreference: prev.unitsPreference,
-                      height: prev.height,
-                      weight: prev.weight,
-                    },
-                    unitsPreference,
-                  );
-                  return { ...prev, unitsPreference, height, weight };
-                })
-              }
-            />
-          </div>
-          <HeightWeightFields
-            units={form.unitsPreference}
-            height={form.height}
-            weight={form.weight}
-            disabled={isGeneratingPlan}
-            onChange={({ height, weight }) =>
-              setForm((prev) => ({ ...prev, height, weight }))
+    <div
+      className={
+        isRevisit
+          ? "flex w-full min-w-0 justify-center"
+          : "mx-auto w-full min-w-0 max-w-3xl"
+      }
+    >
+      <div
+        className={`min-w-0 w-full space-y-6 ${isRevisit ? "" : "max-w-3xl"}`}
+      >
+        {isRevisit ? (
+          <PageHeader
+            title="Set your targets"
+            subtitle={
+              <>
+                Enter your profile, generate suggested macros, and then save
+                them as your daily targets.
+              </>
+            }
+            onBack={handleBack}
+            backAriaLabel="Go back"
+            actions={
+              <span className="rounded-full border border-om-border bg-om-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
+                Targets
+              </span>
             }
           />
-          <label className="block text-sm text-zinc-400">
-            Goal
-            <select
-              value={form.goal}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  goal: e.target.value as OnboardingMacroGoal,
-                }))
-              }
-              className="mt-1 w-full om-text-input"
-            >
-              {GOAL_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm text-zinc-400 sm:col-span-2">
-            Activity level
-            <select
-              value={form.activityLevel}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  activityLevel: e.target.value as OnboardingActivityLevel,
-                }))
-              }
-              className="mt-1 w-full om-text-input"
-            >
-              {ACTIVITY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <button
-          type="button"
-          disabled={!canGenerate || isGeneratingPlan}
-          aria-busy={isGeneratingPlan}
-          onClick={generatePlan}
-          className="relative mt-4 btn-mobile-block-lg gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <ButtonPendingContents
-            pending={isGeneratingPlan}
-            spinner={<ButtonSpinner />}
-          >
-            Calculate suggested targets
-          </ButtonPendingContents>
-        </button>
-      </Card>
-
-      {generatedPlan ? (
-        <div ref={step2Ref}>
+        ) : (
           <Card>
-            <h2 className="text-sm font-semibold text-white">
-              Step 2: Apply suggested targets
-            </h2>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="flex items-center justify-between gap-3">
+              <Logo />
+              <span className="rounded-full border border-om-border bg-om-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
+                Setup
+              </span>
+            </div>
+            <h1 className="mt-4 text-xl font-bold tracking-tight text-white">
+              Set your targets
+            </h1>
+            <p className="mt-1 text-sm leading-relaxed text-om-muted">
+              Enter your profile, generate suggested macros, and then save them
+              as your daily targets.
+            </p>
+          </Card>
+        )}
+
+        <Card>
+          <h2 className="text-sm font-semibold text-white">Profile</h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="block text-sm text-zinc-400">
-              Daily target (kcal)
+              Birthday
               <input
-                inputMode="numeric"
-                disabled={isGeneratingPlan}
-                value={generatedPlan.dailyTargetKcal}
+                type="date"
+                value={form.birthDate}
                 onChange={(e) =>
-                  setGeneratedPlan((plan) =>
-                    plan
-                      ? {
-                          ...plan,
-                          dailyTargetKcal: Number(e.target.value),
-                        }
-                      : plan,
-                  )
+                  setForm((prev) => ({ ...prev, birthDate: e.target.value }))
                 }
                 className="mt-1 w-full om-text-input"
               />
             </label>
             <label className="block text-sm text-zinc-400">
-              Protein target (g)
-              <input
-                inputMode="decimal"
-                disabled={isGeneratingPlan}
-                value={generatedPlan.proteinTargetG}
+              Gender
+              <select
+                value={form.gender}
                 onChange={(e) =>
-                  setGeneratedPlan((plan) =>
-                    plan
-                      ? {
-                          ...plan,
-                          proteinTargetG: Number(e.target.value),
-                        }
-                      : plan,
-                  )
+                  setForm((prev) => ({
+                    ...prev,
+                    gender: e.target.value as ProfileGender,
+                  }))
                 }
                 className="mt-1 w-full om-text-input"
-              />
+              >
+                {GENDER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </label>
-            <label className="block text-sm text-zinc-400">
-              Fats target (g)
-              <input
-                inputMode="decimal"
+            <div className="sm:col-span-2">
+              <span className="text-sm text-zinc-400">
+                Height & weight units
+              </span>
+              <UnitsPreferenceSegment
+                id="tutorial-units"
+                value={form.unitsPreference}
                 disabled={isGeneratingPlan}
-                value={generatedPlan.fatsTargetG}
+                onChange={(unitsPreference) =>
+                  setForm((prev) => {
+                    if (unitsPreference === prev.unitsPreference) return prev;
+                    const { height, weight } = convertBodyMeasuresToUnits(
+                      {
+                        unitsPreference: prev.unitsPreference,
+                        height: prev.height,
+                        weight: prev.weight,
+                      },
+                      unitsPreference,
+                    );
+                    return { ...prev, unitsPreference, height, weight };
+                  })
+                }
+              />
+            </div>
+            <HeightWeightFields
+              units={form.unitsPreference}
+              height={form.height}
+              weight={form.weight}
+              disabled={isGeneratingPlan}
+              onChange={({ height, weight }) =>
+                setForm((prev) => ({ ...prev, height, weight }))
+              }
+            />
+            <label className="block text-sm text-zinc-400">
+              Goal
+              <select
+                value={form.goal}
                 onChange={(e) =>
-                  setGeneratedPlan((plan) =>
-                    plan
-                      ? {
-                          ...plan,
-                          fatsTargetG: Number(e.target.value),
-                        }
-                      : plan,
-                  )
+                  setForm((prev) => ({
+                    ...prev,
+                    goal: e.target.value as OnboardingMacroGoal,
+                  }))
                 }
                 className="mt-1 w-full om-text-input"
-              />
+              >
+                {GOAL_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </label>
-            <label className="block text-sm text-zinc-400">
-              Carbs target (g)
-              <input
-                inputMode="decimal"
-                disabled={isGeneratingPlan}
-                value={generatedPlan.carbsTargetG}
+            <label className="block text-sm text-zinc-400 sm:col-span-2">
+              Activity level
+              <select
+                value={form.activityLevel}
                 onChange={(e) =>
-                  setGeneratedPlan((plan) =>
-                    plan
-                      ? {
-                          ...plan,
-                          carbsTargetG: Number(e.target.value),
-                        }
-                      : plan,
-                  )
+                  setForm((prev) => ({
+                    ...prev,
+                    activityLevel: e.target.value as OnboardingActivityLevel,
+                  }))
                 }
                 className="mt-1 w-full om-text-input"
-              />
+              >
+                {ACTIVITY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
+
           <button
             type="button"
-            disabled={isSaving || !canApply || isGeneratingPlan}
-            aria-busy={isSaving}
-            onClick={() =>
-              void (async () => {
-                try {
-                  await updateProfile({
-                    birthDate: form.birthDate,
-                    gender: form.gender,
-                    unitsPreference: form.unitsPreference,
-                    height: form.height,
-                    weight: form.weight,
-                    dailyTargetKcal: generatedPlan.dailyTargetKcal,
-                    proteinTargetG: generatedPlan.proteinTargetG,
-                    carbsTargetG: generatedPlan.carbsTargetG,
-                    fatsTargetG: generatedPlan.fatsTargetG,
-                  });
-                  await clearOnboardingDraft();
-                  await completeOnboarding();
-                  await navigate({ to: "/" });
-                } catch (e) {
-                  toast.error(
-                    e instanceof Error ? e.message : "Could not save targets.",
-                  );
-                }
-              })()
-            }
-            className="relative mt-4 btn-mobile-block-lg gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!canGenerate || isGeneratingPlan}
+            aria-busy={isGeneratingPlan}
+            onClick={generatePlan}
+            className="relative mt-4 btn-mobile-block-lg gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ButtonPendingContents
-              pending={isSaving}
+              pending={isGeneratingPlan}
               spinner={<ButtonSpinner />}
             >
-              Use these targets
+              Save and calculate targets
             </ButtonPendingContents>
           </button>
         </Card>
-        </div>
-      ) : null}
+
+        {generatedPlan ? (
+          <div ref={step2Ref}>
+            <Card>
+              <h2 className="text-sm font-semibold text-white">Targets</h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm text-zinc-400">
+                  Daily target (kcal)
+                  <input
+                    inputMode="numeric"
+                    disabled={isGeneratingPlan}
+                    value={generatedPlan.dailyTargetKcal}
+                    onChange={(e) =>
+                      setGeneratedPlan((plan) =>
+                        plan
+                          ? {
+                              ...plan,
+                              dailyTargetKcal: Number(e.target.value),
+                            }
+                          : plan,
+                      )
+                    }
+                    className="mt-1 w-full om-text-input"
+                  />
+                </label>
+                <label className="block text-sm text-zinc-400">
+                  Protein target (g)
+                  <input
+                    inputMode="decimal"
+                    disabled={isGeneratingPlan}
+                    value={generatedPlan.proteinTargetG}
+                    onChange={(e) =>
+                      setGeneratedPlan((plan) =>
+                        plan
+                          ? {
+                              ...plan,
+                              proteinTargetG: Number(e.target.value),
+                            }
+                          : plan,
+                      )
+                    }
+                    className="mt-1 w-full om-text-input"
+                  />
+                </label>
+                <label className="block text-sm text-zinc-400">
+                  Fats target (g)
+                  <input
+                    inputMode="decimal"
+                    disabled={isGeneratingPlan}
+                    value={generatedPlan.fatsTargetG}
+                    onChange={(e) =>
+                      setGeneratedPlan((plan) =>
+                        plan
+                          ? {
+                              ...plan,
+                              fatsTargetG: Number(e.target.value),
+                            }
+                          : plan,
+                      )
+                    }
+                    className="mt-1 w-full om-text-input"
+                  />
+                </label>
+                <label className="block text-sm text-zinc-400">
+                  Carbs target (g)
+                  <input
+                    inputMode="decimal"
+                    disabled={isGeneratingPlan}
+                    value={generatedPlan.carbsTargetG}
+                    onChange={(e) =>
+                      setGeneratedPlan((plan) =>
+                        plan
+                          ? {
+                              ...plan,
+                              carbsTargetG: Number(e.target.value),
+                            }
+                          : plan,
+                      )
+                    }
+                    className="mt-1 w-full om-text-input"
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                disabled={isSaving || !canApply || isGeneratingPlan}
+                aria-busy={isSaving}
+                onClick={() =>
+                  void (async () => {
+                    try {
+                      await updateProfile({
+                        birthDate: form.birthDate,
+                        gender: form.gender,
+                        unitsPreference: form.unitsPreference,
+                        height: form.height,
+                        weight: form.weight,
+                        dailyTargetKcal: generatedPlan.dailyTargetKcal,
+                        proteinTargetG: generatedPlan.proteinTargetG,
+                        carbsTargetG: generatedPlan.carbsTargetG,
+                        fatsTargetG: generatedPlan.fatsTargetG,
+                      });
+                      await clearOnboardingDraft();
+                      await completeOnboarding();
+                      await navigate({ to: paths.home });
+                    } catch (e) {
+                      toast.error(
+                        e instanceof Error
+                          ? e.message
+                          : "Could not save targets.",
+                      );
+                    }
+                  })()
+                }
+                className="relative mt-4 btn-mobile-block-lg gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ButtonPendingContents
+                  pending={isSaving}
+                  spinner={<ButtonSpinner />}
+                >
+                  Use these targets
+                </ButtonPendingContents>
+              </button>
+            </Card>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
