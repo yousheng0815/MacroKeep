@@ -4,6 +4,7 @@ import { AddFromHistoryPage } from "@/pages/AddFromHistoryPage";
 import { AddMealPage } from "@/pages/AddMealPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { DriveFilesPage } from "@/pages/DriveFilesPage";
+import { SavedMealEditPage } from "@/pages/SavedMealEditPage";
 import { SavedMealsPage } from "@/pages/SavedMealsPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { LoginPage } from "@/pages/LoginPage";
@@ -87,6 +88,12 @@ const savedMealsRoute = createRoute({
   component: SavedMealsPage,
 });
 
+const savedMealEditRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.add.savedMealEdit,
+  component: SavedMealEditPage,
+});
+
 const legacyFavoriteMealsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: paths.add.favorites,
@@ -162,6 +169,7 @@ const routeTree = rootRoute.addChildren([
     mealDetailRoute,
     addMealRoute,
     savedMealsRoute,
+    savedMealEditRoute,
     legacyFavoriteMealsRoute,
     addFromHistoryRoute,
     manualMealRoute,

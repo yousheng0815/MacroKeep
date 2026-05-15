@@ -21,7 +21,10 @@ import {
   upsertSavedMealsToDrive,
 } from "@/lib/google-drive";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
-import { isMealAlreadySavedAsTemplate } from "@/lib/saved-meals-snapshot-match";
+import {
+  isMealAlreadySavedAsTemplate,
+  savedMealDuplicatesExisting,
+} from "@/lib/saved-meals-snapshot-match";
 import type { PreparedMealPhoto } from "@/types/meal-scan";
 import type {
   MealRecord,
@@ -634,6 +637,82 @@ export function useRecords() {
     [qc],
   );
 
+  const updateSavedMeal = useCallback(
+    async (
+      id: string,
+      patch: {
+        food_name: string;
+        calories: number;
+        protein: number;
+        fats: number;
+        carbs: number;
+        /** New Drive file id, or `null` / empty string to drop the photo. */
+        photoFileId?: string | null;
+      },
+    ) => {
+      if (!canSyncToDriveAppData()) {
+        throw new Error("Not signed in or Drive scope unavailable");
+      }
+      const token = await ensureGoogleAccessToken();
+      if (!token) throw new Error("Missing access token");
+      const uid = getGoogleUserId() ?? "";
+      await ensureSavedMealsMigrated(token);
+      const { savedMeals: prev } = await pullSavedMealsFromDrive(token);
+      const prevRow = prev.find((s) => s.id === id);
+      if (!prevRow) throw new Error("Saved meal not found");
+      const oldPhotoId = prevRow.photoFileId;
+
+      const foodName = patch.food_name.trim();
+      if (!foodName) throw new Error("Enter a food name.");
+
+      const updated: SavedMealRecord = {
+        ...prevRow,
+        food_name: foodName,
+        calories: patch.calories,
+        protein: patch.protein,
+        fats: patch.fats,
+        carbs: patch.carbs,
+      };
+
+      if ("photoFileId" in patch) {
+        if (patch.photoFileId === null || patch.photoFileId === "") {
+          delete updated.photoFileId;
+        } else if (typeof patch.photoFileId === "string") {
+          updated.photoFileId = patch.photoFileId;
+        }
+      }
+
+      if (savedMealDuplicatesExisting(updated, prev, id)) {
+        throw new Error(
+          "A saved meal with the same name and macros is already on your list.",
+        );
+      }
+
+      const next = prev.map((s) => (s.id === id ? updated : s));
+      await upsertSavedMealsToDrive(token, next);
+      qc.setQueryData<SavedMealRecord[]>(["saved-meals", uid], next);
+
+      const newPhotoId = updated.photoFileId;
+      if (oldPhotoId !== newPhotoId && canSyncToDriveAppData()) {
+        const t = await ensureGoogleAccessToken();
+        if (t && oldPhotoId && oldPhotoId !== newPhotoId) {
+          const meals = getCurrentRecords().meals;
+          const still =
+            meals.some((m) => m.photoFileId === oldPhotoId) ||
+            next.some((s) => s.photoFileId === oldPhotoId);
+          if (!still) {
+            try {
+              await deleteDriveFile(t, oldPhotoId);
+            } catch {
+              /* best-effort */
+            }
+          }
+        }
+      }
+    },
+    [qc, getCurrentRecords],
+  );
+
   /**
    * Replaces the full saved-meals list on Drive (order + removals in one write).
    * Rows are re-read from the server by id so client payloads stay in sync.
@@ -886,6 +965,7 @@ export function useRecords() {
     updateGeminiKey,
     addMeal,
     addSavedMealFromMeal,
+    updateSavedMeal,
     commitSavedMeals,
     deleteMeal,
     updateMeal,

@@ -8,6 +8,7 @@ export const paths = {
   add: {
     root: "/add",
     savedMeals: "/add/saved-meals",
+    savedMealEdit: "/add/saved-meals/$savedMealId/edit",
     /** @deprecated Use {@link paths.add.savedMeals}. */
     favorites: "/add/favorites",
     history: "/add/history",
