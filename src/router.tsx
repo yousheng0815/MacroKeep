@@ -12,6 +12,7 @@ import { MealDetailPage } from "@/pages/MealDetailPage";
 import { MealEditPage } from "@/pages/MealEditPage";
 import { ProgressPage } from "@/pages/ProgressPage";
 import { ProgressPhotoSlideshowPage } from "@/pages/ProgressPhotoSlideshowPage";
+import { DescribeMealPage } from "@/pages/DescribeMealPage";
 import { ManualMealPage } from "@/pages/ManualMealPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { TutorialPage } from "@/pages/TutorialPage";
@@ -112,6 +113,12 @@ const manualMealRoute = createRoute({
   component: ManualMealPage,
 });
 
+const describeMealRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.add.describe,
+  component: DescribeMealPage,
+});
+
 const legacyScannerRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: legacyPaths.scanner,
@@ -172,6 +179,7 @@ const routeTree = rootRoute.addChildren([
     savedMealEditRoute,
     legacyFavoriteMealsRoute,
     addFromHistoryRoute,
+    describeMealRoute,
     manualMealRoute,
     legacyScannerRoute,
     legacyScannerFavoritesRoute,

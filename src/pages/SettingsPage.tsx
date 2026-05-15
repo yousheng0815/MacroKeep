@@ -86,8 +86,9 @@ function GeminiKeyCard({
         <div>
           <h2 className="text-sm font-semibold text-white">Gemini API Key</h2>
           <p className="mt-1 text-sm text-om-muted">
-            Add an API key to estimate macros from photos. The key is saved in
-            your own Google Drive.
+            Add an API key for AI-powered macro estimates from photos or meal
+            descriptions. The key is saved with your OpenMacro data on Google
+            Drive.
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm">

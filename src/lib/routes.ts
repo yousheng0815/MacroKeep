@@ -12,6 +12,7 @@ export const paths = {
     /** @deprecated Use {@link paths.add.savedMeals}. */
     favorites: "/add/favorites",
     history: "/add/history",
+    describe: "/add/describe",
     manual: "/add/manual",
   },
   progress: {

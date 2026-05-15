@@ -84,6 +84,13 @@ const KCAL_PER_PROTEIN = 4;
 const KCAL_PER_CARB = 4;
 const KCAL_PER_FAT = 9;
 
+const MEAL_ESTIMATE_JSON_RULES = `Rules for the JSON you return:
+- food_name: short human label (e.g. "Chicken rice bowl" or "Toast, eggs, avocado"). Max about 80 characters.
+- protein, fats, carbs: non-negative numbers in grams; use your best single estimate (one decimal is fine).
+- calories: MUST equal (${KCAL_PER_PROTEIN} × protein) + (${KCAL_PER_CARB} × carbs) + (${KCAL_PER_FAT} × fats) in kilocalories, rounded to the nearest whole number. Do not pick calories independently of these macros.
+
+Return only one JSON object with keys: food_name, calories, protein, fats, carbs.`;
+
 /**
  * Meal-scan instructions: decomposition, assumptions, then one JSON object.
  * Output shape is unchanged — reasoning stays implicit.
@@ -96,12 +103,101 @@ Work through this mentally before you answer (do not output these steps as text)
 3) Sum protein, carbs, and fat in grams across items. Prefer cooked weights unless the food is clearly raw.
 4) If cooking fat, dressing, or gravy is visible or very likely, include a realistic amount — this is a common source of underestimation.
 
-Rules for the JSON you return:
-- food_name: short human label (e.g. "Chicken rice bowl" or "Toast, eggs, avocado"). Max about 80 characters.
-- protein, fats, carbs: non-negative numbers in grams; use your best single estimate (one decimal is fine).
-- calories: MUST equal (${KCAL_PER_PROTEIN} × protein) + (${KCAL_PER_CARB} × carbs) + (${KCAL_PER_FAT} × fats) in kilocalories, rounded to the nearest whole number. Do not pick calories independently of these macros.
+${MEAL_ESTIMATE_JSON_RULES}`;
 
-Return only one JSON object with keys: food_name, calories, protein, fats, carbs.`;
+function buildMealDescribePrompt(
+  description: string,
+  hasImage: boolean,
+): string {
+  const source = hasImage
+    ? "A meal photo is included. Combine the user's description with what you see in the image. Prefer visible portions in the photo when sizing; use the text for ingredients, brands, or amounts that are not clear from the picture."
+    : "The user only provided a text description (no photo). Infer typical portion sizes when amounts are not specified.";
+
+  return `You are an expert at estimating nutrition from how someone describes their meal.
+
+${source}
+
+Work through this mentally before you answer (do not output these steps as text):
+1) List each distinct food, drink, sauce, oil, or condiment implied by the description${
+    hasImage ? " and visible in the photo" : ""
+  }.
+2) For each item, estimate plausible grams for portions that match the description${
+    hasImage ? " and image (account for bowl depth when visible)" : ""
+  }.
+3) Sum protein, carbs, and fat in grams across items. Prefer cooked weights unless the description clearly means raw ingredients.
+4) If cooking fat, dressing, gravy, butter, or oil is stated or strongly implied—or visible—include a realistic amount.
+
+User description:
+${JSON.stringify(description.trim())}
+
+${MEAL_ESTIMATE_JSON_RULES}`;
+}
+
+function mealJsonModel(apiKey: string) {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const mealGenerationConfig: MealScanGenerationConfig = {
+    temperature: 0.15,
+    responseMimeType: "application/json",
+    responseSchema: {
+      type: SchemaType.OBJECT,
+      properties: {
+        food_name: { type: SchemaType.STRING },
+        calories: { type: SchemaType.NUMBER },
+        protein: { type: SchemaType.NUMBER },
+        fats: { type: SchemaType.NUMBER },
+        carbs: { type: SchemaType.NUMBER },
+      },
+      required: ["food_name", "calories", "protein", "fats", "carbs"],
+    },
+    thinkingConfig: { thinkingBudget: 0 },
+  };
+  return genAI.getGenerativeModel({
+    model: DEFAULT_GEMINI_MODEL,
+    generationConfig: mealGenerationConfig,
+  });
+}
+
+type MealEstimatePart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
+
+async function generateMealEstimateFromParts(
+  apiKey: string,
+  parts: MealEstimatePart[],
+): Promise<AiMealEstimate> {
+  const model = mealJsonModel(apiKey);
+  const result = await model.generateContent(parts);
+  const response = result.response;
+  const candidate = response.candidates?.[0];
+  let text: string;
+  try {
+    text = response.text();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`Gemini response blocked: ${msg}`);
+  }
+
+  if (!text.trim()) {
+    const fr = candidate?.finishReason;
+    const thoughts = (
+      response as { usageMetadata?: { thoughtsTokenCount?: number } }
+    ).usageMetadata?.thoughtsTokenCount;
+    if (fr === "MAX_TOKENS") {
+      const thoughtHint =
+        thoughts != null
+          ? ` This response used ${thoughts} internal thought tokens before any visible JSON.`
+          : "";
+      throw new Error(
+        `Gemini hit the output token limit with no JSON in the reply.${thoughtHint} Try again, or shorten the description.`,
+      );
+    }
+    throw new Error(
+      "Gemini returned an empty answer. Try again or check model/API availability.",
+    );
+  }
+
+  return parseAiMealJson(text);
+}
 
 function stripCodeFence(text: string): string {
   let t = text.trim();
@@ -153,28 +249,7 @@ export async function analyzeFoodPhoto(
   base64: string,
   mimeType: string,
 ): Promise<AiMealEstimate> {
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const mealGenerationConfig: MealScanGenerationConfig = {
-    temperature: 0.15,
-    responseMimeType: "application/json",
-    responseSchema: {
-      type: SchemaType.OBJECT,
-      properties: {
-        food_name: { type: SchemaType.STRING },
-        calories: { type: SchemaType.NUMBER },
-        protein: { type: SchemaType.NUMBER },
-        fats: { type: SchemaType.NUMBER },
-        carbs: { type: SchemaType.NUMBER },
-      },
-      required: ["food_name", "calories", "protein", "fats", "carbs"],
-    },
-    thinkingConfig: { thinkingBudget: 0 },
-  };
-  const model = genAI.getGenerativeModel({
-    model: DEFAULT_GEMINI_MODEL,
-    generationConfig: mealGenerationConfig,
-  });
-  const result = await model.generateContent([
+  return generateMealEstimateFromParts(apiKey, [
     { text: MEAL_SCAN_PROMPT },
     {
       inlineData: {
@@ -183,35 +258,28 @@ export async function analyzeFoodPhoto(
       },
     },
   ]);
+}
 
-  const response = result.response;
-  const candidate = response.candidates?.[0];
-  let text: string;
-  try {
-    text = response.text();
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    throw new Error(`Gemini response blocked: ${msg}`);
+/**
+ * Estimate macros from a written description, optionally with the same meal photo
+ * the user would attach when logging.
+ */
+export async function analyzeFoodFromDescription(
+  apiKey: string,
+  description: string,
+  image?: { base64: string; mimeType: string },
+): Promise<AiMealEstimate> {
+  const trimmed = description.trim();
+  if (!trimmed) {
+    throw new Error("Add a short description of what you ate.");
   }
-
-  if (!text.trim()) {
-    const fr = candidate?.finishReason;
-    const thoughts = (
-      response as { usageMetadata?: { thoughtsTokenCount?: number } }
-    ).usageMetadata?.thoughtsTokenCount;
-    if (fr === "MAX_TOKENS") {
-      const thoughtHint =
-        thoughts != null
-          ? ` This response used ${thoughts} internal thought tokens before any visible JSON.`
-          : "";
-      throw new Error(
-        `Gemini hit the output token limit with no JSON in the reply.${thoughtHint} Try again, or use a different photo.`,
-      );
-    }
-    throw new Error(
-      "Gemini returned an empty answer. Try another photo or check model/API availability.",
-    );
+  const parts: MealEstimatePart[] = [
+    { text: buildMealDescribePrompt(trimmed, Boolean(image)) },
+  ];
+  if (image) {
+    parts.push({
+      inlineData: { mimeType: image.mimeType, data: image.base64 },
+    });
   }
-
-  return parseAiMealJson(text);
+  return generateMealEstimateFromParts(apiKey, parts);
 }

@@ -62,6 +62,11 @@
     @apply flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900;
   }
 
+  /** Large touch tiles (Add meal primary actions). */
+  .om-add-tile-btn {
+    @apply flex h-32 w-full shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border border-om-border bg-om-bg px-3 py-2 text-center text-sm font-semibold leading-snug text-white transition hover:bg-zinc-900 active:bg-zinc-950;
+  }
+
   /** Meal form: thumbnail + camera / library actions. */
   .om-photo-field-panel {
     @apply flex items-start gap-3 rounded-xl border border-om-border bg-om-bg p-3 md:items-center md:gap-5 md:p-4;
@@ -87,6 +92,10 @@ body,
   }
 
   .om-list-row-btn {
+    @apply select-none;
+  }
+
+  .om-add-tile-btn {
     @apply select-none;
   }
 

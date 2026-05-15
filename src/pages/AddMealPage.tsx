@@ -5,7 +5,14 @@ import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { consumePendingScanPhoto } from "@/lib/pending-scan-photo";
 import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
-import { Bookmark, Camera, History, ImagePlus, PenLine } from "lucide-react";
+import {
+  Bookmark,
+  Camera,
+  History,
+  ImagePlus,
+  MessageSquareText,
+  PenLine,
+} from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 
 export function AddMealPage() {
@@ -43,7 +50,7 @@ export function AddMealPage() {
     <div className="min-w-0 space-y-6">
       <PageHeader
         title="Add Meal"
-        subtitle="Estimate macros from a photo, type them in yourself, or reuse a past or saved meal."
+        subtitle="Use a photo, describe what you had, enter macros yourself—or reuse something you've saved or logged before."
       />
 
       <Card>
@@ -63,17 +70,17 @@ export function AddMealPage() {
           onChange={(e) => void onPick(e.target.files, e.currentTarget)}
         />
 
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <button
             type="button"
             onClick={() => {
               if (!ensureKeyForPhotoScan()) return;
               cameraInputRef.current?.click();
             }}
-            className="om-list-row-btn"
+            className="om-add-tile-btn"
           >
-            <Camera className="size-5 shrink-0 text-emerald-400" />
-            Take a photo to estimate
+            <Camera className="size-8 shrink-0 text-emerald-400" aria-hidden />
+            <span className="text-balance">Take photo & estimate</span>
           </button>
           <button
             type="button"
@@ -81,34 +88,45 @@ export function AddMealPage() {
               if (!ensureKeyForPhotoScan()) return;
               uploadInputRef.current?.click();
             }}
-            className="om-list-row-btn"
+            className="om-add-tile-btn"
           >
-            <ImagePlus className="size-5 shrink-0 text-orange-500" />
-            Choose a photo to estimate
+            <ImagePlus className="size-8 shrink-0 text-orange-500" aria-hidden />
+            <span className="text-balance">Choose photo & estimate</span>
           </button>
           <button
             type="button"
-            onClick={() => void navigate({ to: paths.add.savedMeals })}
-            className="om-list-row-btn"
+            onClick={() => void navigate({ to: paths.add.describe })}
+            className="om-add-tile-btn"
           >
-            <Bookmark className="size-5 shrink-0 text-amber-400" />
-            Add from saved meals
-          </button>
-          <button
-            type="button"
-            onClick={() => void navigate({ to: paths.add.history })}
-            className="om-list-row-btn"
-          >
-            <History className="size-5 shrink-0 text-violet-400" />
-            Add from history
+            <MessageSquareText
+              className="size-8 shrink-0 text-fuchsia-400"
+              aria-hidden
+            />
+            <span className="text-balance">Describe meal</span>
           </button>
           <button
             type="button"
             onClick={() => void navigate({ to: paths.add.manual })}
-            className="om-list-row-btn"
+            className="om-add-tile-btn"
           >
-            <PenLine className="size-5 shrink-0 text-sky-400" />
-            Enter macros manually
+            <PenLine className="size-8 shrink-0 text-sky-400" aria-hidden />
+            <span className="text-balance">Enter macros manually</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void navigate({ to: paths.add.savedMeals })}
+            className="om-add-tile-btn"
+          >
+            <Bookmark className="size-8 shrink-0 text-amber-400" aria-hidden />
+            <span className="text-balance">From saved meals</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void navigate({ to: paths.add.history })}
+            className="om-add-tile-btn"
+          >
+            <History className="size-8 shrink-0 text-violet-400" aria-hidden />
+            <span className="text-balance">From history</span>
           </button>
         </div>
       </Card>

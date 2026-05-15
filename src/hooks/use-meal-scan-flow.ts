@@ -1,7 +1,7 @@
 import { useRecords } from "@/hooks/use-records";
 import { fileToBase64 } from "@/lib/file-to-base64";
 import { canSyncToDriveAppData, ensureGoogleAccessToken } from "@/lib/gapi";
-import { analyzeFoodPhoto } from "@/lib/gemini";
+import { analyzeFoodFromDescription, analyzeFoodPhoto } from "@/lib/gemini";
 import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import { paths } from "@/lib/routes";
@@ -10,7 +10,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "@/lib/app-toast";
 
 export const MISSING_GEMINI_API_KEY_ERROR =
-  "To estimate macros from a photo, add your Gemini API key in Settings.";
+  "AI estimates need a Gemini API key. Add one in Settings.";
 
 export function useMealScanFlow() {
   const { geminiKey, addMeal } = useRecords();
@@ -91,8 +91,123 @@ export function useMealScanFlow() {
           { photoFileId: uploadedPhotoId ?? undefined },
         );
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Analysis failed");
+        toast.error(e instanceof Error ? e.message : "Estimate failed — try again.");
         // If the photo uploaded but meal persistence failed, best-effort clean up.
+        if (uploadedPhotoId) {
+          try {
+            const token = await ensureGoogleAccessToken();
+            if (token) await deleteDriveFile(token, uploadedPhotoId);
+          } catch {
+            /* best-effort */
+          }
+        }
+      } finally {
+        setAnalyzing(false);
+      }
+
+      if (nextMealId) {
+        void navigate({
+          to: paths.mealDetail,
+          params: { mealId: nextMealId },
+          state: { navFrom: paths.add.root },
+        });
+      }
+    },
+    [addMeal, geminiKey, hasKey, navigate, showMissingGeminiKeyToast],
+  );
+
+  const runDescribeMeal = useCallback(
+    async (description: string, photoFile: File | null) => {
+      const trimmed = description.trim();
+      if (!trimmed) {
+        toast.error(
+          "Add a short note about what you ate before estimating.",
+        );
+        return;
+      }
+      if (!hasKey) {
+        showMissingGeminiKeyToast();
+        return;
+      }
+
+      setAnalyzing(true);
+      let nextMealId: string | null = null;
+      let uploadedPhotoId: string | null = null;
+      try {
+        if (!canSyncToDriveAppData()) {
+          throw new Error("Not signed in or Drive scope unavailable");
+        }
+        const token = await ensureGoogleAccessToken();
+        if (!token) throw new Error("Missing access token");
+
+        const mealId = crypto.randomUUID?.() ?? String(Date.now());
+        const recordedAt = new Date().toISOString();
+
+        let imageForModel: { base64: string; mimeType: string } | undefined;
+        if (photoFile) {
+          const raw = await fileToBase64(photoFile);
+          const snapshot = await prepareMealPhotoForUpload(
+            raw.base64,
+            raw.mimeType,
+          );
+          imageForModel = {
+            base64: snapshot.base64,
+            mimeType: snapshot.mimeType,
+          };
+
+          const [analysisRes, uploadRes] = await Promise.allSettled([
+            analyzeFoodFromDescription(geminiKey, trimmed, imageForModel),
+            uploadMealPhotoToAppData(
+              token,
+              mealId,
+              snapshot.base64,
+              snapshot.mimeType,
+            ),
+          ]);
+
+          if (analysisRes.status === "rejected") {
+            if (uploadRes.status === "fulfilled" && uploadRes.value) {
+              uploadedPhotoId = uploadRes.value;
+              try {
+                await deleteDriveFile(token, uploadedPhotoId);
+              } catch {
+                /* best-effort */
+              }
+            }
+            throw analysisRes.reason;
+          }
+
+          const est = analysisRes.value;
+          if (uploadRes.status === "fulfilled") uploadedPhotoId = uploadRes.value;
+
+          nextMealId = await addMeal(
+            {
+              id: mealId,
+              recordedAt,
+              food_name: est.food_name,
+              calories: est.calories,
+              protein: est.protein,
+              fats: est.fats,
+              carbs: est.carbs,
+            },
+            { photoFileId: uploadedPhotoId ?? undefined },
+          );
+        } else {
+          const est = await analyzeFoodFromDescription(geminiKey, trimmed);
+          nextMealId = await addMeal(
+            {
+              id: mealId,
+              recordedAt,
+              food_name: est.food_name,
+              calories: est.calories,
+              protein: est.protein,
+              fats: est.fats,
+              carbs: est.carbs,
+            },
+          );
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Estimate failed — try again.");
         if (uploadedPhotoId) {
           try {
             const token = await ensureGoogleAccessToken();
@@ -122,7 +237,7 @@ export function useMealScanFlow() {
         const { base64, mimeType } = await fileToBase64(file);
         await runAnalyzeSnapshot(base64, mimeType);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Analysis failed");
+        toast.error(e instanceof Error ? e.message : "Estimate failed — try again.");
       }
     },
     [runAnalyzeSnapshot],
@@ -139,6 +254,7 @@ export function useMealScanFlow() {
     hasKey,
     runAnalyzeSnapshot,
     runAnalyzeFromFile,
+    runDescribeMeal,
     ensureKeyForPhotoScan,
   };
 }

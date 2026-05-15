@@ -3,10 +3,18 @@ import { createPortal } from "react-dom";
 
 type MealScanOverlaysProps = {
   analyzing: boolean;
+  /** Primary line under spinner (defaults to neutral meal-estimate copy). */
+  title?: string;
+  /** Supporting line beneath the title. */
+  subtitle?: string;
 };
 
-/** Full-screen analyzing blocker (shared Dashboard / Scanner). */
-export function MealScanOverlays({ analyzing }: MealScanOverlaysProps) {
+/** Full-screen analyzing blocker (shared Dashboard / Scanner / Describe). */
+export function MealScanOverlays({
+  analyzing,
+  title = "Estimating your meal…",
+  subtitle = "Just a few seconds.",
+}: MealScanOverlaysProps) {
   if (!analyzing) return null;
 
   return createPortal(
@@ -15,15 +23,11 @@ export function MealScanOverlays({ analyzing }: MealScanOverlaysProps) {
       role="alertdialog"
       aria-busy="true"
       aria-live="polite"
-      aria-label="Analyzing meal photo"
+      aria-label={title}
     >
       <Loader2 className="size-12 animate-spin text-emerald-400" />
-      <p className="text-center text-sm font-medium text-zinc-100">
-        AI analyzing…
-      </p>
-      <p className="max-w-sm text-center text-sm text-zinc-400">
-        Stay on this screen.
-      </p>
+      <p className="text-center text-sm font-medium text-zinc-100">{title}</p>
+      <p className="max-w-sm text-center text-sm text-zinc-400">{subtitle}</p>
     </div>,
     document.body,
   );
