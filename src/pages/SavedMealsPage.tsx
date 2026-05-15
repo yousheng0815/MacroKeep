@@ -60,8 +60,7 @@ function ManageRow({
         <div className="w-0 min-w-0 flex-1 overflow-hidden">
           <div className="truncate font-medium text-white">{item.food_name}</div>
           <div className="mt-1 truncate text-sm text-om-muted">
-            {Math.round(item.calories)} kcal · P {Math.round(item.protein)} g ·
-            F {Math.round(item.fats)} g · C {Math.round(item.carbs)} g
+            {Math.round(item.calories)} kcal
           </div>
         </div>
         <Link
@@ -143,8 +142,7 @@ function SortableReorderRow({ item, committing }: SortableReorderRowProps) {
         <div className="w-0 min-w-0 flex-1 overflow-hidden">
           <div className="truncate font-medium text-white">{item.food_name}</div>
           <div className="mt-1 truncate text-sm text-om-muted">
-            {Math.round(item.calories)} kcal · P {Math.round(item.protein)} g ·
-            F {Math.round(item.fats)} g · C {Math.round(item.carbs)} g
+            {Math.round(item.calories)} kcal
           </div>
         </div>
       </div>
@@ -424,9 +422,7 @@ export function SavedMealsPage() {
                       ) : null}
                     </div>
                     <div className="mt-1 truncate text-sm text-om-muted">
-                      {Math.round(item.calories)} kcal · P{" "}
-                      {Math.round(item.protein)} g · F {Math.round(item.fats)} g
-                      · C {Math.round(item.carbs)} g
+                      {Math.round(item.calories)} kcal
                     </div>
                   </div>
                 </button>

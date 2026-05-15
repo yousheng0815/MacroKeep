@@ -184,8 +184,7 @@ export function HistoryPage() {
                     {today ? "Today" : formatLocalDateLabel(dayDate)}
                   </div>
                   <div className="mt-1 text-sm text-om-muted">
-                    {Math.round(totals.kcal)} kcal · P {Math.round(totals.p)} g
-                    · F {Math.round(totals.f)} g · C {Math.round(totals.c)} g
+                    {Math.round(totals.kcal)} kcal
                   </div>
                 </div>
               </div>
@@ -211,9 +210,7 @@ export function HistoryPage() {
                         </div>
                         <div className="mt-1 truncate text-sm text-om-muted">
                           {formatTime(new Date(m.recordedAt))} ·{" "}
-                          {Math.round(m.calories)} kcal · P{" "}
-                          {Math.round(m.protein)} · F {Math.round(m.fats)} · C{" "}
-                          {Math.round(m.carbs)}
+                          {Math.round(m.calories)} kcal
                         </div>
                       </div>
                     </Link>

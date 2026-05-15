@@ -198,9 +198,7 @@ export function AddFromHistoryPage() {
                       ) : null}
                     </div>
                     <div className="mt-1 truncate text-sm text-om-muted">
-                      {Math.round(item.calories)} kcal · P{" "}
-                      {Math.round(item.protein)} g · F {Math.round(item.fats)} g
-                      · C {Math.round(item.carbs)} g
+                      {Math.round(item.calories)} kcal
                     </div>
                   </div>
                 </button>
