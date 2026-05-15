@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           className={`relative flex min-h-dvh min-w-0 flex-1 flex-col ${!inFirstRunTutorial ? "lg:pl-60" : ""}`}
         >
           <header
-            className={`sticky top-0 z-30 flex items-center justify-between border-b border-om-border bg-om-bg/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur lg:hidden ${inFirstRunTutorial ? "hidden" : ""}`}
+            className={`om-pwa-no-select sticky top-0 z-30 flex items-center justify-between border-b border-om-border bg-om-bg/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur lg:hidden ${inFirstRunTutorial ? "hidden" : ""}`}
           >
             <Link to="/" className="flex items-center gap-2">
               <Logo />

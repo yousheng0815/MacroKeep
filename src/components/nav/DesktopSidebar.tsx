@@ -16,7 +16,7 @@ export function DesktopSidebar() {
   const settingsActive = pathname.startsWith("/settings");
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-om-border bg-om-bg lg:flex">
+    <aside className="om-pwa-no-select fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-om-border bg-om-bg lg:flex">
       <div className="flex h-16 items-center gap-2 px-6">
         <Link to="/" className="flex items-center gap-2">
           <Logo />

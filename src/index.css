@@ -73,3 +73,24 @@ body,
 #root {
   height: 100%;
 }
+
+/*
+ * Installed PWA / app-window modes only (not normal browser tabs).
+ * Suppresses accidental selection when tapping controls and shell chrome.
+ */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  button,
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"] {
+    @apply select-none;
+  }
+
+  .om-list-row-btn {
+    @apply select-none;
+  }
+
+  .om-pwa-no-select {
+    @apply select-none;
+  }
+}

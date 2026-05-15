@@ -13,7 +13,7 @@ export function MobileBottomNav() {
   const highlightPath = pathForNavHighlight(pathname, mealDetailNavFrom);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-om-border bg-om-bg/95 backdrop-blur lg:hidden">
+    <nav className="om-pwa-no-select fixed inset-x-0 bottom-0 z-40 border-t border-om-border bg-om-bg/95 backdrop-blur lg:hidden">
       <div className="mx-auto grid max-w-lg grid-cols-4 gap-1 px-2 py-2">
         {NAV_ITEMS.map((item) => {
           const active =

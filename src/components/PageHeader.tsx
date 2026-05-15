@@ -30,7 +30,7 @@ export function PageHeader({
               type="button"
               onClick={onBack}
               aria-label={backAriaLabel}
-              className="inline-flex items-center rounded-xl p-1.5 text-zinc-300 transition hover:bg-zinc-900/60 hover:text-white"
+              className="om-pwa-no-select inline-flex items-center rounded-xl p-1.5 text-zinc-300 transition hover:bg-zinc-900/60 hover:text-white"
             >
               <ArrowLeft className="size-4" />
             </button>
@@ -38,7 +38,7 @@ export function PageHeader({
             <Link
               to={backTo}
               aria-label={backAriaLabel}
-              className="inline-flex items-center rounded-xl p-1.5 text-zinc-300 transition hover:bg-zinc-900/60 hover:text-white"
+              className="om-pwa-no-select inline-flex items-center rounded-xl p-1.5 text-zinc-300 transition hover:bg-zinc-900/60 hover:text-white"
             >
               <ArrowLeft className="size-4" />
             </Link>
