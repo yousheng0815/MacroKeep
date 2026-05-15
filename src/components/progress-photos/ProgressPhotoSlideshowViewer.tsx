@@ -131,7 +131,7 @@ export function ProgressPhotoSlideshowViewer({
             type="button"
             onClick={() => setPlaying((p) => !p)}
             disabled={sorted.length < 2}
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="btn-mobile-block-lg gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {playing ? (
               <>

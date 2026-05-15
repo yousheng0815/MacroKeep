@@ -71,7 +71,7 @@ export function ManualMealPage() {
   const nowLocal = toLocalDateTimeInput(new Date().toISOString());
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <PageHeader
         title="Add manually"
         backTo={paths.add.root}
@@ -138,7 +138,7 @@ export function ManualMealPage() {
               type="text"
               autoComplete="off"
               placeholder="e.g. Chicken salad"
-              className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+              className="w-full om-text-input"
             />
           </label>
 
@@ -150,7 +150,7 @@ export function ManualMealPage() {
               name="recordedAt"
               type="datetime-local"
               defaultValue={nowLocal}
-              className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+              className="w-full om-text-input"
             />
           </label>
 
@@ -175,8 +175,8 @@ export function ManualMealPage() {
               className="hidden"
               onChange={(e) => onPickPhoto(e.target.files, e.currentTarget)}
             />
-            <div className="flex items-start gap-3 rounded-xl border border-om-border bg-om-bg p-3 md:items-center md:gap-5 md:p-4">
-              <div className="size-20 shrink-0 overflow-hidden rounded-lg border border-zinc-700 md:size-32">
+            <div className="om-photo-field-panel">
+              <div className="size-20 shrink-0 overflow-hidden rounded-xl border border-zinc-700 md:size-32">
                 {photoChoice ? (
                   <img
                     src={photoChoice.previewUrl}
@@ -186,7 +186,7 @@ export function ManualMealPage() {
                 ) : (
                   <MealPhotoThumb
                     alt="No meal photo yet"
-                    className="size-full shrink-0 overflow-hidden rounded-lg border-0 bg-zinc-800/80"
+                    className="size-full shrink-0 overflow-hidden rounded-xl border-0 bg-zinc-800/80"
                   />
                 )}
               </div>
@@ -195,7 +195,7 @@ export function ManualMealPage() {
                   type="button"
                   disabled={savePending}
                   onClick={() => cameraInputRef.current?.click()}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[11rem]"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                 >
                   <Camera className="size-4 text-emerald-400 md:size-5" />
                   Take a photo
@@ -204,7 +204,7 @@ export function ManualMealPage() {
                   type="button"
                   disabled={savePending}
                   onClick={() => uploadInputRef.current?.click()}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[11rem]"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                 >
                   <ImagePlus className="size-4 text-orange-500 md:size-5" />
                   Choose a photo
@@ -222,7 +222,7 @@ export function ManualMealPage() {
                 inputMode="decimal"
                 step="1"
                 defaultValue={0}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                className="w-full om-text-input"
               />
             </label>
             <label className="block">
@@ -235,7 +235,7 @@ export function ManualMealPage() {
                 inputMode="decimal"
                 step="0.1"
                 defaultValue={0}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                className="w-full om-text-input"
               />
             </label>
             <label className="block">
@@ -246,7 +246,7 @@ export function ManualMealPage() {
                 inputMode="decimal"
                 step="0.1"
                 defaultValue={0}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                className="w-full om-text-input"
               />
             </label>
             <label className="block">
@@ -259,7 +259,7 @@ export function ManualMealPage() {
                 inputMode="decimal"
                 step="0.1"
                 defaultValue={0}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                className="w-full om-text-input"
               />
             </label>
           </div>
@@ -268,7 +268,7 @@ export function ManualMealPage() {
             type="submit"
             disabled={savePending}
             aria-busy={savePending}
-            className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="relative btn-mobile-block-lg gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <ButtonPendingContents
               pending={savePending}

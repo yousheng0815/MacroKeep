@@ -23,7 +23,7 @@ export function ProgressPhotoSlideshowPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4">
         <PageHeader
           title="Play back"
           backTo="/progress"
@@ -39,7 +39,7 @@ export function ProgressPhotoSlideshowPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4">
         <PageHeader
           title="Play back"
           backTo="/progress"
@@ -53,7 +53,7 @@ export function ProgressPhotoSlideshowPage() {
           <button
             type="button"
             onClick={goBack}
-            className="mx-auto inline-flex rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+            className="btn-mobile-block-lg rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             Back to Progress
           </button>
@@ -64,7 +64,7 @@ export function ProgressPhotoSlideshowPage() {
 
   if (photos.length < 2) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4">
         <PageHeader
           title="Play back"
           backTo="/progress"
@@ -77,7 +77,7 @@ export function ProgressPhotoSlideshowPage() {
           <button
             type="button"
             onClick={goBack}
-            className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black hover:bg-emerald-400"
+            className="btn-mobile-block-lg rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black hover:bg-emerald-400"
           >
             Back to Progress
           </button>
@@ -88,7 +88,7 @@ export function ProgressPhotoSlideshowPage() {
 
   if (!allBlobsLoaded) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4">
         <PageHeader
           title="Play back"
           backTo="/progress"
@@ -103,7 +103,7 @@ export function ProgressPhotoSlideshowPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-col gap-4">
+    <div className="flex min-h-0 min-w-0 flex-col gap-4">
       <PageHeader
         title="Play back"
         backTo="/progress"

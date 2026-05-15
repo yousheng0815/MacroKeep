@@ -40,7 +40,7 @@ export function AddMealPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <PageHeader
         title="Add Meal"
         subtitle="Estimate macros from a photo, type them in yourself, or reuse a past or saved meal."
@@ -70,7 +70,7 @@ export function AddMealPage() {
               if (!ensureKeyForPhotoScan()) return;
               cameraInputRef.current?.click();
             }}
-            className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
+            className="om-list-row-btn"
           >
             <Camera className="size-5 shrink-0 text-emerald-400" />
             Take a photo to estimate
@@ -81,7 +81,7 @@ export function AddMealPage() {
               if (!ensureKeyForPhotoScan()) return;
               uploadInputRef.current?.click();
             }}
-            className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
+            className="om-list-row-btn"
           >
             <ImagePlus className="size-5 shrink-0 text-orange-500" />
             Choose a photo to estimate
@@ -89,7 +89,7 @@ export function AddMealPage() {
           <button
             type="button"
             onClick={() => void navigate({ to: paths.add.savedMeals })}
-            className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
+            className="om-list-row-btn"
           >
             <Bookmark className="size-5 shrink-0 text-amber-400" />
             Add from saved meals
@@ -97,7 +97,7 @@ export function AddMealPage() {
           <button
             type="button"
             onClick={() => void navigate({ to: paths.add.history })}
-            className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
+            className="om-list-row-btn"
           >
             <History className="size-5 shrink-0 text-violet-400" />
             Add from history
@@ -105,7 +105,7 @@ export function AddMealPage() {
           <button
             type="button"
             onClick={() => void navigate({ to: paths.add.manual })}
-            className="flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-4 text-sm font-semibold text-white transition hover:bg-zinc-900"
+            className="om-list-row-btn"
           >
             <PenLine className="size-5 shrink-0 text-sky-400" />
             Enter macros manually

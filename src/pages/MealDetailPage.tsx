@@ -193,7 +193,7 @@ export function MealDetailPage() {
           <p className="text-sm text-om-muted">This meal could not be found.</p>
           <Link
             to={paths.history}
-            className="inline-flex items-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
+            className="btn-mobile-block-lg gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
             Back to history
@@ -204,7 +204,7 @@ export function MealDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <PageHeader
         title="Meal Details"
         onBack={handleBack}
@@ -319,7 +319,7 @@ export function MealDetailPage() {
                 name="foodName"
                 type="text"
                 defaultValue={meal.food_name}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                className="w-full om-text-input"
               />
             </label>
 
@@ -331,7 +331,7 @@ export function MealDetailPage() {
                 name="recordedAt"
                 type="datetime-local"
                 defaultValue={toLocalDateTimeInput(meal.recordedAt)}
-                className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                className="w-full om-text-input"
               />
             </label>
 
@@ -358,8 +358,8 @@ export function MealDetailPage() {
                   onPickEditPhoto(e.target.files, e.currentTarget)
                 }
               />
-              <div className="flex items-start gap-3 rounded-xl border border-om-border bg-om-bg p-3 md:items-center md:gap-5 md:p-4">
-                <div className="size-20 shrink-0 overflow-hidden rounded-lg border border-zinc-700 md:size-28">
+              <div className="om-photo-field-panel">
+                <div className="size-20 shrink-0 overflow-hidden rounded-xl border border-zinc-700 md:size-32">
                   {editPhoto.mode === "replacement" ? (
                     <img
                       src={editPhoto.previewUrl}
@@ -370,12 +370,12 @@ export function MealDetailPage() {
                     <MealPhotoThumb
                       photoFileId={meal.photoFileId}
                       alt={meal.food_name}
-                      className="size-full shrink-0 overflow-hidden rounded-lg border border-zinc-700 bg-zinc-800"
+                      className="size-full shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
                     />
                   ) : (
                     <MealPhotoThumb
                       alt="No meal photo"
-                      className="size-full shrink-0 overflow-hidden rounded-lg border-0"
+                      className="size-full shrink-0 overflow-hidden rounded-xl border-0"
                     />
                   )}
                 </div>
@@ -384,7 +384,7 @@ export function MealDetailPage() {
                     type="button"
                     disabled={savePending}
                     onClick={() => cameraInputRef.current?.click()}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                   >
                     <Camera className="size-4 text-emerald-400 md:size-5" />
                     Take a photo
@@ -393,7 +393,7 @@ export function MealDetailPage() {
                     type="button"
                     disabled={savePending}
                     onClick={() => uploadInputRef.current?.click()}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                   >
                     <ImagePlus className="size-4 text-orange-500 md:size-5" />
                     Choose a photo
@@ -413,7 +413,7 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="1"
                   defaultValue={meal.calories}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                  className="w-full om-text-input"
                 />
               </label>
               <label className="block">
@@ -426,7 +426,7 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="0.1"
                   defaultValue={meal.protein}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                  className="w-full om-text-input"
                 />
               </label>
               <label className="block">
@@ -439,7 +439,7 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="0.1"
                   defaultValue={meal.fats}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                  className="w-full om-text-input"
                 />
               </label>
               <label className="block">
@@ -452,7 +452,7 @@ export function MealDetailPage() {
                   inputMode="decimal"
                   step="0.1"
                   defaultValue={meal.carbs}
-                  className="w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none ring-0 ring-inset ring-emerald-500 transition focus:ring-2"
+                  className="w-full om-text-input"
                 />
               </label>
             </div>

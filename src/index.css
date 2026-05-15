@@ -15,25 +15,50 @@
 }
 
 @layer components {
+  /*
+   * Paired actions: keep two controls on one row only if both fit at their
+   * natural single-line width; otherwise wrap so each row is one full-width
+   * control. Text stays on one line (no forced wrapping inside a control).
+   */
   .btn-pair-row {
-    @apply grid grid-cols-2 gap-3;
+    @apply flex flex-wrap gap-3;
   }
 
-  /* Below sm: grid cells should fill each column. */
   .btn-pair-row > * {
-    @apply min-w-0 w-full;
+    box-sizing: border-box;
+    white-space: nowrap;
+    flex: 1 1 calc((100% - 0.75rem) / 2);
+    min-width: min(max-content, 100%);
+    max-width: 100%;
   }
 
-  @screen sm {
-    .btn-pair-row {
-      display: flex;
-      flex-wrap: wrap;
-    }
+  /*
+   * Primary controls: full width in the default stacked / narrow layout, then
+   * shrink to content when the surrounding layout goes horizontal (sm) or when
+   * the desktop sidebar is visible (lg), matching AppShell breakpoints.
+   */
+  .btn-mobile-block-sm {
+    @apply flex w-full min-w-0 items-center justify-center sm:inline-flex sm:w-auto;
+  }
 
-    /* Must follow the rule above so this wins over w-full on wider viewports. */
-    .btn-pair-row > * {
-      @apply w-auto flex-1 min-w-0;
-    }
+  .btn-mobile-block-lg {
+    @apply flex w-full min-w-0 items-center justify-center lg:inline-flex lg:w-auto;
+  }
+
+  /** Text fields: shared surface, padding, and inset emerald focus ring. */
+  .om-text-input {
+    @apply rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-zinc-100 outline-none transition;
+    @apply ring-0 ring-inset ring-emerald-500 focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /** Full-width bordered list rows (Add meal, similar menus). */
+  .om-list-row-btn {
+    @apply flex w-full items-center justify-start gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900;
+  }
+
+  /** Meal form: thumbnail + camera / library actions. */
+  .om-photo-field-panel {
+    @apply flex items-start gap-3 rounded-xl border border-om-border bg-om-bg p-3 md:items-center md:gap-5 md:p-4;
   }
 }
 

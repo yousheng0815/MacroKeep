@@ -70,7 +70,7 @@ function MealsLoadErrorBanner({
             }
           })()
         }
-        className="relative inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+        className="relative btn-mobile-block-sm shrink-0 gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <ButtonPendingContents
           pending={retryPending}
@@ -125,7 +125,7 @@ function MealDerivedPlaceholder({
               }
             })()
           }
-          className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+          className="relative btn-mobile-block-lg gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <ButtonPendingContents
             pending={retryPending}
@@ -170,13 +170,13 @@ export function DashboardPage() {
   const consumptionPending = isMealsLoading && !mealsError;
 
   return (
-    <div className="space-y-6 pb-6 lg:pb-0">
+    <div className="min-w-0 space-y-6 pb-6 lg:pb-0">
       {mealsError ? (
         <MealsLoadErrorBanner error={mealsError} onRetry={refetchMeals} />
       ) : null}
 
       <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <ProgressArc
               consumed={today.kcal}

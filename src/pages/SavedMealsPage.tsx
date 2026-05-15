@@ -222,7 +222,7 @@ export function SavedMealsPage() {
     (savedMeals.length > 0 || managing);
 
   return (
-    <div className="space-y-6 overflow-x-hidden">
+    <div className="min-w-0 space-y-6 overflow-x-hidden">
       <PageHeader
         title="Add From Saved Meals"
         backTo={paths.add.root}

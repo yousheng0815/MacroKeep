@@ -82,7 +82,7 @@ function ImperialHeightRow({
                 weight,
               });
             }}
-            className="w-20 rounded-xl border border-om-border bg-om-bg px-3 py-3 text-base text-white outline-none focus:border-emerald-400/60 disabled:opacity-50"
+            className="om-text-input w-20 px-3"
           />
           <span className="text-zinc-500">ft</span>
           <input
@@ -104,7 +104,7 @@ function ImperialHeightRow({
                 weight,
               });
             }}
-            className="w-24 rounded-xl border border-om-border bg-om-bg px-3 py-3 text-base text-white outline-none focus:border-emerald-400/60 disabled:opacity-50"
+            className="om-text-input w-24 px-3"
           />
           <span className="text-zinc-500">in</span>
         </div>
@@ -126,7 +126,7 @@ function ImperialHeightRow({
               weight: intFromDigitsOnly(e.target.value),
             })
           }
-          className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60 disabled:opacity-50"
+          className="mt-1 w-full om-text-input"
         />
       </label>
     </>
@@ -215,7 +215,7 @@ export function HeightWeightFields({
                 weight,
               })
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60 disabled:opacity-50"
+            className="mt-1 w-full om-text-input"
           />
         </label>
         <label className="block text-sm text-zinc-400">
@@ -235,7 +235,7 @@ export function HeightWeightFields({
                 weight: intFromDigitsOnly(e.target.value),
               })
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60 disabled:opacity-50"
+            className="mt-1 w-full om-text-input"
           />
         </label>
       </>

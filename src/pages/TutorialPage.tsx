@@ -184,22 +184,22 @@ export function TutorialPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6">
-      <div className="rounded-2xl border border-om-border bg-om-surface px-4 py-3 sm:px-5">
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-6">
+      <Card>
         <div className="flex items-center justify-between gap-3">
           <Logo />
           <span className="rounded-full border border-om-border bg-om-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
             Setup
           </span>
         </div>
-        <h1 className="mt-3 text-xl font-bold tracking-tight text-white">
+        <h1 className="mt-4 text-xl font-bold tracking-tight text-white">
           Set your targets
         </h1>
-        <p className="mt-1 text-sm text-om-muted">
+        <p className="mt-1 text-sm leading-relaxed text-om-muted">
           Enter your profile and goal, generate suggested calories and macros,
           then save them as your daily targets.
         </p>
-      </div>
+      </Card>
 
       <Card>
         <h2 className="text-sm font-semibold text-white">
@@ -214,7 +214,7 @@ export function TutorialPage() {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, birthDate: e.target.value }))
               }
-              className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+              className="mt-1 w-full om-text-input"
             />
           </label>
           <label className="block text-sm text-zinc-400">
@@ -227,7 +227,7 @@ export function TutorialPage() {
                   gender: e.target.value as ProfileGender,
                 }))
               }
-              className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+              className="mt-1 w-full om-text-input"
             >
               {GENDER_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -277,7 +277,7 @@ export function TutorialPage() {
                   goal: e.target.value as OnboardingMacroGoal,
                 }))
               }
-              className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+              className="mt-1 w-full om-text-input"
             >
               {GOAL_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -296,7 +296,7 @@ export function TutorialPage() {
                   activityLevel: e.target.value as OnboardingActivityLevel,
                 }))
               }
-              className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+              className="mt-1 w-full om-text-input"
             >
               {ACTIVITY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -312,7 +312,7 @@ export function TutorialPage() {
           disabled={!canGenerate || isGeneratingPlan}
           aria-busy={isGeneratingPlan}
           onClick={generatePlan}
-          className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative mt-4 btn-mobile-block-lg gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ButtonPendingContents
             pending={isGeneratingPlan}
@@ -346,7 +346,7 @@ export function TutorialPage() {
                       : plan,
                   )
                 }
-                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+                className="mt-1 w-full om-text-input"
               />
             </label>
             <label className="block text-sm text-zinc-400">
@@ -365,7 +365,7 @@ export function TutorialPage() {
                       : plan,
                   )
                 }
-                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+                className="mt-1 w-full om-text-input"
               />
             </label>
             <label className="block text-sm text-zinc-400">
@@ -384,7 +384,7 @@ export function TutorialPage() {
                       : plan,
                   )
                 }
-                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+                className="mt-1 w-full om-text-input"
               />
             </label>
             <label className="block text-sm text-zinc-400">
@@ -403,7 +403,7 @@ export function TutorialPage() {
                       : plan,
                   )
                 }
-                className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+                className="mt-1 w-full om-text-input"
               />
             </label>
           </div>
@@ -435,7 +435,7 @@ export function TutorialPage() {
                 }
               })()
             }
-            className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative mt-4 btn-mobile-block-lg gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ButtonPendingContents
               pending={isSaving}

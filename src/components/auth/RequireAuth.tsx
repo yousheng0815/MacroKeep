@@ -56,7 +56,7 @@ function RecordsReadyGate({ children }: { children: ReactNode }) {
                 }
               })()
             }
-            className="relative flex min-w-[220px] items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+            className="relative btn-mobile-block-lg gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60 lg:min-w-[220px]"
           >
             <ButtonPendingContents
               pending={retryPending}
@@ -167,7 +167,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
               setSignInPending(true);
               signIn(needsConsent ? { promptConsent: true } : undefined);
             }}
-            className="relative flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+            className="relative btn-mobile-block-lg gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ButtonPendingContents
               pending={signInPending}

@@ -386,7 +386,7 @@ export function ProgressPhotosSection({
           <button
             type="button"
             onClick={dismissOverlay}
-            className="mt-6 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black hover:bg-emerald-400"
+            className="mt-6 btn-mobile-block-lg rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black hover:bg-emerald-400"
           >
             Go back
           </button>

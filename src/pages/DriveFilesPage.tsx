@@ -177,7 +177,7 @@ export function DriveFilesPage() {
   }, [viewerFile, closeViewer]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <PageHeader
         title="Drive app data"
         subtitle={
@@ -224,7 +224,7 @@ export function DriveFilesPage() {
                   }
                 })()
               }
-              className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+              className="relative btn-mobile-block-lg gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <ButtonPendingContents
                 pending={retryBusy}

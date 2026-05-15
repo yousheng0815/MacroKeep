@@ -143,11 +143,11 @@ function GeminiKeyCard({
           }}
           placeholder="AIza…"
           autoComplete="off"
-          className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 font-mono text-base text-white outline-none focus:border-emerald-400/60"
+          className="mt-1 w-full om-text-input font-mono"
         />
       </label>
 
-      <div className="mt-3 flex flex-wrap gap-3">
+      <div className="btn-pair-row mt-3">
         <button
           type="button"
           disabled={isSaving || keyFlowBusy}
@@ -174,7 +174,7 @@ function GeminiKeyCard({
               }
             })()
           }
-          className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ButtonPendingContents
             pending={isSaving || keyFlowBusy}
@@ -184,7 +184,7 @@ function GeminiKeyCard({
           </ButtonPendingContents>
         </button>
         <a
-          className="inline-flex items-center rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-blue-400 transition hover:bg-zinc-900"
+          className="flex items-center justify-center rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-blue-400 transition hover:bg-zinc-900"
           href="https://aistudio.google.com/app/apikey"
           target="_blank"
           rel="noreferrer"
@@ -228,7 +228,7 @@ function ProfileBodyCard({
                 birthDate: e.target.value,
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full om-text-input"
           />
         </label>
         <label className="block text-sm text-zinc-400">
@@ -242,7 +242,7 @@ function ProfileBodyCard({
                 gender: e.target.value as ProfileGender,
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full om-text-input"
           >
             <option value="male">Male</option>
             <option value="female">Female</option>
@@ -286,7 +286,7 @@ function ProfileBodyCard({
         disabled={formsDisabled}
         aria-busy={savePending}
         onClick={() => void onSave(draft)}
-        className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="relative mt-4 btn-mobile-block-lg gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
       >
         <ButtonPendingContents
           pending={savePending}
@@ -331,7 +331,7 @@ function MacroTargetsCard({
                 dailyTargetKcal: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full om-text-input"
           />
         </label>
         <label className="block text-sm text-zinc-400">
@@ -346,7 +346,7 @@ function MacroTargetsCard({
                 proteinTargetG: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full om-text-input"
           />
         </label>
         <label className="block text-sm text-zinc-400">
@@ -361,7 +361,7 @@ function MacroTargetsCard({
                 fatsTargetG: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full om-text-input"
           />
         </label>
         <label className="block text-sm text-zinc-400">
@@ -376,7 +376,7 @@ function MacroTargetsCard({
                 carbsTargetG: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full rounded-xl border border-om-border bg-om-bg px-4 py-3 text-base text-white outline-none focus:border-emerald-400/60"
+            className="mt-1 w-full om-text-input"
           />
         </label>
       </div>
@@ -386,7 +386,7 @@ function MacroTargetsCard({
         disabled={formsDisabled}
         aria-busy={savePending}
         onClick={() => void onSave(draft)}
-        className="relative mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="relative mt-4 btn-mobile-block-lg gap-2 rounded-xl bg-zinc-100 px-4 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
       >
         <ButtonPendingContents
           pending={savePending}
@@ -398,7 +398,7 @@ function MacroTargetsCard({
 
       <Link
         to="/tutorial"
-        className="relative mt-3 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900"
+        className="relative mt-3 btn-mobile-block-lg cursor-pointer gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900"
       >
         Calculate suggested targets again
       </Link>
@@ -524,7 +524,7 @@ function GoogleAccountDriveCard({
             }
           })()
         }
-        className="relative mt-5 inline-flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+        className="relative mt-5 btn-mobile-block-lg gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <ButtonPendingContents
           pending={signOutBusy}
@@ -611,7 +611,7 @@ function GoogleAccountDriveCard({
                   }
                 })()
               }
-              className="relative mt-3 inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 bg-red-950/40 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-950/70 disabled:cursor-not-allowed disabled:opacity-50"
+              className="relative mt-3 btn-mobile-block-lg gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ButtonPendingContents
                 pending={wipeBusy}
@@ -667,7 +667,7 @@ export function SettingsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <PageHeader
         title="Settings"
         subtitle="Authentication, AI keys, and your baseline targets."

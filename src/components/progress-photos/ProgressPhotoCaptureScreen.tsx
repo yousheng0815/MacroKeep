@@ -284,7 +284,7 @@ export function ProgressPhotoCaptureScreen({
                     toast.error("Could not capture frame."),
                   )
                 }
-                className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-black hover:bg-emerald-400 disabled:opacity-40"
+                className="flex w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-black hover:bg-emerald-400 disabled:opacity-40"
               >
                 <Camera className="size-5 shrink-0" />
                 Capture

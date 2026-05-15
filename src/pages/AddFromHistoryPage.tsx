@@ -144,7 +144,7 @@ export function AddFromHistoryPage() {
     !isMealsLoading && (!allMealShardsLoaded || isLoadingMoreMeals);
 
   return (
-    <div className="space-y-6 overflow-x-hidden">
+    <div className="min-w-0 space-y-6 overflow-x-hidden">
       <PageHeader
         title="Add From History"
         backTo={paths.add.root}
