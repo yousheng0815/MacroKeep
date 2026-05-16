@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         injectRegister: false,
         registerType: "autoUpdate",
-        includeAssets: ["favicon.png", "wordmark.png"],
+        includeAssets: ["favicon.png", "icon-mark.png", "wordmark.png", "pwa/**/*"],
         manifest: {
           name: "MacroKeep",
           short_name: "MacroKeep",
@@ -28,10 +28,22 @@ export default defineConfig(({ mode }) => {
           start_url: "/",
           icons: [
             {
-              src: "/favicon.png",
-              sizes: "128x128",
+              src: "/pwa/icon-192.png",
+              sizes: "192x192",
               type: "image/png",
-              purpose: "any maskable",
+              purpose: "any",
+            },
+            {
+              src: "/pwa/icon-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "any",
+            },
+            {
+              src: "/pwa/icon-maskable-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "maskable",
             },
           ],
         },
