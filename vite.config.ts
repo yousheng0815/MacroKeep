@@ -16,10 +16,10 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         injectRegister: false,
         registerType: "autoUpdate",
-        includeAssets: ["favicon.svg"],
+        includeAssets: ["favicon.png", "wordmark.png"],
         manifest: {
-          name: "OpenMacro",
-          short_name: "OpenMacro",
+          name: "MacroKeep",
+          short_name: "MacroKeep",
           description:
             "Privacy-first AI calorie tracking — your data stays in Google Drive.",
           theme_color: "#09090B",
@@ -28,9 +28,9 @@ export default defineConfig(({ mode }) => {
           start_url: "/",
           icons: [
             {
-              src: "/favicon.svg",
-              sizes: "any",
-              type: "image/svg+xml",
+              src: "/favicon.png",
+              sizes: "128x128",
+              type: "image/png",
               purpose: "any maskable",
             },
           ],

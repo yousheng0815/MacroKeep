@@ -1,18 +1,39 @@
-import { Leaf } from "lucide-react";
+type LogoProps = {
+  className?: string;
+  /** App icon (`favicon.png`) — compact nav chrome. */
+  variant?: "mark" | "wordmark";
+  /** Larger wordmark for centered auth / onboarding. */
+  prominent?: boolean;
+};
 
-export function Logo({ className = "" }: { className?: string }) {
+export function Logo({
+  className = "",
+  variant = "wordmark",
+  prominent = false,
+}: LogoProps) {
+  if (variant === "mark") {
+    return (
+      <img
+        src="/favicon.png"
+        alt="MacroKeep"
+        width={128}
+        height={128}
+        className={`size-8 shrink-0 rounded-lg object-contain ${className}`}
+        decoding="async"
+      />
+    );
+  }
+
+  const wordmarkClass = prominent
+    ? `h-9 w-auto max-w-[min(280px,85vw)] object-contain object-left sm:h-10 ${className}`
+    : `h-7 w-auto min-w-0 max-w-[min(220px,55vw)] object-contain object-left sm:h-8 sm:max-w-[260px] ${className}`;
+
   return (
-    <div className={`flex items-center gap-1 font-bold tracking-tight ${className}`}>
-      <span className="relative inline-flex text-lg text-white">
-        <span className="relative">
-          O
-          <Leaf
-            className="absolute -right-1 -top-1 size-3 text-emerald-400"
-            aria-hidden
-          />
-        </span>
-        <span>M</span>
-      </span>
-    </div>
+    <img
+      src="/wordmark.png"
+      alt="MacroKeep"
+      className={wordmarkClass}
+      decoding="async"
+    />
   );
 }

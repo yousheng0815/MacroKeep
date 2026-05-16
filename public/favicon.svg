@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#09090B"/>
-  <text x="16" y="22" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="700" fill="#fff">OM</text>
-  <circle cx="11" cy="12" r="3" fill="#34D399" opacity="0.9"/>
-</svg>

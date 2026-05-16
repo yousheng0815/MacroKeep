@@ -90,7 +90,10 @@ export function AddMealPage() {
             }}
             className="om-add-tile-btn"
           >
-            <ImagePlus className="size-8 shrink-0 text-orange-500" aria-hidden />
+            <ImagePlus
+              className="size-8 shrink-0 text-orange-500"
+              aria-hidden
+            />
             <span className="text-balance">Choose photo & estimate</span>
           </button>
           <button
@@ -102,7 +105,7 @@ export function AddMealPage() {
               className="size-8 shrink-0 text-fuchsia-400"
               aria-hidden
             />
-            <span className="text-balance">Describe meal</span>
+            <span className="text-balance">Describe meal & estimate</span>
           </button>
           <button
             type="button"

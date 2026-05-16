@@ -87,7 +87,7 @@ function GeminiKeyCard({
           <h2 className="text-sm font-semibold text-white">Gemini API Key</h2>
           <p className="mt-1 text-sm text-om-muted">
             Add an API key for AI-powered macro estimates from photos or meal
-            descriptions. The key is saved with your OpenMacro data on Google
+            descriptions. The key is saved with your MacroKeep data on Google
             Drive.
           </p>
         </div>
@@ -570,7 +570,7 @@ function GoogleAccountDriveCard({
               Delete all cloud data
             </h3>
             <p className="mt-1 text-sm text-om-muted">
-              Permanently removes every OpenMacro file from this Google
+              Permanently removes every MacroKeep file from this Google
               account&apos;s Drive App Data folder. This cannot be reversed.
               Type <span className="font-mono text-zinc-300">DELETE</span> to
               enable the button.

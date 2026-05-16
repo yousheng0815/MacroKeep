@@ -225,12 +225,12 @@ export function TutorialPage() {
         ) : (
           <Card>
             <div className="flex items-center justify-between gap-3">
-              <Logo />
+              <Logo variant="wordmark" />
               <span className="rounded-full border border-om-border bg-om-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
                 Setup
               </span>
             </div>
-            <h1 className="mt-4 text-xl font-bold tracking-tight text-white">
+            <h1 className="mt-6 text-xl font-bold tracking-tight text-white">
               Set your targets
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-om-muted">

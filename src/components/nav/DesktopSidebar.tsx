@@ -18,8 +18,8 @@ export function DesktopSidebar() {
   return (
     <aside className="om-pwa-no-select fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-om-border bg-om-bg lg:flex">
       <div className="flex h-16 items-center gap-2 px-6">
-        <Link to="/" className="flex items-center gap-2">
-          <Logo />
+        <Link to="/" className="flex min-w-0 items-center">
+          <Logo variant="wordmark" />
         </Link>
       </div>
       <nav className="flex flex-1 flex-col gap-1 px-3 pt-4">

@@ -25,8 +25,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <header
             className={`om-pwa-no-select sticky top-0 z-30 flex items-center justify-between border-b border-om-border bg-om-bg/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur lg:hidden ${inFirstRunTutorial ? "hidden" : ""}`}
           >
-            <Link to="/" className="flex items-center gap-2">
-              <Logo />
+            <Link to="/" className="flex min-w-0 max-w-[calc(100%-3.5rem)] items-center">
+              <Logo variant="wordmark" />
             </Link>
             <Link
               to="/settings"

@@ -1,6 +1,8 @@
 import {
   GOOGLE_DRIVE_APP_DATA_BLURB,
   GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE,
+  LOGIN_WELCOME_BLURB,
+  LOGIN_WELCOME_TITLE,
 } from "@/components/auth/auth-copy";
 import { GoogleAuthPageLayout } from "@/components/auth/GoogleAuthPageLayout";
 import { GoogleGMark } from "@/components/auth/GoogleGMark";
@@ -117,11 +119,11 @@ export function LoginPage() {
   return (
     <GoogleAuthPageLayout
       title={
-        needsConsent
-          ? GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE
-          : "Welcome to OpenMacro"
+        needsConsent ? GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE : LOGIN_WELCOME_TITLE
       }
-      description={GOOGLE_DRIVE_APP_DATA_BLURB}
+      description={
+        needsConsent ? GOOGLE_DRIVE_APP_DATA_BLURB : LOGIN_WELCOME_BLURB
+      }
     >
       <div className="space-y-4">
         <button

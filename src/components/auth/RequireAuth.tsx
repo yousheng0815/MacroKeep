@@ -1,4 +1,5 @@
 import {
+  AUTH_SIGN_IN_AGAIN_TITLE,
   GOOGLE_DRIVE_APP_DATA_BLURB,
   GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE,
 } from "@/components/auth/auth-copy";
@@ -135,7 +136,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     return (
       <GoogleAuthPageLayout
         title={
-          needsConsent ? GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE : "Sign in again"
+          needsConsent
+            ? GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE
+            : AUTH_SIGN_IN_AGAIN_TITLE
         }
         description={
           needsConsent ? (

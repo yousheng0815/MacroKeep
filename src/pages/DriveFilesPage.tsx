@@ -182,7 +182,7 @@ export function DriveFilesPage() {
         title="Drive app data"
         subtitle={
           <>
-            Files OpenMacro stores in your Google Drive{" "}
+            Files MacroKeep stores in your Google Drive{" "}
             <span className="text-zinc-400">App Data</span> folder (hidden from
             My Drive).
           </>
