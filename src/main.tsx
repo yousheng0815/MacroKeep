@@ -15,9 +15,17 @@ const queryClient = new QueryClient({
   },
 });
 
+function isInstalledPwa(): boolean {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
 /** Old builds registered Workbox; unregister once so `/api/*` is never intercepted. */
-async function unregisterLegacyServiceWorkers(): Promise<void> {
-  if (!("serviceWorker" in navigator)) return;
+async function unregisterLegacyServiceWorkers(): Promise<boolean> {
+  if (!("serviceWorker" in navigator)) return false;
   const regs = await navigator.serviceWorker.getRegistrations();
   if (regs.length === 0) {
     try {
@@ -25,7 +33,7 @@ async function unregisterLegacyServiceWorkers(): Promise<void> {
     } catch {
       /* ignore */
     }
-    return;
+    return false;
   }
   await Promise.all(regs.map((r) => r.unregister()));
   if (!navigator.serviceWorker.controller) {
@@ -34,21 +42,37 @@ async function unregisterLegacyServiceWorkers(): Promise<void> {
     } catch {
       /* ignore */
     }
-    return;
+    return false;
   }
   try {
     if (sessionStorage.getItem("openmacro:sw-reload-once") !== "1") {
       sessionStorage.setItem("openmacro:sw-reload-once", "1");
       window.location.reload();
-      return;
+      return true;
     }
   } catch {
     window.location.reload();
-    return;
+    return true;
   }
+  return false;
 }
 
-void unregisterLegacyServiceWorkers().then(() => {
+function waitForNextFrame(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
+async function dismissLaunchSplash() {
+  document.body.classList.add("app-ready");
+  await waitForNextFrame();
+  await waitForNextFrame();
+  document.getElementById("pwa-launch")?.remove();
+}
+
+void (async () => {
+  if (await unregisterLegacyServiceWorkers()) return;
+
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
@@ -57,4 +81,11 @@ void unregisterLegacyServiceWorkers().then(() => {
       </QueryClientProvider>
     </StrictMode>,
   );
-});
+
+  if (isInstalledPwa()) {
+    await dismissLaunchSplash();
+  } else {
+    document.getElementById("pwa-launch")?.remove();
+    document.body.classList.add("app-ready");
+  }
+})();
