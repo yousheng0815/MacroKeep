@@ -15,6 +15,10 @@ const queryClient = new QueryClient({
   },
 });
 
+/** Keep the in-app wordmark splash visible at least this long (iOS native splash is not controllable). */
+const LAUNCH_SPLASH_MIN_MS = 850;
+const launchStartedAt = performance.now();
+
 function isInstalledPwa(): boolean {
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
@@ -63,10 +67,21 @@ function waitForNextFrame(): Promise<void> {
   });
 }
 
+function waitMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function dismissLaunchSplash() {
   document.body.classList.add("app-ready");
   await waitForNextFrame();
   await waitForNextFrame();
+
+  const remaining =
+    LAUNCH_SPLASH_MIN_MS - (performance.now() - launchStartedAt);
+  if (remaining > 0) {
+    await waitMs(remaining);
+  }
+
   document.getElementById("pwa-launch")?.remove();
 }
 

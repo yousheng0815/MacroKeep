@@ -316,7 +316,7 @@ export function DashboardPage() {
           if (!ensureKeyForPhotoScan()) return;
           quickCameraInputRef.current?.click();
         }}
-        className="fixed bottom-[5.25rem] right-4 z-30 inline-flex items-center gap-2 rounded-full bg-emerald-400 p-4 text-sm font-semibold text-black shadow-lg transition hover:bg-emerald-300 lg:hidden"
+        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] z-30 inline-flex items-center gap-2 rounded-full bg-emerald-400 p-4 text-sm font-semibold text-black shadow-lg transition hover:bg-emerald-300 lg:hidden"
         aria-label="Quick scan meal photo"
       >
         <Camera className="size-6" />

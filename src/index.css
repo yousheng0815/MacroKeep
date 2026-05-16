@@ -80,6 +80,19 @@ body,
 }
 
 /*
+ * Installed PWA: reduce rubber-band overscroll moving the home indicator.
+ */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  html {
+    overscroll-behavior: none;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+/*
  * Installed PWA / app-window modes only (not normal browser tabs).
  * Suppresses accidental selection when tapping controls and shell chrome.
  */

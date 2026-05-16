@@ -43,7 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </header>
 
           <main
-            className={`min-w-0 flex-1 px-4 pt-4 ${inFirstRunTutorial ? "pb-6 lg:px-4 lg:pt-6 lg:pb-6" : "pb-28 lg:px-8 lg:pt-8 lg:pb-10"}`}
+            className={`min-w-0 flex-1 px-4 pt-4 ${inFirstRunTutorial ? "pb-6 lg:px-4 lg:pt-6 lg:pb-6" : "pb-[calc(7rem+env(safe-area-inset-bottom))] lg:px-8 lg:pt-8 lg:pb-10"}`}
           >
             {children}
           </main>

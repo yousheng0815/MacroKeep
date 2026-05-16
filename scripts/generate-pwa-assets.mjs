@@ -2,7 +2,7 @@
 /**
  * Generate PWA icons and Apple splash screens from public brand assets.
  */
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
@@ -12,25 +12,6 @@ const PUBLIC = path.join(ROOT, "public");
 const OUT = path.join(PUBLIC, "pwa");
 const BG = { r: 9, g: 9, b: 11, alpha: 1 };
 const TRANSPARENT = { r: 0, g: 0, b: 0, alpha: 0 };
-
-/** [width, height, scale] — portrait; matches Apple device canvas sizes. */
-const APPLE_SPLASH_SIZES = [
-  [1320, 2868, 3], // iPhone 16 Pro Max
-  [1290, 2796, 3], // iPhone 15/14 Pro Max, 16 Plus
-  [1284, 2778, 3], // iPhone 12/13 Pro Max
-  [1242, 2688, 3], // iPhone XS Max / 11 Pro Max
-  [1206, 2622, 3], // iPhone 16 Pro
-  [1179, 2556, 3], // iPhone 14–16 Pro class
-  [1170, 2532, 3], // iPhone 12–14
-  [1125, 2436, 3], // iPhone X / 11 Pro / 12 mini
-  [828, 1792, 2], // iPhone 11 / XR
-  [750, 1334, 2], // iPhone SE / 8
-  [640, 1136, 2], // iPhone SE 4"
-  [2048, 2732, 2], // iPad Pro 12.9"
-  [1668, 2388, 2], // iPad Pro 11"
-  [1640, 2360, 2], // iPad Air 11"
-  [1536, 2048, 2], // iPad 9.7"
-];
 
 /** Padding inside square icons — larger = smaller leaf (avoids mask clipping). */
 const ICON_INSET = {
@@ -97,69 +78,6 @@ async function squareMark(mark, size, { inset = 0.12, background = BG } = {}) {
   }).composite([{ input: resized, left: x, top: y }]);
 }
 
-/**
- * @param {string} wordmarkPath
- * @param {number} width
- * @param {number} height
- */
-async function splashImage(wordmarkPath, width, height) {
-  const maxW = Math.floor(width * 0.7);
-  const maxH = Math.floor(height * 0.18);
-  const fitted = await sharp(wordmarkPath)
-    .resize(maxW, maxH, { fit: "inside", kernel: sharp.kernel.lanczos3 })
-    .png()
-    .toBuffer();
-  const meta = await sharp(fitted).metadata();
-  const w = meta.width ?? 0;
-  const h = meta.height ?? 0;
-
-  return sharp({
-    create: { width, height, channels: 4, background: BG },
-  }).composite([
-    {
-      input: fitted,
-      left: Math.floor((width - w) / 2),
-      top: Math.floor((height - h) / 2),
-    },
-  ]);
-}
-
-function splashMedia(width, height, scale) {
-  const dw = Math.floor(width / scale);
-  const dh = Math.floor(height / scale);
-  const ratio = scale > 1 ? ` and (-webkit-device-pixel-ratio: ${scale})` : "";
-  return `screen and (device-width: ${dw}px) and (device-height: ${dh}px) and (orientation: portrait)${ratio}`;
-}
-
-function buildAppleSplashHtml() {
-  const links = APPLE_SPLASH_SIZES.map(([w, h, scale]) => {
-    const name = `apple-splash-portrait-${w}x${h}.png`;
-    const media = splashMedia(w, h, scale);
-    return `    <link rel="apple-touch-startup-image" href="/pwa/${name}" media="${media}" />`;
-  });
-  // Fallback when no media query matches (avoids tiny centered icon splash).
-  links.push(
-    '    <link rel="apple-touch-startup-image" href="/pwa/apple-splash-portrait-1290x2796.png" />',
-  );
-  return links.join("\n") + "\n";
-}
-
-async function patchIndexHtml(splashLinks) {
-  const indexPath = path.join(ROOT, "index.html");
-  let text = await readFile(indexPath, "utf8");
-  const start = "    <!-- pwa-apple-splash:start -->";
-  const end = "    <!-- pwa-apple-splash:end -->";
-  const block = `${start}\n${splashLinks}${end}`;
-
-  if (text.includes(start)) {
-    text = text.split(start)[0] + block + text.split(end)[1];
-  } else {
-    text = text.replace('    <link rel="icon"', `${block}\n    <link rel="icon"`, 1);
-  }
-
-  await writeFile(indexPath, text);
-}
-
 async function writePng(pipeline, filePath) {
   await mkdir(path.dirname(filePath), { recursive: true });
   await pipeline.png().toFile(filePath);
@@ -167,7 +85,6 @@ async function writePng(pipeline, filePath) {
 
 async function main() {
   const mark = await loadLeafMark();
-  const wordmarkPath = path.join(PUBLIC, "wordmark.png");
 
   await writePng(
     await squareMark(mark, 128, {
@@ -193,15 +110,6 @@ async function main() {
     path.join(OUT, "icon-maskable-512.png"),
   );
 
-  for (const [w, h] of APPLE_SPLASH_SIZES) {
-    const name = `apple-splash-portrait-${w}x${h}.png`;
-    await writePng(
-      await splashImage(wordmarkPath, w, h),
-      path.join(OUT, name),
-    );
-  }
-
-  await patchIndexHtml(buildAppleSplashHtml());
   console.log("Wrote PWA assets to public/pwa/");
 }
 
