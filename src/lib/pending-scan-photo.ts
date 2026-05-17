@@ -1,4 +1,4 @@
-const PENDING_SCAN_PHOTO_KEY = "openmacro:pending_scan_photo:v1";
+const PENDING_SCAN_PHOTO_KEY = "macrokeep:pending_scan_photo:v1";
 const PENDING_SCAN_MAX_AGE_MS = 5 * 60 * 1000;
 
 export type PendingScanPhoto = {

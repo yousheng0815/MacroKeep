@@ -16,7 +16,7 @@ export function DesktopSidebar() {
   const settingsActive = pathname.startsWith("/settings");
 
   return (
-    <aside className="om-pwa-no-select fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-om-border bg-om-bg lg:flex">
+    <aside className="mk-pwa-no-select fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-mk-border bg-mk-bg lg:flex">
       <div className="flex h-16 items-center gap-2 px-6">
         <Link to="/" className="flex min-w-0 items-center">
           <Logo variant="wordmark" />
@@ -45,7 +45,7 @@ export function DesktopSidebar() {
           );
         })}
       </nav>
-      <div className="border-t border-om-border p-3">
+      <div className="border-t border-mk-border p-3">
         <Link
           to="/settings"
           className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition ${

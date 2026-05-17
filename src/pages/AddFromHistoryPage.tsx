@@ -161,14 +161,14 @@ export function AddFromHistoryPage() {
           </div>
         </div>
         {isMealsLoading ? (
-          <p className="text-sm text-om-muted">Loading meals…</p>
+          <p className="text-sm text-mk-muted">Loading meals…</p>
         ) : mealsError ? (
-          <p className="text-sm text-om-muted">
+          <p className="text-sm text-mk-muted">
             Couldn&apos;t load meal history. Check your connection or try
             refreshing the app.
           </p>
         ) : allMealShardsLoaded && templates.length === 0 ? (
-          <p className="text-sm text-om-muted">
+          <p className="text-sm text-mk-muted">
             Nothing logged yet. Add a meal first, then you can reuse it from
             here.
           </p>
@@ -203,7 +203,7 @@ export function AddFromHistoryPage() {
                         <ButtonSpinner className="mt-0.5 shrink-0 text-zinc-200" />
                       ) : null}
                     </div>
-                    <div className="mt-1 truncate text-sm text-om-muted">
+                    <div className="mt-1 truncate text-sm text-mk-muted">
                       {Math.round(item.calories)} kcal
                     </div>
                   </div>
@@ -217,7 +217,7 @@ export function AddFromHistoryPage() {
               className="size-7 animate-spin text-emerald-400"
               aria-hidden
             />
-            <p className="text-sm text-om-muted">
+            <p className="text-sm text-mk-muted">
               Loading older months to find past meals…
             </p>
           </div>
@@ -233,10 +233,10 @@ export function AddFromHistoryPage() {
                   className="size-6 animate-spin text-emerald-400"
                   aria-hidden
                 />
-                <p className="text-xs text-om-muted">Loading older meals…</p>
+                <p className="text-xs text-mk-muted">Loading older meals…</p>
               </>
             ) : (
-              <p className="text-xs text-om-muted">Scroll for more</p>
+              <p className="text-xs text-mk-muted">Scroll for more</p>
             )}
           </div>
         ) : null}

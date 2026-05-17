@@ -217,7 +217,7 @@ export function TutorialPage() {
             onBack={handleBack}
             backAriaLabel="Go back"
             actions={
-              <span className="rounded-full border border-om-border bg-om-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
+              <span className="rounded-full border border-mk-border bg-mk-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
                 Targets
               </span>
             }
@@ -226,14 +226,14 @@ export function TutorialPage() {
           <Card>
             <div className="flex items-center justify-between gap-3">
               <Logo variant="wordmark" />
-              <span className="rounded-full border border-om-border bg-om-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
+              <span className="rounded-full border border-mk-border bg-mk-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
                 Setup
               </span>
             </div>
             <h1 className="mt-6 text-xl font-bold tracking-tight text-white">
               Set your targets
             </h1>
-            <p className="mt-1 text-sm leading-relaxed text-om-muted">
+            <p className="mt-1 text-sm leading-relaxed text-mk-muted">
               Enter your profile, generate suggested macros, and then save them
               as your daily targets.
             </p>
@@ -251,7 +251,7 @@ export function TutorialPage() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, birthDate: e.target.value }))
                 }
-                className="mt-1 w-full om-text-input"
+                className="mt-1 w-full mk-text-input"
               />
             </label>
             <label className="block text-sm text-zinc-400">
@@ -264,7 +264,7 @@ export function TutorialPage() {
                     gender: e.target.value as ProfileGender,
                   }))
                 }
-                className="mt-1 w-full om-text-input"
+                className="mt-1 w-full mk-text-input"
               >
                 {GENDER_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -316,7 +316,7 @@ export function TutorialPage() {
                     goal: e.target.value as OnboardingMacroGoal,
                   }))
                 }
-                className="mt-1 w-full om-text-input"
+                className="mt-1 w-full mk-text-input"
               >
                 {GOAL_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -335,7 +335,7 @@ export function TutorialPage() {
                     activityLevel: e.target.value as OnboardingActivityLevel,
                   }))
                 }
-                className="mt-1 w-full om-text-input"
+                className="mt-1 w-full mk-text-input"
               >
                 {ACTIVITY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -383,7 +383,7 @@ export function TutorialPage() {
                           : plan,
                       )
                     }
-                    className="mt-1 w-full om-text-input"
+                    className="mt-1 w-full mk-text-input"
                   />
                 </label>
                 <label className="block text-sm text-zinc-400">
@@ -402,7 +402,7 @@ export function TutorialPage() {
                           : plan,
                       )
                     }
-                    className="mt-1 w-full om-text-input"
+                    className="mt-1 w-full mk-text-input"
                   />
                 </label>
                 <label className="block text-sm text-zinc-400">
@@ -421,7 +421,7 @@ export function TutorialPage() {
                           : plan,
                       )
                     }
-                    className="mt-1 w-full om-text-input"
+                    className="mt-1 w-full mk-text-input"
                   />
                 </label>
                 <label className="block text-sm text-zinc-400">
@@ -440,7 +440,7 @@ export function TutorialPage() {
                           : plan,
                       )
                     }
-                    className="mt-1 w-full om-text-input"
+                    className="mt-1 w-full mk-text-input"
                   />
                 </label>
               </div>

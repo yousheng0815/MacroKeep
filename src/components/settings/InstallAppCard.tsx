@@ -10,7 +10,7 @@ import { useLayoutEffect, useState } from "react";
 function InstallSteps({ platform }: { platform: MobileInstallPlatform }) {
   if (platform === "ios") {
     return (
-      <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-om-muted marker:text-zinc-500">
+      <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-mk-muted marker:text-zinc-500">
         <li>
           In Safari, tap the{" "}
           <span className="inline-flex items-center gap-1 text-zinc-300">
@@ -50,7 +50,7 @@ function InstallSteps({ platform }: { platform: MobileInstallPlatform }) {
   }
 
   return (
-    <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-om-muted marker:text-zinc-500">
+    <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-mk-muted marker:text-zinc-500">
       <li>
         In Chrome, tap the{" "}
         <span className="inline-flex items-center gap-1 text-zinc-300">
@@ -86,7 +86,7 @@ export function InstallAppCard() {
           <h2 className="text-sm font-semibold text-white">
             Install MacroKeep
           </h2>
-          <p className="mt-1 text-sm text-om-muted">
+          <p className="mt-1 text-sm text-mk-muted">
             Add MacroKeep to your home screen for a better experience.
           </p>
         </div>

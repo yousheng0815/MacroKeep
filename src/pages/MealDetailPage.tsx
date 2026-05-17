@@ -107,7 +107,7 @@ export function MealDetailPage() {
               className="size-8 animate-spin text-emerald-400"
               aria-hidden
             />
-            <p className="text-sm text-om-muted">Loading meal…</p>
+            <p className="text-sm text-mk-muted">Loading meal…</p>
           </div>
         </Card>
       );
@@ -115,10 +115,10 @@ export function MealDetailPage() {
     return (
       <Card>
         <div className="space-y-3 py-4 text-center">
-          <p className="text-sm text-om-muted">This meal could not be found.</p>
+          <p className="text-sm text-mk-muted">This meal could not be found.</p>
           <Link
             to={paths.history}
-            className="btn-mobile-block-lg gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
+            className="btn-mobile-block-lg gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
             Back to history
@@ -151,7 +151,7 @@ export function MealDetailPage() {
             <h1 className="min-w-0 break-words text-xl font-bold text-white">
               {meal.food_name}
             </h1>
-            <p className="mt-1 text-sm text-om-muted">
+            <p className="mt-1 text-sm text-mk-muted">
               {formatLocalDateLabel(new Date(meal.recordedAt))} at{" "}
               {formatTime(new Date(meal.recordedAt))}
             </p>
@@ -165,25 +165,25 @@ export function MealDetailPage() {
             <h2 className="text-sm font-semibold text-white">Nutrition</h2>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div>
-                <span className="mb-1 block text-sm text-om-muted">
+                <span className="mb-1 block text-sm text-mk-muted">
                   Calories
                 </span>
                 <p className="text-sm text-zinc-100">{meal.calories}</p>
               </div>
               <div>
-                <span className="mb-1 block text-sm text-om-muted">
+                <span className="mb-1 block text-sm text-mk-muted">
                   Protein (g)
                 </span>
                 <p className="text-sm text-zinc-100">{meal.protein}</p>
               </div>
               <div>
-                <span className="mb-1 block text-sm text-om-muted">
+                <span className="mb-1 block text-sm text-mk-muted">
                   Fats (g)
                 </span>
                 <p className="text-sm text-zinc-100">{meal.fats}</p>
               </div>
               <div>
-                <span className="mb-1 block text-sm text-om-muted">
+                <span className="mb-1 block text-sm text-mk-muted">
                   Carbs (g)
                 </span>
                 <p className="text-sm text-zinc-100">{meal.carbs}</p>
@@ -191,7 +191,7 @@ export function MealDetailPage() {
             </div>
           </div>
 
-          <div className="border-t border-om-border pt-4">
+          <div className="border-t border-mk-border pt-4">
             <div className="btn-pair-row">
               <button
                 type="button"
@@ -327,7 +327,7 @@ export function MealDetailPage() {
             }}
             className={
               alreadySavedTemplate
-                ? "relative flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-om-border bg-zinc-900/35 px-4 py-3 text-sm font-semibold text-om-muted opacity-90"
+                ? "relative flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-mk-border bg-zinc-900/35 px-4 py-3 text-sm font-semibold text-mk-muted opacity-90"
                 : "relative flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-950/20 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-950/35 disabled:cursor-not-allowed disabled:opacity-60"
             }
           >

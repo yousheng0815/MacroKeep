@@ -7,7 +7,6 @@ import {
   copyAppDataPhotoForSavedMeal,
   deleteAllAppDataFiles,
   deleteDriveFile,
-  ensureSavedMealsMigrated,
   hydrateMealMonthsForPersist,
   listMealShardFilesSortedDesc,
   monthKeyFromRecordedAt,
@@ -61,11 +60,6 @@ function splitNormalized(doc: RecordsDocument): {
   const { meals, ...core } = n;
   return { core, meals };
 }
-
-type RecordsCoreQueryData = {
-  core: RecordsCoreDocument;
-  coreOnPrimaryDriveFile: boolean;
-};
 
 export type RecordsMealsQueryData = {
   meals: MealRecord[];
@@ -135,23 +129,17 @@ export function useRecords() {
     queryKey: ["records-core", userId],
     enabled: !!userId,
     staleTime: DRIVE_QUERY_STALE_TIME_MS,
-    queryFn: async (): Promise<RecordsCoreQueryData> => {
+    queryFn: async (): Promise<RecordsCoreDocument> => {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
 
       const pulled = await pullRecordsCoreFromDrive(token);
-      if (!pulled.core) {
+      if (!pulled) {
         const initial = emptyRecords();
         await persistRecordsToDrive(token, initial);
-        return {
-          core: splitNormalized(initial).core,
-          coreOnPrimaryDriveFile: true,
-        };
+        return splitNormalized(initial).core;
       }
-      return {
-        core: pulled.core,
-        coreOnPrimaryDriveFile: pulled.coreOnPrimaryDriveFile,
-      };
+      return pulled;
     },
   });
 
@@ -162,7 +150,6 @@ export function useRecords() {
     queryFn: async ({ signal }): Promise<RecordsMealsQueryData> => {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
-      await ensureSavedMealsMigrated(token, signal);
       const shardsOnDriveDesc = await listMealShardFilesSortedDesc(token, signal);
       const initialRefs = pickInitialMealShards(
         shardsOnDriveDesc,
@@ -189,15 +176,7 @@ export function useRecords() {
     queryFn: async ({ signal }) => {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
-      const { savedMeals, didMigrate } = await pullSavedMealsFromDrive(
-        token,
-        signal,
-      );
-      const uid = getGoogleUserId() ?? "";
-      if (didMigrate && uid) {
-        void qc.invalidateQueries({ queryKey: ["records-meals", uid] });
-      }
-      return savedMeals;
+      return pullSavedMealsFromDrive(token, signal);
     },
   });
 
@@ -215,8 +194,6 @@ export function useRecords() {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing access token");
       const uid = getGoogleUserId() ?? "";
-      const boot = qc.getQueryData<RecordsCoreQueryData>(["records-core", uid]);
-
       let nextDoc = payload.next;
       let hydratedMonthKeysForSync: string[] = [];
       if (payload.mealsOnly && payload.mealMonthKeysToSync?.length) {
@@ -242,8 +219,6 @@ export function useRecords() {
         coreOnly: payload.coreOnly,
         mealsOnly: payload.mealsOnly,
         mealMonthKeysToSync: payload.mealMonthKeysToSync,
-        skipLegacyCoreMigration:
-          !!(payload.mealsOnly && boot?.coreOnPrimaryDriveFile),
         shardFileIdsPrefetched: payload.shardFileIdsPrefetched,
       });
       return { doc: nextDoc, hydratedMonthKeysForSync };
@@ -257,10 +232,7 @@ export function useRecords() {
       if (!uid) return;
       const doc = data.doc;
       const { core, meals } = splitNormalized(doc);
-      qc.setQueryData<RecordsCoreQueryData>(["records-core", uid], {
-        core,
-        coreOnPrimaryDriveFile: true,
-      });
+      qc.setQueryData<RecordsCoreDocument>(["records-core", uid], core);
 
       if (!variables.coreOnly && !variables.mealsOnly) {
         void qc.invalidateQueries({ queryKey: ["records-meals", uid] });
@@ -328,19 +300,19 @@ export function useRecords() {
     const boot = coreQuery.data;
     if (!boot) return emptyRecords();
     const meals = mealsQuery.data?.meals ?? [];
-    return normalizeRecordsDocument({ ...boot.core, meals });
+    return normalizeRecordsDocument({ ...boot, meals });
   }, [coreQuery.data, mealsQuery.data]);
 
-  const geminiKey = coreQuery.data?.core.geminiApiKey ?? "";
+  const geminiKey = coreQuery.data?.geminiApiKey ?? "";
 
   const getCurrentRecords = useCallback((): RecordsDocument => {
     const uid = getGoogleUserId();
     if (!uid) return emptyRecords();
-    const boot = qc.getQueryData<RecordsCoreQueryData>(["records-core", uid]);
-    if (!boot?.core) return emptyRecords();
+    const boot = qc.getQueryData<RecordsCoreDocument>(["records-core", uid]);
+    if (!boot) return emptyRecords();
     const mealsState = qc.getQueryData<RecordsMealsQueryData>(["records-meals", uid]);
     return normalizeRecordsDocument({
-      ...boot.core,
+      ...boot,
       meals: mealsState?.meals ?? [],
     });
   }, [qc]);
@@ -617,8 +589,7 @@ export function useRecords() {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing access token");
       const uid = getGoogleUserId() ?? "";
-      await ensureSavedMealsMigrated(token);
-      const { savedMeals: prev } = await pullSavedMealsFromDrive(token);
+      const prev = await pullSavedMealsFromDrive(token);
       if (isMealAlreadySavedAsTemplate(meal, prev)) {
         throw new Error("This meal is already in your saved meals.");
       }
@@ -662,8 +633,7 @@ export function useRecords() {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing access token");
       const uid = getGoogleUserId() ?? "";
-      await ensureSavedMealsMigrated(token);
-      const { savedMeals: prev } = await pullSavedMealsFromDrive(token);
+      const prev = await pullSavedMealsFromDrive(token);
       const prevRow = prev.find((s) => s.id === id);
       if (!prevRow) throw new Error("Saved meal not found");
       const oldPhotoId = prevRow.photoFileId;
@@ -732,8 +702,7 @@ export function useRecords() {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing access token");
       const uid = getGoogleUserId() ?? "";
-      await ensureSavedMealsMigrated(token);
-      const { savedMeals: prev } = await pullSavedMealsFromDrive(token);
+      const prev = await pullSavedMealsFromDrive(token);
       const prevById = new Map(prev.map((s) => [s.id, s]));
       const seen = new Set<string>();
       const merged: SavedMealRecord[] = [];

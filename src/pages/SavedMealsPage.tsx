@@ -60,7 +60,7 @@ function ManageRow({
         />
         <div className="w-0 min-w-0 flex-1 overflow-hidden">
           <div className="truncate font-medium text-white">{item.food_name}</div>
-          <div className="mt-1 truncate text-sm text-om-muted">
+          <div className="mt-1 truncate text-sm text-mk-muted">
             {Math.round(item.calories)} kcal
           </div>
         </div>
@@ -143,7 +143,7 @@ function SortableReorderRow({ item, committing }: SortableReorderRowProps) {
         />
         <div className="w-0 min-w-0 flex-1 overflow-hidden">
           <div className="truncate font-medium text-white">{item.food_name}</div>
-          <div className="mt-1 truncate text-sm text-om-muted">
+          <div className="mt-1 truncate text-sm text-mk-muted">
             {Math.round(item.calories)} kcal
           </div>
         </div>
@@ -347,19 +347,19 @@ export function SavedMealsPage() {
           ) : null}
         </div>
         {isSavedMealsLoading ? (
-          <p className="text-sm text-om-muted">Loading saved meals…</p>
+          <p className="text-sm text-mk-muted">Loading saved meals…</p>
         ) : savedMealsError ? (
-          <p className="text-sm text-om-muted">
+          <p className="text-sm text-mk-muted">
             Couldn&apos;t load saved meals. Check your connection or try
             refreshing the app.
           </p>
         ) : savedMeals.length === 0 && !inSession ? (
-          <p className="text-sm text-om-muted">
+          <p className="text-sm text-mk-muted">
             No saved meals yet. Open a meal, then use &quot;Add to saved
             meals&quot; on the meal details screen to build your quick-add list.
           </p>
         ) : list.length === 0 && listMode === "manage" ? (
-          <p className="text-sm text-om-muted">
+          <p className="text-sm text-mk-muted">
             No meals in this list. Tap Done to clear your saved meals, Cancel to
             undo edits, or add meals from a logged entry first.
           </p>
@@ -424,7 +424,7 @@ export function SavedMealsPage() {
                         <ButtonSpinner className="shrink-0 text-zinc-200" />
                       ) : null}
                     </div>
-                    <div className="mt-1 truncate text-sm text-om-muted">
+                    <div className="mt-1 truncate text-sm text-mk-muted">
                       {Math.round(item.calories)} kcal
                     </div>
                   </div>

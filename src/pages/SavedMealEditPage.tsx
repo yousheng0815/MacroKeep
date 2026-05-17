@@ -160,17 +160,17 @@ function SavedMealEditForm({
         }}
       >
         <label className="block">
-          <span className="mb-1 block text-sm text-om-muted">Food name</span>
+          <span className="mb-1 block text-sm text-mk-muted">Food name</span>
           <input
             name="foodName"
             type="text"
             defaultValue={saved.food_name}
-            className="w-full om-text-input"
+            className="w-full mk-text-input"
           />
         </label>
 
         <div className="space-y-2">
-          <span className="block text-sm text-om-muted">Photo</span>
+          <span className="block text-sm text-mk-muted">Photo</span>
           <input
             key={`cam-${fileInputKey}`}
             ref={cameraInputRef}
@@ -192,7 +192,7 @@ function SavedMealEditForm({
               onPickEditPhoto(e.target.files, e.currentTarget)
             }
           />
-          <div className="om-photo-field-panel">
+          <div className="mk-photo-field-panel">
             <div className="size-20 shrink-0 overflow-hidden rounded-xl border border-zinc-700 md:size-32">
               {editPhoto.mode === "replacement" ? (
                 <img
@@ -219,7 +219,7 @@ function SavedMealEditForm({
                 type="button"
                 disabled={savePending}
                 onClick={() => cameraInputRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
               >
                 <Camera className="size-4 text-emerald-400 md:size-5" />
                 Take a photo
@@ -228,7 +228,7 @@ function SavedMealEditForm({
                 type="button"
                 disabled={savePending}
                 onClick={() => uploadInputRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
               >
                 <ImagePlus className="size-4 text-orange-500 md:size-5" />
                 Choose a photo
@@ -239,18 +239,18 @@ function SavedMealEditForm({
 
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="mb-1 block text-sm text-om-muted">Calories</span>
+            <span className="mb-1 block text-sm text-mk-muted">Calories</span>
             <input
               name="calories"
               type="number"
               inputMode="decimal"
               step="1"
               defaultValue={saved.calories}
-              className="w-full om-text-input"
+              className="w-full mk-text-input"
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm text-om-muted">
+            <span className="mb-1 block text-sm text-mk-muted">
               Protein (g)
             </span>
             <input
@@ -259,29 +259,29 @@ function SavedMealEditForm({
               inputMode="decimal"
               step="0.1"
               defaultValue={saved.protein}
-              className="w-full om-text-input"
+              className="w-full mk-text-input"
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm text-om-muted">Fats (g)</span>
+            <span className="mb-1 block text-sm text-mk-muted">Fats (g)</span>
             <input
               name="fats"
               type="number"
               inputMode="decimal"
               step="0.1"
               defaultValue={saved.fats}
-              className="w-full om-text-input"
+              className="w-full mk-text-input"
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm text-om-muted">Carbs (g)</span>
+            <span className="mb-1 block text-sm text-mk-muted">Carbs (g)</span>
             <input
               name="carbs"
               type="number"
               inputMode="decimal"
               step="0.1"
               defaultValue={saved.carbs}
-              className="w-full om-text-input"
+              className="w-full mk-text-input"
             />
           </label>
         </div>
@@ -305,7 +305,7 @@ function SavedMealEditForm({
             type="button"
             disabled={savePending}
             onClick={() => onDone()}
-            className="flex items-center justify-center gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center justify-center gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Cancel
           </button>
@@ -347,10 +347,10 @@ export function SavedMealEditPage() {
     return (
       <Card>
         <div className="space-y-3 py-4 text-center">
-          <p className="text-sm text-om-muted">Invalid link.</p>
+          <p className="text-sm text-mk-muted">Invalid link.</p>
           <Link
             to={paths.add.savedMeals}
-            className="btn-mobile-block-lg gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
+            className="btn-mobile-block-lg gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
             Back to saved meals
@@ -368,7 +368,7 @@ export function SavedMealEditPage() {
             className="size-8 animate-spin text-emerald-400"
             aria-hidden
           />
-          <p className="text-sm text-om-muted">Loading saved meal…</p>
+          <p className="text-sm text-mk-muted">Loading saved meal…</p>
         </div>
       </Card>
     );
@@ -378,12 +378,12 @@ export function SavedMealEditPage() {
     return (
       <Card>
         <div className="space-y-3 py-4 text-center">
-          <p className="text-sm text-om-muted">
+          <p className="text-sm text-mk-muted">
             This saved meal could not be found.
           </p>
           <Link
             to={paths.add.savedMeals}
-            className="btn-mobile-block-lg gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
+            className="btn-mobile-block-lg gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
             Back to saved meals

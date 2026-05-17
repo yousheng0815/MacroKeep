@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
-  LEGACY_SESSION_COOKIE,
   OAUTH_RT_FALLBACK_COOKIE,
+  SESSION_COOKIE,
 } from "../../server/oauth/config.js";
 import {
   appendSetCookie,
@@ -21,12 +21,12 @@ export default async function handler(
   res.setHeader("Cache-Control", "no-store");
 
   try {
-    appendSetCookie(res, cookieClearPersistedSession(LEGACY_SESSION_COOKIE));
+    appendSetCookie(res, cookieClearPersistedSession(SESSION_COOKIE));
     appendSetCookie(res, cookieClear(OAUTH_RT_FALLBACK_COOKIE));
 
     res.status(204).end();
   } catch {
-    appendSetCookie(res, cookieClearPersistedSession(LEGACY_SESSION_COOKIE));
+    appendSetCookie(res, cookieClearPersistedSession(SESSION_COOKIE));
     res.status(204).end();
   }
 }

@@ -77,7 +77,7 @@ export function AddMealPage() {
               if (!ensureKeyForPhotoScan()) return;
               cameraInputRef.current?.click();
             }}
-            className="om-add-tile-btn"
+            className="mk-add-tile-btn"
           >
             <Camera className="size-8 shrink-0 text-emerald-400" aria-hidden />
             <span className="text-balance">Take photo & estimate</span>
@@ -88,7 +88,7 @@ export function AddMealPage() {
               if (!ensureKeyForPhotoScan()) return;
               uploadInputRef.current?.click();
             }}
-            className="om-add-tile-btn"
+            className="mk-add-tile-btn"
           >
             <ImagePlus
               className="size-8 shrink-0 text-orange-500"
@@ -99,7 +99,7 @@ export function AddMealPage() {
           <button
             type="button"
             onClick={() => void navigate({ to: paths.add.describe })}
-            className="om-add-tile-btn"
+            className="mk-add-tile-btn"
           >
             <MessageSquareText
               className="size-8 shrink-0 text-fuchsia-400"
@@ -110,7 +110,7 @@ export function AddMealPage() {
           <button
             type="button"
             onClick={() => void navigate({ to: paths.add.manual })}
-            className="om-add-tile-btn"
+            className="mk-add-tile-btn"
           >
             <PenLine className="size-8 shrink-0 text-sky-400" aria-hidden />
             <span className="text-balance">Enter macros manually</span>
@@ -118,7 +118,7 @@ export function AddMealPage() {
           <button
             type="button"
             onClick={() => void navigate({ to: paths.add.savedMeals })}
-            className="om-add-tile-btn"
+            className="mk-add-tile-btn"
           >
             <Bookmark className="size-8 shrink-0 text-amber-400" aria-hidden />
             <span className="text-balance">From saved meals</span>
@@ -126,7 +126,7 @@ export function AddMealPage() {
           <button
             type="button"
             onClick={() => void navigate({ to: paths.add.history })}
-            className="om-add-tile-btn"
+            className="mk-add-tile-btn"
           >
             <History className="size-8 shrink-0 text-violet-400" aria-hidden />
             <span className="text-balance">From history</span>

@@ -31,7 +31,7 @@ let brokerAccessTokenRefresh: Promise<string | null> | null = null;
 
 function notifyOAuthChanged(): void {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("openmacro:oauth-changed"));
+  window.dispatchEvent(new CustomEvent("macrokeep:oauth-changed"));
 }
 
 function applyTokenResponse(resp: AccessTokenPayload): void {

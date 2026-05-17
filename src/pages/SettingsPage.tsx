@@ -86,7 +86,7 @@ function GeminiKeyCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-white">Gemini API Key</h2>
-          <p className="mt-1 text-sm text-om-muted">
+          <p className="mt-1 text-sm text-mk-muted">
             Add an API key for AI-powered macro estimates from photos or meal
             descriptions. The key is saved with your MacroKeep data on Google
             Drive.
@@ -103,11 +103,11 @@ function GeminiKeyCard({
       </div>
 
       {!geminiKey.trim() && (
-        <div className="mt-4 rounded-xl border border-om-border bg-zinc-950/40 px-4 py-3">
+        <div className="mt-4 rounded-xl border border-mk-border bg-zinc-950/40 px-4 py-3">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
             How to get a key
           </h3>
-          <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-om-muted marker:text-zinc-500">
+          <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-mk-muted marker:text-zinc-500">
             <li>
               Open{" "}
               <a
@@ -145,7 +145,7 @@ function GeminiKeyCard({
           }}
           placeholder="AIza…"
           autoComplete="off"
-          className="mt-1 w-full om-text-input font-mono"
+          className="mt-1 w-full mk-text-input font-mono"
         />
       </label>
 
@@ -186,7 +186,7 @@ function GeminiKeyCard({
           </ButtonPendingContents>
         </button>
         <a
-          className="flex items-center justify-center rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-blue-400 transition hover:bg-zinc-900"
+          className="flex items-center justify-center rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-blue-400 transition hover:bg-zinc-900"
           href="https://aistudio.google.com/app/apikey"
           target="_blank"
           rel="noreferrer"
@@ -230,7 +230,7 @@ function ProfileBodyCard({
                 birthDate: e.target.value,
               }))
             }
-            className="mt-1 w-full om-text-input"
+            className="mt-1 w-full mk-text-input"
           />
         </label>
         <label className="block text-sm text-zinc-400">
@@ -244,7 +244,7 @@ function ProfileBodyCard({
                 gender: e.target.value as ProfileGender,
               }))
             }
-            className="mt-1 w-full om-text-input"
+            className="mt-1 w-full mk-text-input"
           >
             <option value="male">Male</option>
             <option value="female">Female</option>
@@ -333,7 +333,7 @@ function MacroTargetsCard({
                 dailyTargetKcal: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full om-text-input"
+            className="mt-1 w-full mk-text-input"
           />
         </label>
         <label className="block text-sm text-zinc-400">
@@ -348,7 +348,7 @@ function MacroTargetsCard({
                 proteinTargetG: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full om-text-input"
+            className="mt-1 w-full mk-text-input"
           />
         </label>
         <label className="block text-sm text-zinc-400">
@@ -363,7 +363,7 @@ function MacroTargetsCard({
                 fatsTargetG: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full om-text-input"
+            className="mt-1 w-full mk-text-input"
           />
         </label>
         <label className="block text-sm text-zinc-400">
@@ -378,7 +378,7 @@ function MacroTargetsCard({
                 carbsTargetG: Number(e.target.value),
               }))
             }
-            className="mt-1 w-full om-text-input"
+            className="mt-1 w-full mk-text-input"
           />
         </label>
       </div>
@@ -401,7 +401,7 @@ function MacroTargetsCard({
 
         <Link
           to="/tutorial"
-          className="relative btn-mobile-block-lg cursor-pointer gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900"
+          className="relative btn-mobile-block-lg cursor-pointer gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900"
         >
           Calculate suggested targets again
         </Link>
@@ -528,7 +528,7 @@ function GoogleAccountDriveCard({
             }
           })()
         }
-        className="relative mt-5 btn-mobile-block-lg gap-2 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+        className="relative mt-5 btn-mobile-block-lg gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <ButtonPendingContents
           pending={signOutBusy}
@@ -540,10 +540,10 @@ function GoogleAccountDriveCard({
 
       {advancedDriveUnlocked && (
         <>
-          <div className="mt-8 border-t border-om-border pt-6">
+          <div className="mt-8 border-t border-mk-border pt-6">
             <Link
               to="/drive"
-              className="flex w-full items-center justify-between gap-3 rounded-xl border border-om-border bg-om-bg px-4 py-3 text-left text-sm transition hover:bg-zinc-900"
+              className="flex w-full items-center justify-between gap-3 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-left text-sm transition hover:bg-zinc-900"
             >
               <span className="flex min-w-0 items-start gap-3">
                 <FolderOpen
@@ -554,7 +554,7 @@ function GoogleAccountDriveCard({
                   <span className="block font-medium text-zinc-100">
                     Drive app data
                   </span>
-                  <span className="mt-0.5 block text-sm font-normal text-om-muted">
+                  <span className="mt-0.5 block text-sm font-normal text-mk-muted">
                     Files in your App Data folder
                   </span>
                 </span>
@@ -570,7 +570,7 @@ function GoogleAccountDriveCard({
             <h3 className="text-sm font-semibold text-red-300">
               Delete all cloud data
             </h3>
-            <p className="mt-1 text-sm text-om-muted">
+            <p className="mt-1 text-sm text-mk-muted">
               Permanently removes every MacroKeep file from this Google
               account&apos;s Drive App Data folder. This cannot be reversed.
               Type <span className="font-mono text-zinc-300">DELETE</span> to
@@ -586,7 +586,7 @@ function GoogleAccountDriveCard({
                 autoComplete="off"
                 placeholder="DELETE"
                 disabled={!sessionReady || wipeBusy}
-                className="mt-1 w-full max-w-xs rounded-xl border border-om-border bg-om-bg px-4 py-3 font-mono text-base text-white outline-none placeholder:text-zinc-600 focus:border-red-400/50"
+                className="mt-1 w-full max-w-xs rounded-xl border border-mk-border bg-mk-bg px-4 py-3 font-mono text-base text-white outline-none placeholder:text-zinc-600 focus:border-red-400/50"
               />
             </label>
             <button

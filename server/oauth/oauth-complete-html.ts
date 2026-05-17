@@ -1,5 +1,5 @@
 /** Must match {@link src/lib/oauth-session-storage.ts} `OAUTH_STORAGE_KEY`. */
-const OAUTH_STORAGE_KEY = "openmacro:oauth:v1";
+const OAUTH_STORAGE_KEY = "macrokeep:oauth:v1";
 
 export type OAuthCompletePayload = {
   next: string;
@@ -26,21 +26,21 @@ export function oauthSuccessHtml(payload: OAuthCompletePayload): string {
 <style>
 :root{color-scheme:dark;}
 body{margin:0;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;background:#09090b;color:#a1a1aa;font-family:ui-sans-serif,system-ui,sans-serif;}
-.spinner{width:2.25rem;height:2.25rem;color:#34d399;animation:om-spin 1s linear infinite;}
-@keyframes om-spin{to{transform:rotate(360deg);}}
+.spinner{width:2.25rem;height:2.25rem;color:#34d399;animation:mk-spin 1s linear infinite;}
+@keyframes mk-spin{to{transform:rotate(360deg);}}
 #m{margin:0;font-size:.875rem;line-height:1.25rem;}
 </style>
 </head>
 <body>
 <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
 <p id="m">Completing sign-in…</p>
-<script type="application/json" id="om">${json}</script>
+<script type="application/json" id="mk-oauth">${json}</script>
 <script>
 (function(){
   var STORAGE_KEY = ${storageKey};
   var SKEW_MS = 60000;
   try {
-    var d = JSON.parse(document.getElementById("om").textContent);
+    var d = JSON.parse(document.getElementById("mk-oauth").textContent);
     var existing = null;
     try {
       var raw = localStorage.getItem(STORAGE_KEY);

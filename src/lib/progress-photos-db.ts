@@ -1,6 +1,6 @@
 import type { ProgressPhotoRecord } from "@/types/progress-photos";
 
-const DB_NAME = "openmacro-progress-photos";
+const DB_NAME = "macrokeep-progress-photos";
 const DB_VERSION = 1;
 const STORE = "photos";
 

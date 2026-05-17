@@ -36,12 +36,12 @@ function RecordsReadyGate({ children }: { children: ReactNode }) {
     if (error) {
       const msg = recordsLoadErrorMessage(error);
       return (
-        <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-om-bg px-6 text-center text-zinc-100">
+        <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-mk-bg px-6 text-center text-zinc-100">
           <div className="max-w-md space-y-3">
             <h1 className="text-lg font-semibold tracking-tight text-white">
               Couldn&apos;t load diary
             </h1>
-            <p className="text-sm leading-relaxed text-om-muted">{msg}</p>
+            <p className="text-sm leading-relaxed text-mk-muted">{msg}</p>
           </div>
           <button
             type="button"
@@ -70,7 +70,7 @@ function RecordsReadyGate({ children }: { children: ReactNode }) {
       );
     }
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-om-bg text-zinc-400">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-mk-bg text-zinc-400">
         <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
         <p className="text-sm">Loading your diary…</p>
       </div>
@@ -107,7 +107,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-om-bg text-zinc-400">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-mk-bg text-zinc-400">
         <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
         <p className="text-sm">Checking Google sign-in…</p>
       </div>
@@ -123,7 +123,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
     if (reconnecting) {
       return (
-        <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-om-bg text-zinc-400">
+        <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-mk-bg text-zinc-400">
           <Loader2
             className="size-9 animate-spin text-emerald-400"
             aria-hidden
@@ -187,7 +187,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!uid) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-om-bg text-zinc-400">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-mk-bg text-zinc-400">
         <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
         <p className="text-sm">Loading account…</p>
       </div>

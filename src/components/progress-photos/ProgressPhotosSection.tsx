@@ -265,13 +265,13 @@ export function ProgressPhotosSection({
         <h2 className="text-sm font-semibold text-white">
           Body progress photos
         </h2>
-        <p className="mt-1 text-sm text-om-muted">
+        <p className="mt-1 text-sm text-mk-muted">
           Capture photos of your body progress.
         </p>
 
         <div className="mt-4">
           {error ? (
-            <p className="text-sm text-om-muted">
+            <p className="text-sm text-mk-muted">
               Couldn&apos;t load progress photos. Try again later.
             </p>
           ) : (
@@ -318,7 +318,7 @@ export function ProgressPhotosSection({
           )}
         </div>
 
-        <div className="btn-pair-row mt-4 border-t border-om-border pt-4">
+        <div className="btn-pair-row mt-4 border-t border-mk-border pt-4">
           <Link
             to="/progress"
             search={{ capture: "1" }}
@@ -329,7 +329,7 @@ export function ProgressPhotosSection({
           </Link>
           {photos.length < 2 ? (
             <span
-              className="flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-white opacity-40"
+              className="flex cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-white opacity-40"
               aria-disabled
             >
               <Play className="size-5 text-emerald-400" />
@@ -338,7 +338,7 @@ export function ProgressPhotosSection({
           ) : (
             <Link
               to="/progress/photos/slideshow"
-              className="flex items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-900"
+              className="flex items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-900"
             >
               <Play className="size-5 text-emerald-400" />
               Play back

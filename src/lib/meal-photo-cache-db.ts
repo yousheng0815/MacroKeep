@@ -1,6 +1,6 @@
 import type { MealPhotoCacheTier } from "@/lib/meal-photo-cache";
 
-const DB_NAME = "openmacro-meal-photo-cache";
+const DB_NAME = "macrokeep-meal-photo-cache";
 const DB_VERSION = 1;
 const STORE = "photos";
 

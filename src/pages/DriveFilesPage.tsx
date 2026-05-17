@@ -264,7 +264,7 @@ export function DriveFilesPage() {
 
       {!sessionReady ? (
         <Card>
-          <p className="text-sm text-om-muted">
+          <p className="text-sm text-mk-muted">
             Connect your Google account with Drive access to list app data
             files.
           </p>
@@ -276,7 +276,7 @@ export function DriveFilesPage() {
               className="size-8 animate-spin text-emerald-400"
               aria-hidden
             />
-            <p className="text-sm text-om-muted">Loading files from Drive…</p>
+            <p className="text-sm text-mk-muted">Loading files from Drive…</p>
           </div>
         </Card>
       ) : errMsg ? (
@@ -310,14 +310,14 @@ export function DriveFilesPage() {
         </Card>
       ) : files.length === 0 ? (
         <Card>
-          <p className="text-sm text-om-muted">No files in app data yet.</p>
+          <p className="text-sm text-mk-muted">No files in app data yet.</p>
         </Card>
       ) : (
         <Card className="overflow-hidden p-0">
           <div className="min-w-0 overflow-x-auto">
             <table className="w-full table-fixed text-left text-sm">
               <thead>
-                <tr className="border-b border-om-border bg-zinc-900/40 text-sm text-zinc-500">
+                <tr className="border-b border-mk-border bg-zinc-900/40 text-sm text-zinc-500">
                   <th className="min-w-0 px-4 py-3 font-medium">File</th>
                   <th className="hidden min-w-0 px-4 py-3 font-medium sm:table-cell sm:w-[28%]">
                     Type
@@ -338,7 +338,7 @@ export function DriveFilesPage() {
                   return (
                     <tr
                       key={f.id}
-                      className={`border-b border-om-border/60 last:border-0 ${
+                      className={`border-b border-mk-border/60 last:border-0 ${
                         previewable
                           ? "hover:bg-zinc-900/40"
                           : "hover:bg-zinc-900/30"
@@ -412,11 +412,11 @@ export function DriveFilesPage() {
             onClick={closeViewer}
           />
           <div
-            className={`relative z-10 flex max-h-[min(85dvh,720px)] w-full flex-col overflow-hidden rounded-2xl border border-om-border bg-om-surface shadow-xl ${
+            className={`relative z-10 flex max-h-[min(85dvh,720px)] w-full flex-col overflow-hidden rounded-2xl border border-mk-border bg-mk-surface shadow-xl ${
               viewerIsImage ? "max-w-4xl" : "max-w-3xl"
             }`}
           >
-            <div className="flex min-w-0 shrink-0 items-start justify-between gap-3 border-b border-om-border px-4 py-3">
+            <div className="flex min-w-0 shrink-0 items-start justify-between gap-3 border-b border-mk-border px-4 py-3">
               <h2
                 id="drive-viewer-title"
                 className="min-w-0 flex-1 font-mono text-sm font-semibold text-white break-all pr-2"
@@ -432,7 +432,7 @@ export function DriveFilesPage() {
                           type="button"
                           disabled={saveJsonMutation.isPending}
                           onClick={cancelJsonEdit}
-                          className="rounded-xl border border-om-border bg-om-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-xl border border-mk-border bg-mk-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Cancel
                         </button>
@@ -469,7 +469,7 @@ export function DriveFilesPage() {
                             !!contentQuery.error
                           }
                           onClick={startJsonEdit}
-                          className="rounded-xl border border-om-border bg-om-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-xl border border-mk-border bg-mk-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Edit
                         </button>
@@ -486,7 +486,7 @@ export function DriveFilesPage() {
                               displayText || contentQuery.data || "",
                             )
                           }
-                          className="rounded-xl border border-om-border bg-om-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-xl border border-mk-border bg-mk-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Copy
                         </button>
@@ -497,7 +497,7 @@ export function DriveFilesPage() {
                 <button
                   type="button"
                   onClick={closeViewer}
-                  className="rounded-xl border border-om-border bg-om-bg p-2 text-zinc-300 transition hover:bg-zinc-900"
+                  className="rounded-xl border border-mk-border bg-mk-bg p-2 text-zinc-300 transition hover:bg-zinc-900"
                   aria-label="Close"
                 >
                   <X className="size-5" aria-hidden />
@@ -507,7 +507,7 @@ export function DriveFilesPage() {
             <div className="min-h-0 flex-1 overflow-auto p-4">
               {viewerIsJson ? (
                 viewerJsonOversized ? (
-                  <p className="text-sm text-om-muted">
+                  <p className="text-sm text-mk-muted">
                     This file is larger than{" "}
                     {(MAX_JSON_PREVIEW_BYTES / (1024 * 1024)).toFixed(0)}
                     &nbsp;MB. In-app preview is disabled to keep the tab
@@ -519,7 +519,7 @@ export function DriveFilesPage() {
                       className="size-8 animate-spin text-emerald-400"
                       aria-hidden
                     />
-                    <p className="text-sm text-om-muted">Loading file…</p>
+                    <p className="text-sm text-mk-muted">Loading file…</p>
                   </div>
                 ) : contentQuery.error ? (
                   <p className="text-sm text-red-300">
@@ -536,7 +536,7 @@ export function DriveFilesPage() {
                         if (jsonParseError) setJsonParseError(null);
                       }}
                       spellCheck={false}
-                      className="min-h-[min(50dvh,480px)] w-full flex-1 resize-y rounded-xl border border-om-border bg-om-bg px-3 py-2 font-mono text-sm leading-relaxed text-zinc-200 outline-none ring-emerald-500/40 focus:ring-2"
+                      className="min-h-[min(50dvh,480px)] w-full flex-1 resize-y rounded-xl border border-mk-border bg-mk-bg px-3 py-2 font-mono text-sm leading-relaxed text-zinc-200 outline-none ring-emerald-500/40 focus:ring-2"
                       aria-label={`Edit JSON contents of ${viewerFile.name}`}
                     />
                     {jsonParseError ? (
@@ -551,7 +551,7 @@ export function DriveFilesPage() {
                   </pre>
                 )
               ) : viewerImageOversized ? (
-                <p className="text-sm text-om-muted">
+                <p className="text-sm text-mk-muted">
                   This image is larger than{" "}
                   {(MAX_IMAGE_PREVIEW_BYTES / (1024 * 1024)).toFixed(0)}
                   &nbsp;MB. In-app preview is disabled to keep the tab
@@ -563,7 +563,7 @@ export function DriveFilesPage() {
                     className="size-8 animate-spin text-amber-400"
                     aria-hidden
                   />
-                  <p className="text-sm text-om-muted">Loading image…</p>
+                  <p className="text-sm text-mk-muted">Loading image…</p>
                 </div>
               ) : imageBlobQuery.error ? (
                 <p className="text-sm text-red-300">

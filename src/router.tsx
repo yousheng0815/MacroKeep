@@ -17,10 +17,9 @@ import { ManualMealPage } from "@/pages/ManualMealPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { TutorialPage } from "@/pages/TutorialPage";
 import { GoogleSessionProvider } from "@/contexts/google-session";
-import { legacyPaths, paths } from "@/lib/routes";
+import { paths } from "@/lib/routes";
 import type { MealDetailNavFrom } from "@/lib/routes";
 import {
-  Navigate,
   Outlet,
   createRootRoute,
   createRoute,
@@ -95,12 +94,6 @@ const savedMealEditRoute = createRoute({
   component: SavedMealEditPage,
 });
 
-const legacyFavoriteMealsRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
-  path: paths.add.favorites,
-  component: () => <Navigate to={paths.add.savedMeals} replace />,
-});
-
 const addFromHistoryRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: paths.add.history,
@@ -117,24 +110,6 @@ const describeMealRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: paths.add.describe,
   component: DescribeMealPage,
-});
-
-const legacyScannerRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
-  path: legacyPaths.scanner,
-  component: () => <Navigate to={paths.add.root} replace />,
-});
-
-const legacyScannerFavoritesRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
-  path: legacyPaths.scannerFavorites,
-  component: () => <Navigate to={paths.add.savedMeals} replace />,
-});
-
-const legacyScannerManualRoute = createRoute({
-  getParentRoute: () => appLayoutRoute,
-  path: legacyPaths.scannerManual,
-  component: () => <Navigate to={paths.add.manual} replace />,
 });
 
 const progressRoute = createRoute({
@@ -177,13 +152,9 @@ const routeTree = rootRoute.addChildren([
     addMealRoute,
     savedMealsRoute,
     savedMealEditRoute,
-    legacyFavoriteMealsRoute,
     addFromHistoryRoute,
     describeMealRoute,
     manualMealRoute,
-    legacyScannerRoute,
-    legacyScannerFavoritesRoute,
-    legacyScannerManualRoute,
     progressRoute,
     progressPhotoSlideshowRoute,
     driveRoute,

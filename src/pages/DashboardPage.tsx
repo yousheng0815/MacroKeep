@@ -99,7 +99,7 @@ function MealDerivedPlaceholder({
     return (
       <div className="flex min-h-[140px] flex-col items-center justify-center gap-3 py-10">
         <Loader2 className="size-8 animate-spin text-emerald-400" aria-hidden />
-        <p className="text-sm text-om-muted">Loading meals…</p>
+        <p className="text-sm text-mk-muted">Loading meals…</p>
       </div>
     );
   }
@@ -209,7 +209,7 @@ export function DashboardPage() {
                 <h2 className="text-sm font-semibold text-white">
                   Gemini API Key
                 </h2>
-                <p className="mt-1 text-sm text-om-muted">
+                <p className="mt-1 text-sm text-mk-muted">
                   Needed for photo meal scanning. Configure under Settings —
                   saved with your Drive diary file.
                 </p>
@@ -266,7 +266,7 @@ export function DashboardPage() {
             >
               <ul className="divide-y divide-zinc-800">
                 {mealsToday.length === 0 ? (
-                  <li className="py-6 text-center text-sm text-om-muted">
+                  <li className="py-6 text-center text-sm text-mk-muted">
                     No meals logged today yet.
                   </li>
                 ) : (
@@ -290,7 +290,7 @@ export function DashboardPage() {
                           <div className="truncate font-medium text-white">
                             {m.food_name}
                           </div>
-                          <div className="text-sm text-om-muted">
+                          <div className="text-sm text-mk-muted">
                             {formatTime(new Date(m.recordedAt))} ·{" "}
                             {Math.round(m.calories)} kcal
                           </div>

@@ -8,12 +8,12 @@ export const GOOGLE_OAUTH_SCOPES = [
   "profile",
 ].join(" ");
 
-/** Cleared on sign-out for users who signed in before client-side token storage. */
-export const LEGACY_SESSION_COOKIE = "om_session";
-export const OAUTH_STATE_COOKIE = "om_oauth_state";
-export const OAUTH_NEXT_COOKIE = "om_oauth_next";
+/** Cleared on sign-out. */
+export const SESSION_COOKIE = "mk_session";
+export const OAUTH_STATE_COOKIE = "mk_oauth_state";
+export const OAUTH_NEXT_COOKIE = "mk_oauth_next";
 /** Marks that we already retried OAuth once with prompt=consent for refresh_token. */
-export const OAUTH_RT_FALLBACK_COOKIE = "om_oauth_rt_fallback";
+export const OAUTH_RT_FALLBACK_COOKIE = "mk_oauth_rt_fallback";
 
 function forwardedFirst(v: string | string[] | undefined): string | undefined {
   if (!v) return undefined;
@@ -30,7 +30,7 @@ function inferScheme(protoHeader: string | undefined, host: string): "http" | "h
   return "https";
 }
 
-/** OAuth redirects: `OM_SITE_ORIGIN` if set, else `Host`/`x-forwarded-*` from the request. */
+/** OAuth redirects: `MK_SITE_ORIGIN` if set, else `Host`/`x-forwarded-*` from the request. */
 export function siteOriginFromRequestHeaders(headers: IncomingHttpHeaders): string | null {
   const host =
     forwardedFirst(headers["x-forwarded-host"]) ??
@@ -44,7 +44,7 @@ export function siteOriginFromRequestHeaders(headers: IncomingHttpHeaders): stri
 export type SiteOriginRequest = { headers: IncomingHttpHeaders };
 
 export function getSiteOrigin(req?: SiteOriginRequest): string {
-  const explicit = process.env.OM_SITE_ORIGIN?.trim().replace(/\/$/, "");
+  const explicit = process.env.MK_SITE_ORIGIN?.trim().replace(/\/$/, "");
   if (explicit) return explicit;
   if (req) {
     const fromReq = siteOriginFromRequestHeaders(req.headers);

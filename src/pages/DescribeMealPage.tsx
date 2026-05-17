@@ -76,7 +76,7 @@ export function DescribeMealPage() {
           }}
         >
           <label className="block">
-            <span className="mb-1 block text-sm text-om-muted">
+            <span className="mb-1 block text-sm text-mk-muted">
               Description
             </span>
             <textarea
@@ -87,13 +87,13 @@ export function DescribeMealPage() {
               placeholder="e.g. Big salad with grilled chicken, feta, and vinaigrette."
               autoComplete="off"
               disabled={analyzing}
-              className="max-h-[min(16rem,calc(100vh-22rem))] min-h-[7.5rem] w-full resize-y om-text-input"
+              className="max-h-[min(16rem,calc(100vh-22rem))] min-h-[7.5rem] w-full resize-y mk-text-input"
             />
           </label>
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="block text-sm text-om-muted">
+              <span className="block text-sm text-mk-muted">
                 Photo{" "}
                 <span className="font-normal text-zinc-500">(optional)</span>
               </span>
@@ -126,7 +126,7 @@ export function DescribeMealPage() {
               className="hidden"
               onChange={(e) => onPickPhoto(e.target.files, e.currentTarget)}
             />
-            <div className="om-photo-field-panel">
+            <div className="mk-photo-field-panel">
               <div className="size-20 shrink-0 overflow-hidden rounded-xl border border-zinc-700 md:size-32">
                 {photoChoice ? (
                   <img
@@ -146,7 +146,7 @@ export function DescribeMealPage() {
                   type="button"
                   disabled={analyzing}
                   onClick={() => cameraInputRef.current?.click()}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                 >
                   <Camera className="size-4 text-emerald-400 md:size-5" />
                   Take a photo
@@ -155,7 +155,7 @@ export function DescribeMealPage() {
                   type="button"
                   disabled={analyzing}
                   onClick={() => uploadInputRef.current?.click()}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-om-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                 >
                   <ImagePlus className="size-4 text-orange-500 md:size-5" />
                   Choose from gallery

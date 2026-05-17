@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        om: {
+        mk: {
           bg: "#09090B",
           surface: "#18181B",
           border: "#27272A",

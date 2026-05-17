@@ -9,8 +9,6 @@ export const paths = {
     root: "/add",
     savedMeals: "/add/saved-meals",
     savedMealEdit: "/add/saved-meals/$savedMealId/edit",
-    /** @deprecated Use {@link paths.add.savedMeals}. */
-    favorites: "/add/favorites",
     history: "/add/history",
     describe: "/add/describe",
     manual: "/add/manual",
@@ -22,13 +20,6 @@ export const paths = {
   drive: "/drive",
   settings: "/settings",
   tutorial: "/tutorial",
-} as const;
-
-/** Old URLs kept as redirects for bookmarks and shared links. */
-export const legacyPaths = {
-  scanner: "/scanner",
-  scannerFavorites: "/scanner/favorites",
-  scannerManual: "/scanner/manual",
 } as const;
 
 export const NAV_TAB_PATHS = [

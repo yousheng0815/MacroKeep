@@ -17,17 +17,19 @@ const queryClient = new QueryClient({
   },
 });
 
+const SW_RELOAD_ONCE_KEY = "macrokeep:sw-reload-once";
+
 /** Keep the in-app wordmark splash visible at least this long (iOS native splash is not controllable). */
 const LAUNCH_SPLASH_MIN_MS = 850;
 const launchStartedAt = performance.now();
 
-/** Old builds registered Workbox; unregister once so `/api/*` is never intercepted. */
-async function unregisterLegacyServiceWorkers(): Promise<boolean> {
+/** Unregister service workers so `/api/*` is never intercepted. */
+async function unregisterServiceWorkers(): Promise<boolean> {
   if (!("serviceWorker" in navigator)) return false;
   const regs = await navigator.serviceWorker.getRegistrations();
   if (regs.length === 0) {
     try {
-      sessionStorage.removeItem("openmacro:sw-reload-once");
+      sessionStorage.removeItem(SW_RELOAD_ONCE_KEY);
     } catch {
       /* ignore */
     }
@@ -36,15 +38,15 @@ async function unregisterLegacyServiceWorkers(): Promise<boolean> {
   await Promise.all(regs.map((r) => r.unregister()));
   if (!navigator.serviceWorker.controller) {
     try {
-      sessionStorage.removeItem("openmacro:sw-reload-once");
+      sessionStorage.removeItem(SW_RELOAD_ONCE_KEY);
     } catch {
       /* ignore */
     }
     return false;
   }
   try {
-    if (sessionStorage.getItem("openmacro:sw-reload-once") !== "1") {
-      sessionStorage.setItem("openmacro:sw-reload-once", "1");
+    if (sessionStorage.getItem(SW_RELOAD_ONCE_KEY) !== "1") {
+      sessionStorage.setItem(SW_RELOAD_ONCE_KEY, "1");
       window.location.reload();
       return true;
     }
@@ -80,7 +82,7 @@ async function dismissLaunchSplash() {
 }
 
 void (async () => {
-  if (await unregisterLegacyServiceWorkers()) return;
+  if (await unregisterServiceWorkers()) return;
 
   void sweepExpiredMealPhotosFromCache();
 

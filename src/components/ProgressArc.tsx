@@ -85,7 +85,7 @@ export function ProgressArc({ consumed, target, consumptionPending }: Props) {
           {remaining.toLocaleString()}
         </div>
         <div className="text-sm text-zinc-400">Remaining kcal</div>
-        <div className="mt-3 flex min-h-[1rem] items-center justify-center gap-2 text-xs text-om-muted">
+        <div className="mt-3 flex min-h-[1rem] items-center justify-center gap-2 text-xs text-mk-muted">
           {consumptionPending ? (
             <Loader2
               className="size-3.5 shrink-0 animate-spin text-emerald-400"

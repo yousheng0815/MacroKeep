@@ -21,7 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const settingsActive = pathname.startsWith("/settings");
 
   return (
-    <div className="min-h-dvh bg-om-bg text-zinc-100">
+    <div className="min-h-dvh bg-mk-bg text-zinc-100">
       <div className="mx-auto flex min-h-dvh max-w-6xl lg:max-w-screen-2xl">
         {!inFirstRunTutorial ? <DesktopSidebar /> : null}
         <div
@@ -36,17 +36,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           ) : null}
 
           <header
-            className={`om-pwa-no-select sticky top-0 z-30 flex items-center justify-between border-b border-om-border bg-om-bg/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur lg:hidden ${inFirstRunTutorial ? "hidden" : ""}`}
+            className={`mk-pwa-no-select sticky top-0 z-30 flex items-center justify-between border-b border-mk-border bg-mk-bg/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur lg:hidden ${inFirstRunTutorial ? "hidden" : ""}`}
           >
             <Link to="/" className="flex min-w-0 max-w-[calc(100%-3.5rem)] items-center">
               <Logo variant="wordmark" />
             </Link>
             <Link
               to="/settings"
-              className={`rounded-xl border border-om-border p-2 transition ${
+              className={`rounded-xl border border-mk-border p-2 transition ${
                 settingsActive
                   ? "bg-zinc-900 text-emerald-400 hover:bg-zinc-900"
-                  : "bg-om-surface text-zinc-300 hover:bg-zinc-800"
+                  : "bg-mk-surface text-zinc-300 hover:bg-zinc-800"
               }`}
               aria-label="Settings"
               aria-current={settingsActive ? "page" : undefined}

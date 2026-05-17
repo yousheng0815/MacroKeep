@@ -82,7 +82,7 @@ function ImperialHeightRow({
                 weight,
               });
             }}
-            className="om-text-input w-20 px-3"
+            className="mk-text-input w-20 px-3"
           />
           <span className="text-zinc-500">ft</span>
           <input
@@ -104,7 +104,7 @@ function ImperialHeightRow({
                 weight,
               });
             }}
-            className="om-text-input w-24 px-3"
+            className="mk-text-input w-24 px-3"
           />
           <span className="text-zinc-500">in</span>
         </div>
@@ -126,7 +126,7 @@ function ImperialHeightRow({
               weight: intFromDigitsOnly(e.target.value),
             })
           }
-          className="mt-1 w-full om-text-input"
+          className="mt-1 w-full mk-text-input"
         />
       </label>
     </>
@@ -150,7 +150,7 @@ export function UnitsPreferenceSegment({
     <div
       role="radiogroup"
       aria-label="Units for height and weight"
-      className="mt-2 flex rounded-xl border border-om-border p-1"
+      className="mt-2 flex rounded-xl border border-mk-border p-1"
     >
       {(
         [
@@ -215,7 +215,7 @@ export function HeightWeightFields({
                 weight,
               })
             }
-            className="mt-1 w-full om-text-input"
+            className="mt-1 w-full mk-text-input"
           />
         </label>
         <label className="block text-sm text-zinc-400">
@@ -235,7 +235,7 @@ export function HeightWeightFields({
                 weight: intFromDigitsOnly(e.target.value),
               })
             }
-            className="mt-1 w-full om-text-input"
+            className="mt-1 w-full mk-text-input"
           />
         </label>
       </>

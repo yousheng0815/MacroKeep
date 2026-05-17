@@ -9,7 +9,6 @@ import {
   startGoogleOAuthRedirect,
   type GoogleSignInOptions,
 } from "@/lib/gapi";
-import { purgeLegacyOpenMacroStorage } from "@/lib/oauth-session-storage";
 import { useNavigate } from "@tanstack/react-router";
 import {
   createContext,
@@ -68,7 +67,6 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     void (async () => {
       try {
-        purgeLegacyOpenMacroStorage();
         await restoreOAuthSessionFromStorage();
         if (!cancelled) {
           refresh();
@@ -90,9 +88,9 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
     const onOAuthChanged = () => {
       refresh();
     };
-    window.addEventListener("openmacro:oauth-changed", onOAuthChanged);
+    window.addEventListener("macrokeep:oauth-changed", onOAuthChanged);
     return () =>
-      window.removeEventListener("openmacro:oauth-changed", onOAuthChanged);
+      window.removeEventListener("macrokeep:oauth-changed", onOAuthChanged);
   }, [refresh]);
 
   useEffect(() => {

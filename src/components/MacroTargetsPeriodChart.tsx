@@ -475,7 +475,7 @@ export function MacroTargetsPeriodChart({
             className="size-8 animate-spin text-emerald-400"
             aria-hidden
           />
-          <p className="text-sm text-om-muted">Loading meals…</p>
+          <p className="text-sm text-mk-muted">Loading meals…</p>
         </div>
       </Card>
     );

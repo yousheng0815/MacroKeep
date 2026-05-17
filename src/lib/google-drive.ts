@@ -2,7 +2,6 @@ import {
   ageYearsFromIsoBirthDate,
   isValidIsoBirthDate,
 } from "@/lib/birth-date";
-import { inchesFromCm, lbFromKg } from "@/lib/units";
 import { blobToBase64 } from "@/lib/file-to-base64";
 import {
   clearProgressPhotosIndexedDb,
@@ -31,18 +30,6 @@ export const PROGRESS_PHOTOS_MANIFEST_FILE = "progress-photos.json";
 
 /** Quick-add meal snapshots (not tied to `meals-YYYY-MM.json` rows). */
 export const SAVED_MEALS_DRIVE_FILE = "saved-meals.json";
-
-/** From `pullRecordsCoreFromDrive`: loaded core document and whether Drive already uses `core.json`. */
-export type PullRecordsCoreFromDriveResult = {
-  core: RecordsCoreDocument | null;
-  /** True when authoritative core is `CORE_DRIVE_FILE` (not legacy-only `records.json`). */
-  coreOnPrimaryDriveFile: boolean;
-};
-
-/** Former primary filename; migrated to {@link CORE_DRIVE_FILE} on read or upsert. */
-const PREVIOUS_CORE_DRIVE_FILE = "openmacro-core.json";
-
-const LEGACY_CORE_DRIVE_FILE = "records.json";
 
 const DRIVE_FILES = "https://www.googleapis.com/drive/v3/files";
 const UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3/files";
@@ -134,32 +121,16 @@ function normalizeOnboardingDraft(
     draft.unitsPreference === "imperial" ? "imperial" : "metric";
   const rawH = Number(d.height);
   const rawW = Number(d.weight);
-  const legacyH = Number(d.heightCm);
-  const legacyW = Number(d.weightKg);
-  let height: number;
-  let weight: number;
-  const hasNew =
-    Number.isFinite(rawH) && Number.isFinite(rawW) && rawH > 0 && rawW > 0;
-  if (hasNew) {
-    height = Math.max(1, Math.round(rawH));
-    weight = Math.max(1, Math.round(rawW));
-  } else if (
-    Number.isFinite(legacyH) &&
-    Number.isFinite(legacyW) &&
-    legacyH > 0 &&
-    legacyW > 0
+  if (
+    !Number.isFinite(rawH) ||
+    !Number.isFinite(rawW) ||
+    rawH <= 0 ||
+    rawW <= 0
   ) {
-    // Older drafts always stored centimetres and kilograms.
-    if (unitsPreference === "imperial") {
-      height = Math.max(1, Math.round(inchesFromCm(legacyH)));
-      weight = Math.max(1, Math.round(lbFromKg(legacyW)));
-    } else {
-      height = Math.max(1, Math.round(legacyH));
-      weight = Math.max(1, Math.round(legacyW));
-    }
-  } else {
     return undefined;
   }
+  const height = Math.max(1, Math.round(rawH));
+  const weight = Math.max(1, Math.round(rawW));
   const suggestedDailyTargetKcal = Number(draft.suggestedDailyTargetKcal);
   const suggestedProteinTargetG = Number(draft.suggestedProteinTargetG);
   const suggestedFatsTargetG = Number(draft.suggestedFatsTargetG);
@@ -222,33 +193,14 @@ function normalizeUserProfile(
     p.unitsPreference === "imperial" ? "imperial" : "metric";
   const rawH = Number(p.height);
   const rawW = Number(p.weight);
-  const legacyH = Number(p.heightCm);
-  const legacyW = Number(p.weightKg);
-  let height: number;
-  let weight: number;
-  const hasNew =
-    Number.isFinite(rawH) && Number.isFinite(rawW) && rawH > 0 && rawW > 0;
-  if (hasNew) {
-    height = Math.max(1, Math.round(rawH));
-    weight = Math.max(1, Math.round(rawW));
-  } else if (
-    Number.isFinite(legacyH) &&
-    Number.isFinite(legacyW) &&
-    legacyH > 0 &&
-    legacyW > 0
-  ) {
-    // Legacy `core.json` always persisted centimetres and kilograms.
-    if (unitsPreference === "imperial") {
-      height = Math.max(1, Math.round(inchesFromCm(legacyH)));
-      weight = Math.max(1, Math.round(lbFromKg(legacyW)));
-    } else {
-      height = Math.max(1, Math.round(legacyH));
-      weight = Math.max(1, Math.round(legacyW));
-    }
-  } else {
-    height = defaults.height;
-    weight = defaults.weight;
-  }
+  const height =
+    Number.isFinite(rawH) && rawH > 0
+      ? Math.max(1, Math.round(rawH))
+      : defaults.height;
+  const weight =
+    Number.isFinite(rawW) && rawW > 0
+      ? Math.max(1, Math.round(rawW))
+      : defaults.weight;
   const dailyTargetKcal = Number(p.dailyTargetKcal);
   const proteinTargetG = Number(p.proteinTargetG);
   const fatsTargetG = Number(p.fatsTargetG);
@@ -645,75 +597,12 @@ export async function upsertCoreRecordsToDrive(
 ): Promise<void> {
   const normalized = normalizeRecordsCoreDocument(core);
   const payload = JSON.stringify(normalized);
-
   const primaryId = await findAppDataJsonFileIdByName(token, CORE_DRIVE_FILE);
-  const previousPrimaryId = await findAppDataJsonFileIdByName(
-    token,
-    PREVIOUS_CORE_DRIVE_FILE,
-  );
-  const legacyId = await findAppDataJsonFileIdByName(token, LEGACY_CORE_DRIVE_FILE);
-
   if (primaryId) {
     await updateJsonMedia(token, primaryId, payload);
-    if (previousPrimaryId && previousPrimaryId !== primaryId) {
-      try {
-        await deleteDriveFile(token, previousPrimaryId);
-      } catch {
-        /* best-effort */
-      }
-    }
-    if (legacyId && legacyId !== primaryId && legacyId !== previousPrimaryId) {
-      try {
-        await deleteDriveFile(token, legacyId);
-      } catch {
-        /* best-effort; user may reconcile from Drive Files */
-      }
-    }
     return;
   }
-
-  if (previousPrimaryId) {
-    await createMultipartJsonAppData(token, CORE_DRIVE_FILE, payload);
-    try {
-      await deleteDriveFile(token, previousPrimaryId);
-    } catch {
-      /* best-effort */
-    }
-    if (legacyId && legacyId !== previousPrimaryId) {
-      try {
-        await deleteDriveFile(token, legacyId);
-      } catch {
-        /* best-effort */
-      }
-    }
-    return;
-  }
-
-  if (legacyId) {
-    await createMultipartJsonAppData(token, CORE_DRIVE_FILE, payload);
-    try {
-      await deleteDriveFile(token, legacyId);
-    } catch {
-      /* best-effort */
-    }
-    return;
-  }
-
   await createMultipartJsonAppData(token, CORE_DRIVE_FILE, payload);
-}
-
-/** Meal-only persists still migrate legacy `records.json` or `openmacro-core.json` → `core.json` once. */
-async function migrateLegacyCoreFileIfNeeded(
-  token: string,
-  core: RecordsCoreDocument,
-): Promise<void> {
-  if (await findAppDataJsonFileIdByName(token, CORE_DRIVE_FILE)) return;
-  if (await findAppDataJsonFileIdByName(token, PREVIOUS_CORE_DRIVE_FILE)) {
-    await upsertCoreRecordsToDrive(token, core);
-    return;
-  }
-  if (!(await findAppDataJsonFileIdByName(token, LEGACY_CORE_DRIVE_FILE))) return;
-  await upsertCoreRecordsToDrive(token, core);
 }
 
 async function findMealsShardFileId(
@@ -925,11 +814,6 @@ export type PersistRecordsToDriveOptions = {
    */
   mealMonthKeysToSync?: string[];
   /**
-   * Meal-only persist: skip probing for legacy `records.json` / `openmacro-core.json` when the app already
-   * loaded core from `CORE_DRIVE_FILE` (avoids a `files.list` every meal).
-   */
-  skipLegacyCoreMigration?: boolean;
-  /**
    * Skip per-month `files.list` when resolving shard ids — use prefetched ids from a parallel probe
    * (keys are `YYYY-MM`, values are Drive file ids or `null` if absent).
    */
@@ -954,8 +838,6 @@ export async function persistRecordsToDrive(
   };
   if (!options?.mealsOnly) {
     await upsertCoreRecordsToDrive(token, core);
-  } else if (options.skipLegacyCoreMigration !== true) {
-    await migrateLegacyCoreFileIfNeeded(token, core);
   }
   if (!options?.coreOnly) {
     const monthKeys = options?.mealMonthKeysToSync;
@@ -972,35 +854,13 @@ export async function persistRecordsToDrive(
   }
 }
 
-/** Loads core from `CORE_DRIVE_FILE`, else migrates `openmacro-core.json`, else legacy `records.json`. */
+/** Loads core from `CORE_DRIVE_FILE`, or `null` if missing. */
 export async function pullRecordsCoreFromDrive(
   token: string,
-): Promise<PullRecordsCoreFromDriveResult> {
+): Promise<RecordsCoreDocument | null> {
   const primaryId = await findAppDataJsonFileIdByName(token, CORE_DRIVE_FILE);
-  if (primaryId) {
-    return {
-      core: await downloadCoreRecords(token, primaryId),
-      coreOnPrimaryDriveFile: true,
-    };
-  }
-  const previousPrimaryId = await findAppDataJsonFileIdByName(
-    token,
-    PREVIOUS_CORE_DRIVE_FILE,
-  );
-  if (previousPrimaryId) {
-    const core = await downloadCoreRecords(token, previousPrimaryId);
-    await upsertCoreRecordsToDrive(token, core);
-    return {
-      core,
-      coreOnPrimaryDriveFile: true,
-    };
-  }
-  const legacyId = await findAppDataJsonFileIdByName(token, LEGACY_CORE_DRIVE_FILE);
-  if (!legacyId) return { core: null, coreOnPrimaryDriveFile: false };
-  return {
-    core: await downloadCoreRecords(token, legacyId),
-    coreOnPrimaryDriveFile: false,
-  };
+  if (!primaryId) return null;
+  return downloadCoreRecords(token, primaryId);
 }
 
 /** Loads and merges all `meals-YYYY-MM.json` shards under App Data. */
@@ -1015,7 +875,7 @@ export async function pullMealsFromDriveShards(
 export async function pullRecordsFromDrive(
   token: string,
 ): Promise<RecordsDocument | null> {
-  const { core } = await pullRecordsCoreFromDrive(token);
+  const core = await pullRecordsCoreFromDrive(token);
   if (!core) return null;
   const meals = await pullMealsFromDriveShards(token);
   return normalizeRecordsDocument({ ...core, meals });
@@ -1116,17 +976,6 @@ function parseSavedMealsFromJsonText(text: string): SavedMealRecord[] {
   }
 }
 
-type RawMealRow = Record<string, unknown>;
-
-function rawMealRowsFromShardPayload(payload: unknown): RawMealRow[] {
-  if (!payload || typeof payload !== "object") return [];
-  const meals = (payload as { meals?: unknown }).meals;
-  if (!Array.isArray(meals)) return [];
-  return meals.filter(
-    (x): x is RawMealRow => !!x && typeof x === "object",
-  ) as RawMealRow[];
-}
-
 export async function upsertSavedMealsToDrive(
   token: string,
   savedMeals: SavedMealRecord[],
@@ -1137,117 +986,14 @@ export async function upsertSavedMealsToDrive(
   else await createMultipartJsonAppData(token, SAVED_MEALS_DRIVE_FILE, body);
 }
 
-async function executeFirstRunSavedMealsMigration(
-  token: string,
-  signal?: AbortSignal,
-): Promise<void> {
-  const shards = await listMealShardFiles(token, signal);
-  const favoriteCandidates: MealRecord[] = [];
-  let anyLegacy = false;
-
-  for (const s of shards) {
-    const text = await downloadAppDataFileText(token, s.id, signal);
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text) as unknown;
-    } catch {
-      continue;
-    }
-    for (const raw of rawMealRowsFromShardPayload(parsed)) {
-      if (raw.isFavorite === true) {
-        const m = normalizeMeal(raw as Partial<MealRecord>);
-        if (m) favoriteCandidates.push(m);
-      }
-      if ("isFavorite" in raw || "sourceFavoriteMealId" in raw) {
-        anyLegacy = true;
-      }
-    }
-  }
-
-  favoriteCandidates.sort(
-    (a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt),
-  );
-  const seenNames = new Set<string>();
-  const migratedSaved: SavedMealRecord[] = [];
-  for (const m of favoriteCandidates) {
-    const k = m.food_name.trim().toLowerCase();
-    if (!k || seenNames.has(k)) continue;
-    seenNames.add(k);
-    migratedSaved.push({
-      id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
-      food_name: m.food_name,
-      calories: m.calories,
-      protein: m.protein,
-      fats: m.fats,
-      carbs: m.carbs,
-      ...(m.photoFileId ? { photoFileId: m.photoFileId } : {}),
-    });
-  }
-
-  await upsertSavedMealsToDrive(token, migratedSaved);
-
-  if (!anyLegacy || shards.length === 0) return;
-
-  for (const s of shards) {
-    const text = await downloadAppDataFileText(token, s.id, signal);
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text) as unknown;
-    } catch {
-      continue;
-    }
-    const cleaned: MealRecord[] = [];
-    for (const raw of rawMealRowsFromShardPayload(parsed)) {
-      const copy: RawMealRow = { ...raw };
-      delete copy.isFavorite;
-      delete copy.sourceFavoriteMealId;
-      const m = normalizeMeal(copy as Partial<MealRecord>);
-      if (m) cleaned.push(m);
-    }
-    await upsertMealsShardToDrive(token, s.monthKey, cleaned);
-  }
-}
-
-export type EnsureSavedMealsMigratedResult = { didMigrate: boolean };
-
-let savedMealsMigrationChain: Promise<EnsureSavedMealsMigratedResult> =
-  Promise.resolve({ didMigrate: false });
-
-async function runSavedMealsMigrationOnce(
-  token: string,
-  signal?: AbortSignal,
-): Promise<EnsureSavedMealsMigratedResult> {
-  if (await findAppDataJsonFileIdByName(token, SAVED_MEALS_DRIVE_FILE)) {
-    return { didMigrate: false };
-  }
-  await executeFirstRunSavedMealsMigration(token, signal);
-  return { didMigrate: true };
-}
-
-/** Ensures `saved-meals.json` exists; on first run may migrate legacy favorites and strip old fields from shards. */
-export async function ensureSavedMealsMigrated(
-  token: string,
-  signal?: AbortSignal,
-): Promise<EnsureSavedMealsMigratedResult> {
-  const next = savedMealsMigrationChain.then(() =>
-    runSavedMealsMigrationOnce(token, signal),
-  );
-  savedMealsMigrationChain = next.catch(() => ({ didMigrate: false }));
-  return next;
-}
-
 export async function pullSavedMealsFromDrive(
   token: string,
   signal?: AbortSignal,
-): Promise<{ savedMeals: SavedMealRecord[]; didMigrate: boolean }> {
-  const { didMigrate } = await ensureSavedMealsMigrated(token, signal);
+): Promise<SavedMealRecord[]> {
   const id = await findAppDataJsonFileIdByName(token, SAVED_MEALS_DRIVE_FILE);
-  if (!id) return { savedMeals: [], didMigrate };
+  if (!id) return [];
   const text = await downloadAppDataFileText(token, id, signal);
-  return {
-    savedMeals: parseSavedMealsFromJsonText(text),
-    didMigrate,
-  };
+  return parseSavedMealsFromJsonText(text);
 }
 
 /** Copies an App Data meal image to a new file for a saved-meal id (independent of the log row). */

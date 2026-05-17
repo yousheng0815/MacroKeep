@@ -101,7 +101,7 @@ export function HistoryPage() {
             className="size-8 animate-spin text-emerald-400"
             aria-hidden
           />
-          <p className="text-sm text-om-muted">Loading meal history…</p>
+          <p className="text-sm text-mk-muted">Loading meal history…</p>
         </div>
       </Card>
     );
@@ -148,14 +148,14 @@ export function HistoryPage() {
             className="size-8 animate-spin text-emerald-400"
             aria-hidden
           />
-          <p className="text-sm text-om-muted">Loading meal history…</p>
+          <p className="text-sm text-mk-muted">Loading meal history…</p>
         </div>
       </Card>
     );
   } else if (groups.size === 0) {
     body = (
       <Card>
-        <p className="py-10 text-center text-sm text-om-muted">
+        <p className="py-10 text-center text-sm text-mk-muted">
           Nothing logged yet.
         </p>
       </Card>
@@ -183,7 +183,7 @@ export function HistoryPage() {
                   <div className="text-sm font-semibold text-white">
                     {today ? "Today" : formatLocalDateLabel(dayDate)}
                   </div>
-                  <div className="mt-1 text-sm text-om-muted">
+                  <div className="mt-1 text-sm text-mk-muted">
                     {Math.round(totals.kcal)} kcal
                   </div>
                 </div>
@@ -212,7 +212,7 @@ export function HistoryPage() {
                             {m.food_name}
                           </div>
                         </div>
-                        <div className="mt-1 truncate text-sm text-om-muted">
+                        <div className="mt-1 truncate text-sm text-mk-muted">
                           {formatTime(new Date(m.recordedAt))} ·{" "}
                           {Math.round(m.calories)} kcal
                         </div>
@@ -235,10 +235,10 @@ export function HistoryPage() {
                   className="size-6 animate-spin text-emerald-400"
                   aria-hidden
                 />
-                <p className="text-xs text-om-muted">Loading more meals…</p>
+                <p className="text-xs text-mk-muted">Loading more meals…</p>
               </>
             ) : (
-              <p className="text-xs text-om-muted">Scroll for more history</p>
+              <p className="text-xs text-mk-muted">Scroll for more history</p>
             )}
           </div>
         ) : null}
