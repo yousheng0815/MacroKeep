@@ -1,5 +1,6 @@
 /** Client-stored refresh tokens; access tokens via `/api/google/access-token`. */
 
+import { clearMealPhotoCache } from "@/lib/meal-photo-cache-memory";
 import {
   clearPersistedOAuth,
   loadPersistedOAuth,
@@ -244,6 +245,7 @@ export async function signOutGoogle(): Promise<void> {
   } catch {
     /* ignore */
   }
+  await clearMealPhotoCache();
   clearSession();
 }
 

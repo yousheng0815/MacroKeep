@@ -1,19 +1,28 @@
 import { useDrivePhotoUrl } from "@/hooks/use-drive-photo-url";
+import type { MealPhotoCachePolicy } from "@/lib/meal-photo-cache";
 import { ImagePlus } from "lucide-react";
+
+export type { MealPhotoCachePolicy };
 
 type MealPhotoThumbProps = {
   photoFileId?: string;
   alt: string;
   /** Wrapper box (layout + clipping); inner `<img>` uses `size-full object-cover`. */
   className?: string;
+  /**
+   * `saved`: persist all saved-meal images until sign-out.
+   * `log` + `recordedAt`: persist logged meals from today/yesterday (local).
+   */
+  cachePolicy?: MealPhotoCachePolicy;
 };
 
 export function MealPhotoThumb({
   photoFileId,
   alt,
   className = "size-10 shrink-0 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800",
+  cachePolicy,
 }: MealPhotoThumbProps) {
-  const src = useDrivePhotoUrl(photoFileId);
+  const src = useDrivePhotoUrl(photoFileId, cachePolicy);
 
   if (!photoFileId) {
     return (

@@ -281,6 +281,10 @@ export function DashboardPage() {
                         <MealPhotoThumb
                           photoFileId={m.photoFileId}
                           alt={m.food_name}
+                          cachePolicy={{
+                            tier: "log",
+                            recordedAt: m.recordedAt,
+                          }}
                         />
                         <div className="w-0 flex-1">
                           <div className="truncate font-medium text-white">

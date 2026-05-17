@@ -1,4 +1,5 @@
 import { AppToaster } from "@/components/AppToaster";
+import { sweepExpiredMealPhotosFromCache } from "@/lib/meal-photo-cache-db";
 import { isInstalledPwa } from "@/lib/pwa";
 import { router } from "@/router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -80,6 +81,8 @@ async function dismissLaunchSplash() {
 
 void (async () => {
   if (await unregisterLegacyServiceWorkers()) return;
+
+  void sweepExpiredMealPhotosFromCache();
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>

@@ -200,6 +200,10 @@ export function HistoryPage() {
                       <MealPhotoThumb
                         photoFileId={m.photoFileId}
                         alt={m.food_name}
+                        cachePolicy={{
+                          tier: "log",
+                          recordedAt: m.recordedAt,
+                        }}
                         className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
                       />
                       <div className="w-0 flex-1 overflow-hidden">

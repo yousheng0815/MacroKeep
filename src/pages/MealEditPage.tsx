@@ -314,6 +314,10 @@ export function MealEditPage() {
                   <MealPhotoThumb
                     photoFileId={meal.photoFileId}
                     alt={meal.food_name}
+                    cachePolicy={{
+                      tier: "log",
+                      recordedAt: meal.recordedAt,
+                    }}
                     className="size-full shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
                   />
                 ) : (

@@ -20,6 +20,8 @@ import {
   uploadMealPhotoToAppData,
   upsertSavedMealsToDrive,
 } from "@/lib/google-drive";
+import { DRIVE_QUERY_STALE_TIME_MS } from "@/lib/drive-query-cache";
+import { removeMealPhotoFromCache } from "@/lib/meal-photo-cache-db";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import {
   isMealAlreadySavedAsTemplate,
@@ -132,7 +134,7 @@ export function useRecords() {
   const coreQuery = useQuery({
     queryKey: ["records-core", userId],
     enabled: !!userId,
-    staleTime: 60_000,
+    staleTime: DRIVE_QUERY_STALE_TIME_MS,
     queryFn: async (): Promise<RecordsCoreQueryData> => {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
@@ -156,7 +158,7 @@ export function useRecords() {
   const mealsQuery = useQuery({
     queryKey: ["records-meals", userId],
     enabled: !!userId && coreQuery.isSuccess,
-    staleTime: 60_000,
+    staleTime: DRIVE_QUERY_STALE_TIME_MS,
     queryFn: async ({ signal }): Promise<RecordsMealsQueryData> => {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
@@ -183,7 +185,7 @@ export function useRecords() {
   const savedMealsQuery = useQuery({
     queryKey: ["saved-meals", userId],
     enabled: !!userId && coreQuery.isSuccess,
-    staleTime: 60_000,
+    staleTime: DRIVE_QUERY_STALE_TIME_MS,
     queryFn: async ({ signal }) => {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");
@@ -514,7 +516,10 @@ export function useRecords() {
             const photoStillReferenced =
               next.meals.some((m) => m.photoFileId === photoId) ||
               savedMealsReferencePhoto(qc, uid, photoId);
-            if (!photoStillReferenced) await deleteDriveFile(token, photoId);
+            if (!photoStillReferenced) {
+              await deleteDriveFile(token, photoId);
+              void removeMealPhotoFromCache(photoId);
+            }
           } catch {
             /* Snapshot may remain orphaned in App Data if delete fails. */
           }
@@ -593,6 +598,7 @@ export function useRecords() {
           if (!still) {
             try {
               await deleteDriveFile(token, oldPhotoId);
+              void removeMealPhotoFromCache(oldPhotoId);
             } catch {
               /* best-effort */
             }
@@ -703,6 +709,7 @@ export function useRecords() {
           if (!still) {
             try {
               await deleteDriveFile(t, oldPhotoId);
+              void removeMealPhotoFromCache(oldPhotoId);
             } catch {
               /* best-effort */
             }
@@ -754,7 +761,10 @@ export function useRecords() {
           const stillReferenced =
             meals.some((m) => m.photoFileId === photoId) ||
             merged.some((s) => s.photoFileId === photoId);
-          if (!stillReferenced) await deleteDriveFile(token, photoId);
+          if (!stillReferenced) {
+            await deleteDriveFile(token, photoId);
+            void removeMealPhotoFromCache(photoId);
+          }
         } catch {
           /* best-effort */
         }

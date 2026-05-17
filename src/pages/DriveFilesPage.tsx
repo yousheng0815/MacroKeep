@@ -137,6 +137,7 @@ export function DriveFilesPage() {
   const imageBlobQuery = useQuery({
     queryKey: ["drive-app-image-preview", userId, previewImageFileId],
     enabled: !!userId && !!previewImageFileId,
+    /** Fresh blob per selection; gcTime 0 drops bytes when preview unmounts. */
     staleTime: 0,
     gcTime: 0,
     queryFn: async ({ signal }) => {
@@ -149,7 +150,7 @@ export function DriveFilesPage() {
   const q = useQuery({
     queryKey: ["drive-app-files", userId],
     enabled: !!userId && sessionReady,
-    /** Refetch whenever this route remounts (e.g. after navigating away and back). */
+    /** Power-user file browser: refetch on each visit (edits may happen outside the app). */
     staleTime: 0,
     queryFn: async ({ signal }) => {
       const token = await ensureGoogleAccessToken();

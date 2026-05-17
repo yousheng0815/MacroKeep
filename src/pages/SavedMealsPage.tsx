@@ -55,6 +55,7 @@ function ManageRow({
         <MealPhotoThumb
           photoFileId={item.photoFileId}
           alt={item.food_name}
+          cachePolicy={{ tier: "saved" }}
           className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
         />
         <div className="w-0 min-w-0 flex-1 overflow-hidden">
@@ -137,6 +138,7 @@ function SortableReorderRow({ item, committing }: SortableReorderRowProps) {
         <MealPhotoThumb
           photoFileId={item.photoFileId}
           alt={item.food_name}
+          cachePolicy={{ tier: "saved" }}
           className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
         />
         <div className="w-0 min-w-0 flex-1 overflow-hidden">
@@ -408,6 +410,7 @@ export function SavedMealsPage() {
                   <MealPhotoThumb
                     photoFileId={item.photoFileId}
                     alt={item.food_name}
+                    cachePolicy={{ tier: "saved" }}
                     className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
                   />
                   <div className="w-0 flex-1 overflow-hidden">

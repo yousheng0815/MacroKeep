@@ -1,3 +1,4 @@
+import { DRIVE_QUERY_STALE_TIME_MS } from "@/lib/drive-query-cache";
 import {
   canSyncToDriveAppData,
   ensureGoogleAccessToken,
@@ -78,7 +79,7 @@ export function useProgressPhotos(options: UseProgressPhotosOptions = {}) {
   const manifestQuery = useQuery({
     queryKey: ["progress-photos", userId],
     enabled: !!userId && canSyncToDriveAppData(),
-    staleTime: 30_000,
+    staleTime: DRIVE_QUERY_STALE_TIME_MS,
     queryFn: async ({ signal }) => {
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing Google access token");

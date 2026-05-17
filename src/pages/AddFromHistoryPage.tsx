@@ -19,6 +19,7 @@ type HistoryTemplate = {
   fats: number;
   carbs: number;
   sourcePhotoFileId?: string;
+  sourceRecordedAt: string;
 };
 
 function getHistoryTemplates(meals: MealRecord[]): HistoryTemplate[] {
@@ -40,6 +41,7 @@ function getHistoryTemplates(meals: MealRecord[]): HistoryTemplate[] {
       fats: m.fats,
       carbs: m.carbs,
       sourcePhotoFileId: m.photoFileId,
+      sourceRecordedAt: m.recordedAt,
     }));
 }
 
@@ -184,6 +186,10 @@ export function AddFromHistoryPage() {
                   <MealPhotoThumb
                     photoFileId={item.sourcePhotoFileId}
                     alt={item.food_name}
+                    cachePolicy={{
+                      tier: "log",
+                      recordedAt: item.sourceRecordedAt,
+                    }}
                     className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
                   />
                   <div className="w-0 flex-1 overflow-hidden">

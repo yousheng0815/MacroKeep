@@ -141,6 +141,10 @@ export function MealDetailPage() {
           <MealPhotoThumb
             photoFileId={meal.photoFileId}
             alt={meal.food_name}
+            cachePolicy={{
+              tier: "log",
+              recordedAt: meal.recordedAt,
+            }}
             className="size-20 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
           />
           <div className="min-w-0">
