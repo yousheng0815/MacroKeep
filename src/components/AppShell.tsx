@@ -2,14 +2,19 @@ import { Footer } from "@/components/Footer";
 import { Logo } from "@/components/Logo";
 import { DesktopSidebar } from "@/components/nav/DesktopSidebar";
 import { MobileBottomNav } from "@/components/nav/MobileBottomNav";
+import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { useRecords } from "@/hooks/use-records";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
-import type { ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { records } = useRecords();
+  const { records, refetch } = useRecords();
+  const onPullRefresh = useCallback(() => refetch(), [refetch]);
+  const { enabled: pullToRefresh, pullPx, refreshing, thresholdPx } =
+    usePullToRefresh(onPullRefresh);
   /** First-run setup only: hide shell nav so users focus on completing the flow. */
   const inFirstRunTutorial =
     pathname === "/tutorial" && !records.onboardingCompleted;
@@ -22,6 +27,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div
           className={`relative flex min-h-dvh min-w-0 flex-1 flex-col ${!inFirstRunTutorial ? "lg:pl-60" : ""}`}
         >
+          {pullToRefresh && !inFirstRunTutorial ? (
+            <PullToRefreshIndicator
+              pullPx={pullPx}
+              refreshing={refreshing}
+              thresholdPx={thresholdPx}
+            />
+          ) : null}
+
           <header
             className={`om-pwa-no-select sticky top-0 z-30 flex items-center justify-between border-b border-om-border bg-om-bg/95 px-4 pb-2 pt-[calc(env(safe-area-inset-top,0px)+1rem)] backdrop-blur lg:hidden ${inFirstRunTutorial ? "hidden" : ""}`}
           >

@@ -1,4 +1,5 @@
 import { AppToaster } from "@/components/AppToaster";
+import { isInstalledPwa } from "@/lib/pwa";
 import { router } from "@/router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
@@ -18,14 +19,6 @@ const queryClient = new QueryClient({
 /** Keep the in-app wordmark splash visible at least this long (iOS native splash is not controllable). */
 const LAUNCH_SPLASH_MIN_MS = 850;
 const launchStartedAt = performance.now();
-
-function isInstalledPwa(): boolean {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.matchMedia("(display-mode: fullscreen)").matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  );
-}
 
 /** Old builds registered Workbox; unregister once so `/api/*` is never intercepted. */
 async function unregisterLegacyServiceWorkers(): Promise<boolean> {
