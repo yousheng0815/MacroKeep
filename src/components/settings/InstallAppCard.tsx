@@ -4,7 +4,7 @@ import {
   isInstalledPwa,
   type MobileInstallPlatform,
 } from "@/lib/pwa";
-import { MoreHorizontal, MoreVertical, Share, Smartphone } from "lucide-react";
+import { MoreHorizontal, MoreVertical, Share } from "lucide-react";
 import { useLayoutEffect, useState } from "react";
 
 function InstallSteps({ platform }: { platform: MobileInstallPlatform }) {
@@ -82,16 +82,12 @@ export function InstallAppCard() {
   return (
     <Card>
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
-          <Smartphone className="size-5" aria-hidden />
-        </div>
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-white">
             Install MacroKeep
           </h2>
           <p className="mt-1 text-sm text-om-muted">
-            Add MacroKeep to your home screen for a faster launch and
-            full-screen layout on your phone.
+            Add MacroKeep to your home screen for a better experience.
           </p>
         </div>
       </div>
