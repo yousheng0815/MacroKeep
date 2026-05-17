@@ -1,8 +1,22 @@
-/** Returned by OAuth callback: POST session-handoff, then `location.replace(next)`. */
-export function oauthSuccessHtml(payload: { nonce: string; next: string }): string {
+/** Must match {@link src/lib/oauth-session-storage.ts} `OAUTH_STORAGE_KEY`. */
+const OAUTH_STORAGE_KEY = "openmacro:oauth:v1";
+
+export type OAuthCompletePayload = {
+  next: string;
+  access_token: string;
+  expires_in: number;
+  scope: string;
+  refresh_token?: string;
+  sub: string;
+  email: string | null;
+};
+
+/** OAuth callback page: persist tokens in localStorage, then redirect. */
+export function oauthSuccessHtml(payload: OAuthCompletePayload): string {
   const json = JSON.stringify(payload)
     .replace(/</g, "\\u003c")
     .replace(/>/g, "\\u003e");
+  const storageKey = JSON.stringify(OAUTH_STORAGE_KEY);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,30 +37,33 @@ body{margin:0;min-height:100dvh;display:flex;flex-direction:column;align-items:c
 <script type="application/json" id="om">${json}</script>
 <script>
 (function(){
+  var STORAGE_KEY = ${storageKey};
+  var SKEW_MS = 60000;
   try {
-    var el = document.getElementById("om");
-    var d = JSON.parse(el.textContent);
-    fetch("/api/auth/session-handoff", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ nonce: d.nonce }),
-      cache: "no-store",
-    }).then(function (r) {
-      if (r.status === 204) {
-        var next = typeof d.next === "string" && d.next.indexOf("/") === 0 ? d.next : "/";
-        window.location.replace(next);
-        return;
-      }
-      return r.json().then(function (j) {
-        var err = (j && j.error) || "session_handoff_" + r.status;
-        window.location.replace("/login?oauth_error=" + encodeURIComponent(String(err)));
-      });
-    }).catch(function () {
-      window.location.replace("/login?oauth_error=" + encodeURIComponent("session_handoff_network"));
-    });
+    var d = JSON.parse(document.getElementById("om").textContent);
+    var existing = null;
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) existing = JSON.parse(raw);
+    } catch (_) {}
+    var refresh = typeof d.refresh_token === "string" ? d.refresh_token : undefined;
+    if (!refresh && existing && existing.sub === d.sub && typeof existing.refreshToken === "string") {
+      refresh = existing.refreshToken;
+    }
+    var expMs = Date.now() + (d.expires_in || 3600) * 1000 - SKEW_MS;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      v: 3,
+      refreshToken: refresh,
+      accessToken: d.access_token,
+      expiresAtMs: expMs,
+      scope: d.scope,
+      sub: d.sub,
+      email: d.email || undefined
+    }));
+    var next = typeof d.next === "string" && d.next.indexOf("/") === 0 ? d.next : "/";
+    window.location.replace(next);
   } catch (e) {
-    window.location.replace("/login?oauth_error=" + encodeURIComponent("session_handoff_script"));
+    window.location.replace("/login?oauth_error=" + encodeURIComponent("oauth_complete_script"));
   }
 })();
 </script>

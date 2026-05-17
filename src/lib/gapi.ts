@@ -1,4 +1,4 @@
-/** Server OAuth + Firestore refresh tokens; access tokens via `/api/google/access-token`. */
+/** Client-stored refresh tokens; access tokens via `/api/google/access-token`. */
 
 import {
   clearPersistedOAuth,
@@ -22,6 +22,7 @@ let accessValidUntilMs = 0;
 let lastGrantedScopeRaw = "";
 let cachedUserSub: string | null = null;
 let cachedUserEmail: string | null = null;
+let cachedRefreshToken: string | null = null;
 
 const EXPIRY_SKEW_MS = 60_000;
 
@@ -80,6 +81,7 @@ function clearSession(): void {
   lastGrantedScopeRaw = "";
   cachedUserSub = null;
   cachedUserEmail = null;
+  cachedRefreshToken = null;
   clearPersistedOAuth();
   notifyOAuthChanged();
 }
@@ -89,10 +91,12 @@ function persistOAuthSnapshot(): void {
   const exp = accessValidUntilMs;
   const hasIdentity =
     !!cachedUserSub || !!cachedUserEmail || !!lastGrantedScopeRaw;
+  const refresh = cachedRefreshToken;
 
   if (token && Date.now() < exp) {
     savePersistedOAuth({
-      v: 2,
+      v: 3,
+      refreshToken: refresh ?? undefined,
       accessToken: token,
       expiresAtMs: exp,
       scope: lastGrantedScopeRaw || undefined,
@@ -102,9 +106,10 @@ function persistOAuthSnapshot(): void {
     return;
   }
 
-  if (hasIdentity) {
+  if (hasIdentity || refresh) {
     savePersistedOAuth({
-      v: 2,
+      v: 3,
+      refreshToken: refresh ?? undefined,
       expiresAtMs: 0,
       scope: lastGrantedScopeRaw || undefined,
       sub: cachedUserSub ?? undefined,
@@ -126,37 +131,43 @@ export function hasGoogleSession(): boolean {
   return (
     hasValidGoogleAccessToken() ||
     !!cachedUserSub ||
-    !!cachedUserEmail
+    !!cachedUserEmail ||
+    !!cachedRefreshToken
   );
 }
 
-async function fetchSessionFromBroker(): Promise<boolean> {
-  const p = loadPersistedOAuth();
-  if (p) {
-    lastGrantedScopeRaw = p.scope ?? "";
-    cachedUserSub = p.sub ?? null;
-    cachedUserEmail = p.email ?? null;
-    if (
-      typeof p.accessToken === "string" &&
-      p.accessToken.length > 0 &&
-      p.expiresAtMs > Date.now()
-    ) {
-      accessToken = p.accessToken;
-      accessValidUntilMs = p.expiresAtMs;
-    }
+function hydrateFromPersisted(p: NonNullable<ReturnType<typeof loadPersistedOAuth>>): void {
+  lastGrantedScopeRaw = p.scope ?? "";
+  cachedUserSub = p.sub ?? null;
+  cachedUserEmail = p.email ?? null;
+  cachedRefreshToken = p.refreshToken ?? null;
+  if (
+    typeof p.accessToken === "string" &&
+    p.accessToken.length > 0 &&
+    p.expiresAtMs > Date.now()
+  ) {
+    accessToken = p.accessToken;
+    accessValidUntilMs = p.expiresAtMs;
   } else {
-    lastGrantedScopeRaw = "";
-    cachedUserSub = null;
-    cachedUserEmail = null;
     accessToken = null;
     accessValidUntilMs = 0;
   }
+}
 
+async function refreshAccessTokenFromServer(
+  refreshToken: string,
+): Promise<boolean> {
   try {
     const res = await fetch("/api/google/access-token", {
-      credentials: "include",
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+      cache: "no-store",
     });
     if (!res.ok) {
+      if (res.status === 401) {
+        cachedRefreshToken = null;
+      }
       accessToken = null;
       accessValidUntilMs = 0;
       persistOAuthSnapshot();
@@ -186,7 +197,34 @@ async function fetchSessionFromBroker(): Promise<boolean> {
   }
 }
 
-/** Restore session from cookie-backed broker + localStorage hints after navigation. */
+async function fetchSessionFromBroker(): Promise<boolean> {
+  const p = loadPersistedOAuth();
+  if (p) {
+    hydrateFromPersisted(p);
+  } else {
+    lastGrantedScopeRaw = "";
+    cachedUserSub = null;
+    cachedUserEmail = null;
+    cachedRefreshToken = null;
+    accessToken = null;
+    accessValidUntilMs = 0;
+  }
+
+  if (hasValidGoogleAccessToken()) {
+    notifyOAuthChanged();
+    return true;
+  }
+
+  if (cachedRefreshToken) {
+    return refreshAccessTokenFromServer(cachedRefreshToken);
+  }
+
+  persistOAuthSnapshot();
+  notifyOAuthChanged();
+  return false;
+}
+
+/** Restore session from localStorage after navigation. */
 export async function restoreOAuthSessionFromStorage(): Promise<boolean> {
   return fetchSessionFromBroker();
 }
@@ -228,30 +266,11 @@ export async function ensureGoogleAccessToken(): Promise<string | null> {
 
   if (!brokerAccessTokenRefresh) {
     const run = async (): Promise<string | null> => {
-      try {
-        const res = await fetch("/api/google/access-token", {
-          credentials: "include",
-        });
-        if (!res.ok) return null;
-        const data = (await res.json()) as {
-          access_token: string;
-          expires_in: number;
-          scope?: string;
-        };
-        applyTokenResponse(data);
-        await Promise.all([
-          hydrateUserFromGoogle(data.access_token),
-          data.scope
-            ? Promise.resolve()
-            : hydrateScopesFromToken(data.access_token),
-        ]);
-        if (data.scope) lastGrantedScopeRaw = data.scope;
-        persistOAuthSnapshot();
-        notifyOAuthChanged();
-        return getAccessToken();
-      } catch {
-        return null;
-      }
+      const refresh = cachedRefreshToken ?? loadPersistedOAuth()?.refreshToken;
+      if (!refresh) return null;
+      cachedRefreshToken = refresh;
+      const ok = await refreshAccessTokenFromServer(refresh);
+      return ok ? getAccessToken() : null;
     };
     brokerAccessTokenRefresh = run().finally(() => {
       brokerAccessTokenRefresh = null;
