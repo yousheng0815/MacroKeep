@@ -16,7 +16,12 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         injectRegister: false,
         registerType: "autoUpdate",
-        includeAssets: ["favicon.png", "icon-mark.png", "wordmark.png", "pwa/**/*"],
+        includeAssets: [
+          "favicon.png",
+          "icon-mark.png",
+          "wordmark.png",
+          "pwa/**/*",
+        ],
         manifest: {
           name: "MacroKeep",
           short_name: "MacroKeep",
@@ -50,7 +55,7 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     server: {
-      allowedHosts: ["252d-209-227-158-102.ngrok-free.app"],
+      allowedHosts: [],
       ...(apiProxyTarget
         ? {
             proxy: {

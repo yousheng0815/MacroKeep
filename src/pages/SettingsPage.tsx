@@ -8,6 +8,7 @@ import {
   HeightWeightFields,
   UnitsPreferenceSegment,
 } from "@/components/profile/body-measurement-fields";
+import { InstallAppCard } from "@/components/settings/InstallAppCard";
 import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
 import { toast } from "@/lib/app-toast";
@@ -682,6 +683,8 @@ export function SettingsPage() {
         updateGeminiKey={updateGeminiKey}
         isSaving={isSaving}
       />
+
+      <InstallAppCard />
 
       <GoogleAccountDriveCard
         key={email ?? ""}
