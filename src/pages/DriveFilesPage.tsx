@@ -13,9 +13,10 @@ import {
   isImagePreviewAppDataFile,
   isJsonAppDataFile,
   listAllAppDataFiles,
+  updateAppDataFileText,
   type AppDataDriveFileListItem,
 } from "@/lib/google-drive";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileJson, ImageIcon, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -69,6 +70,15 @@ function formatJsonForDisplay(raw: string): string {
   }
 }
 
+function parseJsonDraft(draft: string): { ok: true; text: string } | { ok: false; message: string } {
+  try {
+    const parsed = JSON.parse(draft) as unknown;
+    return { ok: true, text: JSON.stringify(parsed, null, 2) };
+  } catch {
+    return { ok: false, message: "Invalid JSON — fix syntax before saving." };
+  }
+}
+
 function fileKindIcon(f: AppDataDriveFileListItem) {
   const mime = (f.mimeType ?? "").toLowerCase();
   if (mime.startsWith("image/")) {
@@ -85,12 +95,21 @@ function fileKindIcon(f: AppDataDriveFileListItem) {
 export function DriveFilesPage() {
   const { sessionReady } = useGoogleSession();
   const userId = getGoogleUserId() ?? "";
+  const qc = useQueryClient();
   const [retryBusy, setRetryBusy] = useState(false);
   const [viewerFile, setViewerFile] = useState<AppDataDriveFileListItem | null>(
     null,
   );
+  const [jsonEditing, setJsonEditing] = useState(false);
+  const [jsonDraft, setJsonDraft] = useState("");
+  const [jsonParseError, setJsonParseError] = useState<string | null>(null);
 
-  const closeViewer = useCallback(() => setViewerFile(null), []);
+  const closeViewer = useCallback(() => {
+    setViewerFile(null);
+    setJsonEditing(false);
+    setJsonDraft("");
+    setJsonParseError(null);
+  }, []);
 
   const viewerJsonOversized = useMemo(() => {
     if (!viewerFile || !isJsonAppDataFile(viewerFile)) return false;
@@ -166,6 +185,59 @@ export function DriveFilesPage() {
     if (contentQuery.data === undefined) return "";
     return formatJsonForDisplay(contentQuery.data);
   }, [contentQuery.data]);
+
+  const jsonDirty =
+    jsonEditing && jsonDraft.length > 0 && jsonDraft !== displayText;
+
+  useEffect(() => {
+    if (!viewerFile || !viewerIsJson || viewerJsonOversized) return;
+    if (contentQuery.data === undefined) return;
+    setJsonEditing(false);
+    setJsonParseError(null);
+    setJsonDraft(formatJsonForDisplay(contentQuery.data));
+  }, [viewerFile?.id, viewerIsJson, viewerJsonOversized, contentQuery.data]);
+
+  const saveJsonMutation = useMutation({
+    mutationFn: async () => {
+      if (!viewerFile) throw new Error("No file selected");
+      const parsed = parseJsonDraft(jsonDraft);
+      if (!parsed.ok) throw new Error(parsed.message);
+      const token = await ensureGoogleAccessToken();
+      if (!token) throw new Error("Missing Google access token");
+      await updateAppDataFileText(token, viewerFile.id, parsed.text);
+      return parsed.text;
+    },
+    onSuccess: (savedText) => {
+      setJsonParseError(null);
+      setJsonEditing(false);
+      setJsonDraft(savedText);
+      void qc.invalidateQueries({ queryKey: ["drive-app-files", userId] });
+      if (viewerFile) {
+        void qc.invalidateQueries({
+          queryKey: ["drive-app-file-body", userId, viewerFile.id],
+        });
+      }
+      if (userId) {
+        void qc.invalidateQueries({ queryKey: ["records-core", userId] });
+        void qc.invalidateQueries({ queryKey: ["records-meals", userId] });
+      }
+    },
+    onError: (err) => {
+      setJsonParseError(err instanceof Error ? err.message : String(err));
+    },
+  });
+
+  const startJsonEdit = useCallback(() => {
+    setJsonParseError(null);
+    setJsonDraft(displayText || contentQuery.data || "");
+    setJsonEditing(true);
+  }, [displayText, contentQuery.data]);
+
+  const cancelJsonEdit = useCallback(() => {
+    setJsonParseError(null);
+    setJsonEditing(false);
+    setJsonDraft(displayText);
+  }, [displayText]);
 
   useEffect(() => {
     if (!viewerFile) return;
@@ -352,23 +424,74 @@ export function DriveFilesPage() {
               </h2>
               <div className="flex shrink-0 items-center gap-2">
                 {viewerIsJson ? (
-                  <button
-                    type="button"
-                    disabled={
-                      viewerJsonOversized ||
-                      contentQuery.isLoading ||
-                      !contentQuery.data ||
-                      !!contentQuery.error
-                    }
-                    onClick={() =>
-                      void navigator.clipboard.writeText(
-                        displayText || contentQuery.data || "",
-                      )
-                    }
-                    className="rounded-xl border border-om-border bg-om-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Copy
-                  </button>
+                  <>
+                    {jsonEditing ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled={saveJsonMutation.isPending}
+                          onClick={cancelJsonEdit}
+                          className="rounded-xl border border-om-border bg-om-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={
+                            saveJsonMutation.isPending ||
+                            !jsonDirty ||
+                            viewerJsonOversized ||
+                            contentQuery.isLoading ||
+                            !contentQuery.data ||
+                            !!contentQuery.error
+                          }
+                          aria-busy={saveJsonMutation.isPending}
+                          onClick={() => saveJsonMutation.mutate()}
+                          className="relative rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <ButtonPendingContents
+                            pending={saveJsonMutation.isPending}
+                            spinner={<ButtonSpinner className="text-white" />}
+                          >
+                            Save
+                          </ButtonPendingContents>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled={
+                            viewerJsonOversized ||
+                            contentQuery.isLoading ||
+                            !contentQuery.data ||
+                            !!contentQuery.error
+                          }
+                          onClick={startJsonEdit}
+                          className="rounded-xl border border-om-border bg-om-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          disabled={
+                            viewerJsonOversized ||
+                            contentQuery.isLoading ||
+                            !contentQuery.data ||
+                            !!contentQuery.error
+                          }
+                          onClick={() =>
+                            void navigator.clipboard.writeText(
+                              displayText || contentQuery.data || "",
+                            )
+                          }
+                          className="rounded-xl border border-om-border bg-om-bg px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Copy
+                        </button>
+                      </>
+                    )}
+                  </>
                 ) : null}
                 <button
                   type="button"
@@ -403,6 +526,24 @@ export function DriveFilesPage() {
                       ? contentQuery.error.message
                       : "Could not load file."}
                   </p>
+                ) : jsonEditing ? (
+                  <div className="flex min-h-0 flex-1 flex-col gap-2">
+                    <textarea
+                      value={jsonDraft}
+                      onChange={(e) => {
+                        setJsonDraft(e.target.value);
+                        if (jsonParseError) setJsonParseError(null);
+                      }}
+                      spellCheck={false}
+                      className="min-h-[min(50dvh,480px)] w-full flex-1 resize-y rounded-xl border border-om-border bg-om-bg px-3 py-2 font-mono text-sm leading-relaxed text-zinc-200 outline-none ring-emerald-500/40 focus:ring-2"
+                      aria-label={`Edit JSON contents of ${viewerFile.name}`}
+                    />
+                    {jsonParseError ? (
+                      <p className="text-sm text-red-300" role="alert">
+                        {jsonParseError}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : (
                   <pre className="font-mono text-sm leading-relaxed whitespace-pre-wrap break-words text-zinc-200">
                     {displayText}

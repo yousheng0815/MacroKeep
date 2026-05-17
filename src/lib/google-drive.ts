@@ -607,7 +607,12 @@ async function createMultipartJsonAppData(
   return data.id;
 }
 
-async function updateJsonMedia(token: string, fileId: string, body: string): Promise<void> {
+async function updateJsonMedia(
+  token: string,
+  fileId: string,
+  body: string,
+  signal?: AbortSignal,
+): Promise<void> {
   const url = `${UPLOAD_BASE}/${encodeURIComponent(fileId)}?uploadType=media`;
   const res = await fetch(url, {
     method: "PATCH",
@@ -616,8 +621,22 @@ async function updateJsonMedia(token: string, fileId: string, body: string): Pro
       "Content-Type": "application/json; charset=UTF-8",
     },
     body,
+    signal,
   });
   if (!res.ok) throw new Error(`Drive update failed: ${res.status}`);
+}
+
+/**
+ * Overwrites a file in `appDataFolder` with the given UTF-8 text (media upload).
+ * Caller should ensure `fileId` belongs to the user's app data folder.
+ */
+export async function updateAppDataFileText(
+  token: string,
+  fileId: string,
+  body: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  await updateJsonMedia(token, fileId, body, signal);
 }
 
 export async function upsertCoreRecordsToDrive(
