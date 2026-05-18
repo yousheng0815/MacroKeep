@@ -53,6 +53,8 @@ export function MealEditPage() {
     records,
     updateMeal,
     ensureMealIdLoaded,
+    isMealsLoading,
+    isLoadingMoreMeals,
   } = useRecords();
 
   const [mealLookup, setMealLookup] = useState<"pending" | "ready">("pending");
@@ -141,8 +143,11 @@ export function MealEditPage() {
     }
   }, []);
 
+  const mealStillLoading =
+    mealLookup === "pending" || isMealsLoading || isLoadingMoreMeals;
+
   if (!meal) {
-    if (mealLookup === "pending") {
+    if (mealStillLoading) {
       return (
         <Card>
           <div className="flex flex-col items-center justify-center gap-3 py-16">

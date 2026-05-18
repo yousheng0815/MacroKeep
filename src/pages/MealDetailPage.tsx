@@ -49,6 +49,8 @@ export function MealDetailPage() {
     savedMeals,
     isSavedMealsLoading,
     savedMealsError,
+    isMealsLoading,
+    isLoadingMoreMeals,
   } = useRecords();
 
   const [mealLookup, setMealLookup] = useState<"pending" | "ready">("pending");
@@ -98,8 +100,11 @@ export function MealDetailPage() {
     return isMealAlreadySavedAsTemplate(meal, savedMeals);
   }, [meal, savedMeals, isSavedMealsLoading, savedMealsError]);
 
+  const mealStillLoading =
+    mealLookup === "pending" || isMealsLoading || isLoadingMoreMeals;
+
   if (!meal) {
-    if (mealLookup === "pending") {
+    if (mealStillLoading) {
       return (
         <Card>
           <div className="flex flex-col items-center justify-center gap-3 py-16">

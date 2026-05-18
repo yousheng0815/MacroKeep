@@ -114,6 +114,29 @@ function computeAllShardsLoaded(
   return shardsOnDriveDesc.every((s) => loaded.has(s.monthKey));
 }
 
+async function fetchRecordsMealsFromDrive(
+  signal?: AbortSignal,
+): Promise<RecordsMealsQueryData> {
+  const token = await ensureGoogleAccessToken();
+  if (!token) throw new Error("Missing Google access token");
+  const shardsOnDriveDesc = await listMealShardFilesSortedDesc(token, signal);
+  const initialRefs = pickInitialMealShards(
+    shardsOnDriveDesc,
+    INITIAL_MEAL_SHARD_MONTHS,
+  );
+  const meals =
+    initialRefs.length > 0
+      ? await pullMealsFromShardRefs(token, initialRefs, signal)
+      : [];
+  const loadedMonthKeys = initialRefs.map((r) => r.monthKey);
+  return {
+    meals,
+    loadedMonthKeys,
+    shardsOnDriveDesc,
+    allShardsLoaded: computeAllShardsLoaded(shardsOnDriveDesc, loadedMonthKeys),
+  };
+}
+
 type ReplaceMutationResult = {
   doc: RecordsDocument;
   hydratedMonthKeysForSync: string[];
@@ -147,26 +170,7 @@ export function useRecords() {
     queryKey: ["records-meals", userId],
     enabled: !!userId && coreQuery.isSuccess,
     staleTime: DRIVE_QUERY_STALE_TIME_MS,
-    queryFn: async ({ signal }): Promise<RecordsMealsQueryData> => {
-      const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing Google access token");
-      const shardsOnDriveDesc = await listMealShardFilesSortedDesc(token, signal);
-      const initialRefs = pickInitialMealShards(
-        shardsOnDriveDesc,
-        INITIAL_MEAL_SHARD_MONTHS,
-      );
-      const meals =
-        initialRefs.length > 0
-          ? await pullMealsFromShardRefs(token, initialRefs, signal)
-          : [];
-      const loadedMonthKeys = initialRefs.map((r) => r.monthKey);
-      return {
-        meals,
-        loadedMonthKeys,
-        shardsOnDriveDesc,
-        allShardsLoaded: computeAllShardsLoaded(shardsOnDriveDesc, loadedMonthKeys),
-      };
-    },
+    queryFn: ({ signal }) => fetchRecordsMealsFromDrive(signal),
   });
 
   const savedMealsQuery = useQuery({
@@ -935,22 +939,37 @@ export function useRecords() {
       if (!mealId) return false;
       const uid = getGoogleUserId();
       if (!uid) return false;
+      const mealsKey = ["records-meals", uid] as const;
       const hasMeal = () =>
         qc
-          .getQueryData<RecordsMealsQueryData>(["records-meals", uid])
+          .getQueryData<RecordsMealsQueryData>(mealsKey)
           ?.meals.some((m) => m.id === mealId) ?? false;
       if (hasMeal()) return true;
-      for (;;) {
-        const prev = qc.getQueryData<RecordsMealsQueryData>(["records-meals", uid]);
+
+      let prev = qc.getQueryData<RecordsMealsQueryData>(mealsKey);
+      if (!prev) {
+        try {
+          prev = await qc.fetchQuery({
+            queryKey: mealsKey,
+            queryFn: ({ signal }) => fetchRecordsMealsFromDrive(signal),
+            staleTime: DRIVE_QUERY_STALE_TIME_MS,
+          });
+        } catch {
+          return false;
+        }
         if (!prev) return false;
-        if (prev.meals.some((m) => m.id === mealId)) return true;
+      }
+      if (prev.meals.some((m) => m.id === mealId)) return true;
+
+      for (;;) {
         if (prev.allShardsLoaded) return false;
         await loadMoreMealMonths();
         if (hasMeal()) return true;
-        const next = qc.getQueryData<RecordsMealsQueryData>(["records-meals", uid]);
+        const next = qc.getQueryData<RecordsMealsQueryData>(mealsKey);
         if (!next) return false;
         if (next.allShardsLoaded) return false;
         if (next.loadedMonthKeys.length === prev.loadedMonthKeys.length) return false;
+        prev = next;
       }
     },
     [qc, loadMoreMealMonths],
