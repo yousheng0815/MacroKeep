@@ -8,12 +8,8 @@ export const GOOGLE_OAUTH_SCOPES = [
   "profile",
 ].join(" ");
 
-/** Cleared on sign-out. */
-export const SESSION_COOKIE = "mk_session";
 export const OAUTH_STATE_COOKIE = "mk_oauth_state";
 export const OAUTH_NEXT_COOKIE = "mk_oauth_next";
-/** Marks that we already retried OAuth once with prompt=consent for refresh_token. */
-export const OAUTH_RT_FALLBACK_COOKIE = "mk_oauth_rt_fallback";
 
 function forwardedFirst(v: string | string[] | undefined): string | undefined {
   if (!v) return undefined;

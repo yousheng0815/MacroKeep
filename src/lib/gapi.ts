@@ -13,8 +13,7 @@ type AccessTokenPayload = {
   scope?: string;
 };
 
-/** Private Drive app folder scope. */
-export const DRIVE_APPDATA_SCOPE =
+const DRIVE_APPDATA_SCOPE =
   "https://www.googleapis.com/auth/drive.appdata" as const;
 
 let accessToken: string | null = null;
@@ -143,7 +142,7 @@ export function hasValidGoogleAccessToken(): boolean {
   return !!accessToken && Date.now() < accessValidUntilMs;
 }
 
-export function hasPersistedRefreshToken(): boolean {
+function hasPersistedRefreshToken(): boolean {
   return !!(cachedRefreshToken ?? loadPersistedOAuth()?.refreshToken);
 }
 
@@ -283,19 +282,11 @@ export type GoogleSignInOptions = {
 };
 
 export async function signOutGoogle(): Promise<void> {
-  try {
-    await fetch("/api/auth/sign-out", {
-      method: "POST",
-      credentials: "include",
-    });
-  } catch {
-    /* ignore */
-  }
   await clearMealPhotoCache();
   clearSession();
 }
 
-export function getAccessToken(): string | null {
+function getAccessToken(): string | null {
   if (!accessToken) return null;
   if (Date.now() >= accessValidUntilMs) {
     accessToken = null;
@@ -383,10 +374,6 @@ export async function startGoogleOAuthRedirect(
       `/login?oauth_error=${encodeURIComponent("oauth_start_network")}`,
     );
   }
-}
-
-export function isSignedInGoogle(): boolean {
-  return hasGoogleSession();
 }
 
 function grantedScopesIncludeDriveAppData(granted: string): boolean {

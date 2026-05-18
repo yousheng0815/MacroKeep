@@ -2,8 +2,6 @@ import { useDrivePhotoUrl } from "@/hooks/use-drive-photo-url";
 import type { MealPhotoCachePolicy } from "@/lib/meal-photo-cache";
 import { ImagePlus } from "lucide-react";
 
-export type { MealPhotoCachePolicy };
-
 type MealPhotoThumbProps = {
   photoFileId?: string;
   alt: string;

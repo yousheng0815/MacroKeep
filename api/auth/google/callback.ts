@@ -2,7 +2,6 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
   absoluteSitePath,
   OAUTH_NEXT_COOKIE,
-  OAUTH_RT_FALLBACK_COOKIE,
   OAUTH_STATE_COOKIE,
   oauthRedirectUri,
 } from "../../../server/oauth/config.js";
@@ -44,7 +43,6 @@ export default async function handler(
 
     appendSetCookie(res, cookieClear(OAUTH_STATE_COOKIE));
     appendSetCookie(res, cookieClear(OAUTH_NEXT_COOKIE));
-    appendSetCookie(res, cookieClear(OAUTH_RT_FALLBACK_COOKIE));
 
     const tokenPack = await exchangeAuthorizationCode(code, oauthRedirectUri(req));
     const profile = await fetchGoogleProfile(tokenPack.access_token);
@@ -66,7 +64,6 @@ export default async function handler(
     const msg = e instanceof Error ? e.message : "oauth_callback_failed";
     appendSetCookie(res, cookieClear(OAUTH_STATE_COOKIE));
     appendSetCookie(res, cookieClear(OAUTH_NEXT_COOKIE));
-    appendSetCookie(res, cookieClear(OAUTH_RT_FALLBACK_COOKIE));
     res.redirect(
       302,
       absoluteSitePath(req, `/login?oauth_error=${encodeURIComponent(msg)}`),

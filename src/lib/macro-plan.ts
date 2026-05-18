@@ -72,7 +72,7 @@ export function suggestMacroPlanFromProfileBody(
   return suggestMacroPlan({ ...rest, heightCm, weightKg });
 }
 
-export function suggestMacroPlan(input: MacroPlanInput): MacroPlanSuggestion {
+function suggestMacroPlan(input: MacroPlanInput): MacroPlanSuggestion {
   const age = Math.max(1, Math.round(input.age));
   const heightCm = Math.max(1, Math.round(input.heightCm));
   const weightKg = Math.max(1, Math.round(input.weightKg));

@@ -8,9 +8,6 @@ export const PROGRESS_PHOTO_OUT_HEIGHT = 1024;
 /** Target upper bound for encoded JPEG bytes (upload / Drive). */
 export const PROGRESS_PHOTO_MAX_BYTES = 512 * 1024;
 
-/** @deprecated Use fixed output dimensions; kept for any external references. */
-export const PROGRESS_PHOTO_MAX_EDGE_PX = 1024;
-
 function canvasToJpegBlob(
   canvas: HTMLCanvasElement,
   quality: number,
@@ -22,21 +19,6 @@ function canvasToJpegBlob(
       quality,
     );
   });
-}
-
-/** Pixel size of a raster blob after decode. */
-export async function getImageBitmapDimensions(
-  blob: Blob,
-): Promise<{ width: number; height: number }> {
-  const bitmap = await createImageBitmap(blob);
-  try {
-    const w = bitmap.width;
-    const h = bitmap.height;
-    if (w < 1 || h < 1) throw new Error("Invalid image dimensions");
-    return { width: w, height: h };
-  } finally {
-    bitmap.close();
-  }
 }
 
 /**

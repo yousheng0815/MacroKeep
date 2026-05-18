@@ -19,34 +19,6 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-export async function addProgressPhoto(record: ProgressPhotoRecord): Promise<void> {
-  const db = await openDb();
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE, "readwrite");
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error ?? new Error("transaction failed"));
-      tx.objectStore(STORE).put(record);
-    });
-  } finally {
-    db.close();
-  }
-}
-
-export async function deleteProgressPhoto(id: string): Promise<void> {
-  const db = await openDb();
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE, "readwrite");
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error ?? new Error("transaction failed"));
-      tx.objectStore(STORE).delete(id);
-    });
-  } finally {
-    db.close();
-  }
-}
-
 export async function listProgressPhotosDesc(): Promise<ProgressPhotoRecord[]> {
   const db = await openDb();
   try {

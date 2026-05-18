@@ -19,9 +19,3 @@ export function getMobileInstallPlatform(): MobileInstallPlatform | null {
   if (/Android/i.test(ua)) return "android";
   return null;
 }
-
-/** Mobile browser tab where the user has not added MacroKeep to the home screen yet. */
-export function shouldShowInstallGuide(): boolean {
-  if (isInstalledPwa()) return false;
-  return getMobileInstallPlatform() !== null;
-}

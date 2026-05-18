@@ -31,31 +31,6 @@ export function cookieSession(name: string, value: string, maxAgeSec: number): s
   return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly${secureFlag()}; SameSite=Lax; Max-Age=${maxAgeSec}`;
 }
 
-function useStrictCrossSiteSessionCookie(): boolean {
-  return Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
-}
-
-/** Session cookie: `SameSite=None; Secure` in production (cross-site redirect from Google). */
-export function cookiePersistedSession(
-  name: string,
-  value: string,
-  maxAgeSec: number,
-): string {
-  const enc = encodeURIComponent(value);
-  if (useStrictCrossSiteSessionCookie()) {
-    return `${name}=${enc}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${maxAgeSec}`;
-  }
-  return `${name}=${enc}; Path=/; HttpOnly${secureFlag()}; SameSite=Lax; Max-Age=${maxAgeSec}`;
-}
-
-/** Clear cookie set via {@link cookiePersistedSession}. */
-export function cookieClearPersistedSession(name: string): string {
-  if (useStrictCrossSiteSessionCookie()) {
-    return `${name}=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0`;
-  }
-  return `${name}=; Path=/; HttpOnly${secureFlag()}; SameSite=Lax; Max-Age=0`;
-}
-
 function normalizeCookieHeader(header: string | string[] | undefined): string {
   if (header == null) return "";
   if (Array.isArray(header)) return header.join("; ");

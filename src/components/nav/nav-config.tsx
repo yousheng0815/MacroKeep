@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { CirclePlus, History, LayoutDashboard, TrendingUp } from "lucide-react";
-import { NAV_TAB_PATHS, paths, type NavTabPath } from "@/lib/routes";
+import { paths, type NavTabPath } from "@/lib/routes";
 
 export type NavItem = {
   to: NavTabPath;
@@ -25,5 +25,3 @@ export const NAV_ITEMS: NavItem[] = [
   { to: paths.add.root, label: "Add Meal", icon: CirclePlus },
   { to: paths.progress.root, label: "Progress", icon: TrendingUp },
 ];
-
-export { NAV_TAB_PATHS };

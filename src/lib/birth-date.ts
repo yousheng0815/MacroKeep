@@ -26,16 +26,3 @@ export function ageYearsFromIsoBirthDate(iso: string, ref = new Date()): number 
   }
   return Math.max(1, age);
 }
-
-/** Build `YYYY-MM-DD` from Google People `Date` object parts; `null` if unusable. */
-export function isoBirthDateFromParts(
-  year: number,
-  month: number,
-  day: number,
-): string | null {
-  if (!Number.isFinite(year) || year < 1900 || year > 2100) return null;
-  const mo = Number.isFinite(month) && month >= 1 && month <= 12 ? month : 1;
-  const d = Number.isFinite(day) && day >= 1 && day <= 31 ? day : 1;
-  const iso = `${year}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-  return isValidIsoBirthDate(iso) ? iso : null;
-}

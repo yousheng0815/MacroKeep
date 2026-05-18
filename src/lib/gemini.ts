@@ -210,7 +210,7 @@ function stripCodeFence(text: string): string {
   return t;
 }
 
-export function parseAiMealJson(text: string): AiMealEstimate {
+function parseAiMealJson(text: string): AiMealEstimate {
   const cleaned = stripCodeFence(text);
   if (!cleaned) {
     throw new Error(

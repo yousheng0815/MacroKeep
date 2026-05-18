@@ -9,7 +9,6 @@ import {
 import {
   getMealPhotoFromCache,
   putMealPhotoInCache,
-  removeMealPhotoFromCache,
   sweepExpiredMealPhotosFromCache,
 } from "@/lib/meal-photo-cache-db";
 import {
@@ -18,9 +17,6 @@ import {
   rememberMealPhotoBlobUrl,
 } from "@/lib/meal-photo-cache-memory";
 import { useEffect, useState } from "react";
-
-export { clearMealPhotoCache } from "@/lib/meal-photo-cache-memory";
-export { removeMealPhotoFromCache };
 
 let sweepScheduled = false;
 

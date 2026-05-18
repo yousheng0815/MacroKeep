@@ -3,14 +3,12 @@ import {
   absoluteSitePath,
   GOOGLE_OAUTH_SCOPES,
   OAUTH_NEXT_COOKIE,
-  OAUTH_RT_FALLBACK_COOKIE,
   OAUTH_STATE_COOKIE,
   oauthRedirectUri,
   requireEnv,
 } from "../../server/oauth/config.js";
 import {
   appendSetCookie,
-  cookieClear,
   cookieSession,
   safeNextPath,
 } from "../../server/oauth/cookies.js";
@@ -41,15 +39,6 @@ export default function handler(req: VercelRequest, res: VercelResponse): void {
     const promptConsent =
       typeof req.query.prompt_consent === "string" &&
       req.query.prompt_consent === "1";
-
-    if (promptConsent) {
-      appendSetCookie(
-        res,
-        cookieSession(OAUTH_RT_FALLBACK_COOKIE, "1", 600),
-      );
-    } else {
-      appendSetCookie(res, cookieClear(OAUTH_RT_FALLBACK_COOKIE));
-    }
 
     appendSetCookie(res, cookieSession(OAUTH_STATE_COOKIE, state, 600));
     appendSetCookie(res, cookieSession(OAUTH_NEXT_COOKIE, next, 600));

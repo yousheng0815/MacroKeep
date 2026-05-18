@@ -2,7 +2,6 @@ import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { MealScanOverlays } from "@/components/scanner/MealScanOverlays";
 import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
-import { consumePendingScanPhoto } from "@/lib/pending-scan-photo";
 import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -13,28 +12,15 @@ import {
   MessageSquareText,
   PenLine,
 } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 
 export function AddMealPage() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const {
-    analyzing,
-    runAnalyzeSnapshot,
-    runAnalyzeFromFile,
-    ensureKeyForPhotoScan,
-  } = useMealScanFlow();
-
-  useEffect(() => {
-    const pending = consumePendingScanPhoto();
-    if (!pending) return;
-    const timer = window.setTimeout(() => {
-      void runAnalyzeSnapshot(pending.base64, pending.mimeType);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [runAnalyzeSnapshot]);
+  const { analyzing, runAnalyzeFromFile, ensureKeyForPhotoScan } =
+    useMealScanFlow();
 
   const onPick = useCallback(
     async (files: FileList | null, input?: HTMLInputElement | null) => {
