@@ -1,8 +1,4 @@
 import { AppToaster } from "@/components/AppToaster";
-import {
-  initGoogleAnalytics,
-  subscribeGoogleAnalyticsPageViews,
-} from "@/lib/google-analytics";
 import { sweepExpiredMealPhotosFromCache } from "@/lib/meal-photo-cache-db";
 import { isInstalledPwa } from "@/lib/pwa";
 import { router } from "@/router";
@@ -89,9 +85,6 @@ void (async () => {
   if (await unregisterServiceWorkers()) return;
 
   void sweepExpiredMealPhotosFromCache();
-
-  initGoogleAnalytics();
-  subscribeGoogleAnalyticsPageViews(router);
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
