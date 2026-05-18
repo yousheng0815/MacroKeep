@@ -8,6 +8,7 @@ export const paths = {
   add: {
     root: "/add",
     savedMeals: "/add/saved-meals",
+    savedMealNew: "/add/saved-meals/new",
     savedMealEdit: "/add/saved-meals/$savedMealId/edit",
     history: "/add/history",
     describe: "/add/describe",

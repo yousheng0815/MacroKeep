@@ -1,3 +1,11 @@
+import { ButtonSpinner } from "@/components/ButtonSpinner";
+import { Card } from "@/components/Card";
+import { MealPhotoThumb } from "@/components/MealPhotoThumb";
+import { PageHeader } from "@/components/PageHeader";
+import { useRecords } from "@/hooks/use-records";
+import { toast } from "@/lib/app-toast";
+import { paths } from "@/lib/routes";
+import type { SavedMealRecord } from "@/types/records";
 import {
   closestCenter,
   DndContext,
@@ -15,17 +23,15 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ButtonSpinner } from "@/components/ButtonSpinner";
-import { Card } from "@/components/Card";
-import { MealPhotoThumb } from "@/components/MealPhotoThumb";
-import { PageHeader } from "@/components/PageHeader";
-import { useRecords } from "@/hooks/use-records";
-import { paths } from "@/lib/routes";
-import type { SavedMealRecord } from "@/types/records";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "@/lib/app-toast";
+import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 function sameOrderAndIds(
   a: readonly SavedMealRecord[],
@@ -35,6 +41,61 @@ function sameOrderAndIds(
 }
 
 type ListMode = "browse" | "manage" | "reorder";
+
+/** Keeps the saved-meals card header the same height in browse vs edit/reorder. */
+const SAVED_MEALS_HEADER_ACTION_BTN =
+  "inline-flex min-h-9 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-semibold";
+
+const SAVED_MEAL_ROW_PHOTO_CLASS =
+  "size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800";
+
+type SavedMealRowContentProps = {
+  item: SavedMealRecord;
+  leading?: ReactNode;
+  titleAccessory?: ReactNode;
+  trailing?: ReactNode;
+  className?: string;
+};
+
+function SavedMealRowContent({
+  item,
+  leading,
+  titleAccessory,
+  trailing,
+  className = "",
+}: SavedMealRowContentProps) {
+  return (
+    <div
+      className={`flex w-full max-w-full min-w-0 items-center gap-3 overflow-hidden ${className}`}
+    >
+      {leading ? (
+        <div className="flex shrink-0 items-center justify-center">
+          {leading}
+        </div>
+      ) : null}
+      <MealPhotoThumb
+        photoFileId={item.photoFileId}
+        alt={item.food_name}
+        cachePolicy={{ tier: "saved" }}
+        className={SAVED_MEAL_ROW_PHOTO_CLASS}
+      />
+      <div className="w-0 min-w-0 flex-1 overflow-hidden">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="min-w-0 truncate font-medium text-white">
+            {item.food_name}
+          </div>
+          {titleAccessory}
+        </div>
+        <div className="mt-1 truncate text-sm text-mk-muted">
+          {Math.round(item.calories)} kcal
+        </div>
+      </div>
+      {trailing ? (
+        <div className="flex shrink-0 items-center gap-2">{trailing}</div>
+      ) : null}
+    </div>
+  );
+}
 
 type ManageRowProps = {
   item: SavedMealRecord;
@@ -51,41 +112,35 @@ function ManageRow({
 }: ManageRowProps) {
   return (
     <li className="min-w-0 overflow-hidden">
-      <div className="flex max-w-full min-w-0 items-center gap-2 py-3">
-        <MealPhotoThumb
-          photoFileId={item.photoFileId}
-          alt={item.food_name}
-          cachePolicy={{ tier: "saved" }}
-          className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
-        />
-        <div className="w-0 min-w-0 flex-1 overflow-hidden">
-          <div className="truncate font-medium text-white">{item.food_name}</div>
-          <div className="mt-1 truncate text-sm text-mk-muted">
-            {Math.round(item.calories)} kcal
-          </div>
-        </div>
-        <Link
-          to={paths.add.savedMealEdit}
-          params={{ savedMealId: item.id }}
-          aria-label={`Edit ${item.food_name}`}
-          className={`relative z-10 inline-flex shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900/50 p-2.5 text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-800 hover:text-white ${
-            editDisabled || committing
-              ? "pointer-events-none opacity-40"
-              : ""
-          }`}
-        >
-          <Pencil className="size-5" aria-hidden />
-        </Link>
-        <button
-          type="button"
-          disabled={committing}
-          aria-label={`Remove ${item.food_name} from list`}
-          onClick={() => onRemove(item.id)}
-          className="inline-flex shrink-0 items-center justify-center rounded-lg border border-red-900/60 bg-red-950/40 p-2.5 text-red-400 transition hover:bg-red-950/70 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Trash2 className="size-5" aria-hidden />
-        </button>
-      </div>
+      <SavedMealRowContent
+        item={item}
+        className="py-3"
+        trailing={
+          <>
+            <Link
+              to={paths.add.savedMealEdit}
+              params={{ savedMealId: item.id }}
+              aria-label={`Edit ${item.food_name}`}
+              className={`relative z-10 inline-flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900/50 p-2.5 text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-800 hover:text-white ${
+                editDisabled || committing
+                  ? "pointer-events-none opacity-40"
+                  : ""
+              }`}
+            >
+              <Pencil className="size-5" aria-hidden />
+            </Link>
+            <button
+              type="button"
+              disabled={committing}
+              aria-label={`Remove ${item.food_name} from list`}
+              onClick={() => onRemove(item.id)}
+              className="inline-flex items-center justify-center rounded-lg border border-red-900/60 bg-red-950/40 p-2.5 text-red-400 transition hover:bg-red-950/70 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 className="size-5" aria-hidden />
+            </button>
+          </>
+        }
+      />
     </li>
   );
 }
@@ -119,35 +174,27 @@ function SortableReorderRow({ item, committing }: SortableReorderRowProps) {
         isDragging ? "z-10 opacity-90 shadow-lg shadow-black/40" : ""
       }`}
     >
-      <div className="flex max-w-full min-w-0 items-center gap-2 py-3">
-        <button
-          type="button"
-          ref={setActivatorNodeRef}
-          {...listeners}
-          {...attributes}
-          aria-label={`Drag to reorder ${item.food_name}`}
-          disabled={committing}
-          className={`inline-flex shrink-0 items-center justify-center rounded-lg p-1.5 text-zinc-500 outline-none transition hover:bg-zinc-800 hover:text-zinc-300 focus-visible:ring-2 focus-visible:ring-sky-500/80 ${
-            committing
-              ? "cursor-not-allowed opacity-40"
-              : "cursor-grab touch-none active:cursor-grabbing"
-          }`}
-        >
-          <GripVertical className="size-5" aria-hidden />
-        </button>
-        <MealPhotoThumb
-          photoFileId={item.photoFileId}
-          alt={item.food_name}
-          cachePolicy={{ tier: "saved" }}
-          className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
-        />
-        <div className="w-0 min-w-0 flex-1 overflow-hidden">
-          <div className="truncate font-medium text-white">{item.food_name}</div>
-          <div className="mt-1 truncate text-sm text-mk-muted">
-            {Math.round(item.calories)} kcal
-          </div>
-        </div>
-      </div>
+      <SavedMealRowContent
+        item={item}
+        className="py-3"
+        leading={
+          <button
+            type="button"
+            ref={setActivatorNodeRef}
+            {...listeners}
+            {...attributes}
+            aria-label={`Drag to reorder ${item.food_name}`}
+            disabled={committing}
+            className={`inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-500 outline-none transition hover:bg-zinc-800 hover:text-zinc-300 focus-visible:ring-2 focus-visible:ring-sky-500/80 ${
+              committing
+                ? "cursor-not-allowed opacity-40"
+                : "cursor-grab touch-none active:cursor-grabbing"
+            }`}
+          >
+            <GripVertical className="size-5" aria-hidden />
+          </button>
+        }
+      />
     </li>
   );
 }
@@ -264,15 +311,11 @@ export function SavedMealsPage() {
     setDraft((cur) => (cur ? cur.filter((s) => s.id !== id) : cur));
   };
 
-  const list =
-    listMode !== "browse" && draft !== null ? draft : savedMeals;
+  const list = listMode !== "browse" && draft !== null ? draft : savedMeals;
 
   const inSession = listMode !== "browse";
 
-  const showSavedMealsActions =
-    !isSavedMealsLoading &&
-    !savedMealsError &&
-    (savedMeals.length > 0 || inSession);
+  const showSavedMealsActions = !isSavedMealsLoading && !savedMealsError;
 
   const canReorder = savedMeals.length >= 2;
 
@@ -286,7 +329,7 @@ export function SavedMealsPage() {
       />
 
       <Card>
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="mb-4 flex min-h-9 flex-wrap items-center justify-between gap-3">
           <h2 className="text-sm font-semibold text-white">Saved meals</h2>
           {showSavedMealsActions ? (
             inSession ? (
@@ -295,7 +338,7 @@ export function SavedMealsPage() {
                   type="button"
                   disabled={committing}
                   onClick={exitDiscard}
-                  className="rounded-lg px-3 py-1.5 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={`${SAVED_MEALS_HEADER_ACTION_BTN} text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   Cancel
                 </button>
@@ -305,7 +348,7 @@ export function SavedMealsPage() {
                   aria-busy={committing}
                   aria-label={committing ? "Saving" : undefined}
                   onClick={() => void exitDone()}
-                  className="inline-flex min-h-[2.25rem] items-center justify-center rounded-lg px-3 py-1.5 text-sm font-semibold text-sky-400 transition hover:bg-zinc-800 hover:text-sky-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={`${SAVED_MEALS_HEADER_ACTION_BTN} relative text-sky-400 transition hover:bg-zinc-800 hover:text-sky-300 disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   {committing ? (
                     <span className="relative inline-flex items-center justify-center">
@@ -329,7 +372,7 @@ export function SavedMealsPage() {
                 <button
                   type="button"
                   onClick={enterManage}
-                  className="rounded-lg px-3 py-1.5 text-sm font-semibold text-sky-400 transition hover:bg-zinc-800 hover:text-sky-300"
+                  className={`${SAVED_MEALS_HEADER_ACTION_BTN} text-sky-400 transition hover:bg-zinc-800 hover:text-sky-300`}
                 >
                   Edit
                 </button>
@@ -337,7 +380,7 @@ export function SavedMealsPage() {
                   <button
                     type="button"
                     onClick={enterReorder}
-                    className="rounded-lg px-3 py-1.5 text-sm font-semibold text-sky-400 transition hover:bg-zinc-800 hover:text-sky-300"
+                    className={`${SAVED_MEALS_HEADER_ACTION_BTN} text-sky-400 transition hover:bg-zinc-800 hover:text-sky-300`}
                   >
                     Reorder
                   </button>
@@ -355,13 +398,8 @@ export function SavedMealsPage() {
           </p>
         ) : savedMeals.length === 0 && !inSession ? (
           <p className="text-sm text-mk-muted">
-            No saved meals yet. Open a meal, then use &quot;Add to saved
-            meals&quot; on the meal details screen to build your quick-add list.
-          </p>
-        ) : list.length === 0 && listMode === "manage" ? (
-          <p className="text-sm text-mk-muted">
-            No meals in this list. Tap Done to clear your saved meals, Cancel to
-            undo edits, or add meals from a logged entry first.
+            No saved meals yet. Tap Edit to add one, or use &quot;Add to saved
+            meals&quot; on a logged meal&apos;s details screen.
           </p>
         ) : listMode === "reorder" && draft ? (
           <DndContext
@@ -385,17 +423,33 @@ export function SavedMealsPage() {
             </SortableContext>
           </DndContext>
         ) : listMode === "manage" && draft ? (
-          <ul className="divide-y divide-zinc-800">
-            {draft.map((item) => (
-              <ManageRow
-                key={item.id}
-                item={item}
-                committing={committing}
-                onRemove={removeFromDraft}
-                editDisabled={pendingId !== null}
-              />
-            ))}
-          </ul>
+          <div className="space-y-4">
+            {draft.length === 0 ? (
+              <p className="text-sm text-mk-muted">
+                No saved meals yet. Use the button below to create your first
+                one.
+              </p>
+            ) : (
+              <ul className="divide-y divide-zinc-800">
+                {draft.map((item) => (
+                  <ManageRow
+                    key={item.id}
+                    item={item}
+                    committing={committing}
+                    onRemove={removeFromDraft}
+                    editDisabled={pendingId !== null}
+                  />
+                ))}
+              </ul>
+            )}
+            <Link
+              to={paths.add.savedMealNew}
+              className="btn-mobile-block-lg flex items-center justify-center gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900"
+            >
+              <Plus className="size-4 text-emerald-400" aria-hidden />
+              Add a saved meal
+            </Link>
+          </div>
         ) : (
           <ul className="divide-y divide-zinc-800">
             {list.map((item) => (
@@ -405,29 +459,17 @@ export function SavedMealsPage() {
                   disabled={pendingId !== null}
                   aria-busy={pendingId === item.id}
                   onClick={() => void onPickSaved(item)}
-                  className="flex w-full max-w-full min-w-0 items-center gap-3 py-3 overflow-hidden text-left transition hover:bg-zinc-900/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full p-0 text-left transition hover:bg-zinc-900/40 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <MealPhotoThumb
-                    photoFileId={item.photoFileId}
-                    alt={item.food_name}
-                    cachePolicy={{ tier: "saved" }}
-                    className="size-14 shrink-0 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800"
-                  />
-                  <div className="w-0 flex-1 overflow-hidden">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="block max-w-full truncate font-medium text-white">
-                          {item.food_name}
-                        </div>
-                      </div>
-                      {pendingId === item.id ? (
+                  <SavedMealRowContent
+                    item={item}
+                    className="py-3"
+                    titleAccessory={
+                      pendingId === item.id ? (
                         <ButtonSpinner className="shrink-0 text-zinc-200" />
-                      ) : null}
-                    </div>
-                    <div className="mt-1 truncate text-sm text-mk-muted">
-                      {Math.round(item.calories)} kcal
-                    </div>
-                  </div>
+                      ) : null
+                    }
+                  />
                 </button>
               </li>
             ))}

@@ -310,10 +310,7 @@ export function MealDetailPage() {
                 setSaveToSavedPending(true);
                 try {
                   await addSavedMealFromMeal(meal);
-                  toast.success("Added to saved meals", {
-                    description:
-                      "Use Add → Add from saved meals to log it again anytime.",
-                  });
+                  toast.success("Added to saved meals");
                 } catch (err) {
                   toast.error(
                     err instanceof Error

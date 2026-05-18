@@ -581,6 +581,72 @@ export function useRecords() {
     [getCurrentRecords, replaceMutation, qc],
   );
 
+  const addSavedMeal = useCallback(
+    async (
+      snapshot: Pick<
+        SavedMealRecord,
+        "food_name" | "calories" | "protein" | "fats" | "carbs"
+      >,
+      options?: {
+        id?: string;
+        photo?: { base64: string; mimeType: string };
+        preparedPhoto?: PreparedMealPhoto;
+        /** Existing App Data photo id (e.g. copied from a logged meal). */
+        photoFileId?: string;
+      },
+    ): Promise<string> => {
+      if (!canSyncToDriveAppData()) {
+        throw new Error("Not signed in or Drive scope unavailable");
+      }
+      const token = await ensureGoogleAccessToken();
+      if (!token) throw new Error("Missing access token");
+      const uid = getGoogleUserId() ?? "";
+      const foodName = snapshot.food_name.trim();
+      if (!foodName) throw new Error("Enter a food name.");
+
+      const newId = options?.id ?? crypto.randomUUID?.() ?? String(Date.now());
+      let photoFileId = options?.photoFileId;
+
+      if (options?.preparedPhoto || options?.photo) {
+        const prepared = options.preparedPhoto
+          ? options.preparedPhoto
+          : await prepareMealPhotoForUpload(
+              options.photo!.base64,
+              options.photo!.mimeType,
+            );
+        photoFileId = await uploadMealPhotoToAppData(
+          token,
+          newId,
+          prepared.base64,
+          prepared.mimeType,
+        );
+      }
+
+      const row: SavedMealRecord = {
+        id: newId,
+        food_name: foodName,
+        calories: snapshot.calories,
+        protein: snapshot.protein,
+        fats: snapshot.fats,
+        carbs: snapshot.carbs,
+        ...(photoFileId ? { photoFileId } : {}),
+      };
+
+      const prev = await pullSavedMealsFromDrive(token);
+      if (savedMealDuplicatesExisting(row, prev)) {
+        throw new Error(
+          "A saved meal with the same name and macros is already on your list.",
+        );
+      }
+
+      const next = [row, ...prev];
+      await upsertSavedMealsToDrive(token, next);
+      qc.setQueryData<SavedMealRecord[]>(["saved-meals", uid], next);
+      return newId;
+    },
+    [qc],
+  );
+
   const addSavedMealFromMeal = useCallback(
     async (meal: MealRecord) => {
       if (!canSyncToDriveAppData()) {
@@ -588,7 +654,6 @@ export function useRecords() {
       }
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error("Missing access token");
-      const uid = getGoogleUserId() ?? "";
       const prev = await pullSavedMealsFromDrive(token);
       if (isMealAlreadySavedAsTemplate(meal, prev)) {
         throw new Error("This meal is already in your saved meals.");
@@ -598,20 +663,18 @@ export function useRecords() {
       if (photoFileId) {
         photoFileId = await copyAppDataPhotoForSavedMeal(token, photoFileId, newId);
       }
-      const row: SavedMealRecord = {
-        id: newId,
-        food_name: meal.food_name,
-        calories: meal.calories,
-        protein: meal.protein,
-        fats: meal.fats,
-        carbs: meal.carbs,
-        ...(photoFileId ? { photoFileId } : {}),
-      };
-      const next = [row, ...prev];
-      await upsertSavedMealsToDrive(token, next);
-      qc.setQueryData<SavedMealRecord[]>(["saved-meals", uid], next);
+      await addSavedMeal(
+        {
+          food_name: meal.food_name,
+          calories: meal.calories,
+          protein: meal.protein,
+          fats: meal.fats,
+          carbs: meal.carbs,
+        },
+        { id: newId, photoFileId },
+      );
     },
-    [qc],
+    [addSavedMeal],
   );
 
   const updateSavedMeal = useCallback(
@@ -943,6 +1006,7 @@ export function useRecords() {
     geminiKey,
     updateGeminiKey,
     addMeal,
+    addSavedMeal,
     addSavedMealFromMeal,
     updateSavedMeal,
     commitSavedMeals,
