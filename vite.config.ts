@@ -10,10 +10,17 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const apiProxyTarget = env.VITE_DEV_API_PROXY_TARGET?.trim();
 
+  if (mode === "development" && apiProxyTarget) {
+    console.info(
+      `[vite] Proxying /api → ${apiProxyTarget} (use npm run dev:pages and open http://localhost:8788 instead)`,
+    );
+  }
+
   return {
     plugins: [
       react(),
       VitePWA({
+        disable: mode === "development",
         injectRegister: false,
         registerType: "autoUpdate",
         includeAssets: [
@@ -55,6 +62,9 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     server: {
+      watch: {
+        ignored: ["**/.wrangler/**", "**/dist/**"],
+      },
       allowedHosts: [],
       ...(apiProxyTarget
         ? {

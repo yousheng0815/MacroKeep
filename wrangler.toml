@@ -1,0 +1,4 @@
+name = "macrokeep"
+compatibility_date = "2024-11-11"
+# Output dir is passed explicitly: `wrangler pages deploy dist` / `wrangler pages dev dist`
+# (omitted here so `wrangler pages dev -- npm run dev` can proxy Vite without a static dir)

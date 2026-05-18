@@ -1,0 +1,4 @@
+GOOGLE_OAUTH_CLIENT_ID=
+GOOGLE_OAUTH_CLIENT_SECRET=
+# Must match the URL you open in the browser (wrangler port, not Vite’s 5173).
+MK_SITE_ORIGIN=http://localhost:8788

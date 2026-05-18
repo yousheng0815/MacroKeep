@@ -1,4 +1,4 @@
-import { requireEnv } from "./config.js";
+import { requireBinding, type OAuthBindings } from "./bindings.js";
 
 export type TokenSuccess = {
   access_token: string;
@@ -31,11 +31,12 @@ async function postToken(body: Record<string, string>): Promise<unknown> {
 }
 
 export async function exchangeAuthorizationCode(
+  env: OAuthBindings,
   code: string,
   redirectUri: string,
 ): Promise<TokenSuccessWithRefresh> {
-  const client_id = requireEnv("GOOGLE_OAUTH_CLIENT_ID");
-  const client_secret = requireEnv("GOOGLE_OAUTH_CLIENT_SECRET");
+  const client_id = requireBinding(env, "GOOGLE_OAUTH_CLIENT_ID");
+  const client_secret = requireBinding(env, "GOOGLE_OAUTH_CLIENT_SECRET");
 
   const json = (await postToken({
     grant_type: "authorization_code",
@@ -67,10 +68,11 @@ export async function exchangeAuthorizationCode(
 }
 
 export async function refreshAccessToken(
+  env: OAuthBindings,
   refreshToken: string,
 ): Promise<TokenSuccess> {
-  const client_id = requireEnv("GOOGLE_OAUTH_CLIENT_ID");
-  const client_secret = requireEnv("GOOGLE_OAUTH_CLIENT_SECRET");
+  const client_id = requireBinding(env, "GOOGLE_OAUTH_CLIENT_ID");
+  const client_secret = requireBinding(env, "GOOGLE_OAUTH_CLIENT_SECRET");
 
   const json = (await postToken({
     grant_type: "refresh_token",

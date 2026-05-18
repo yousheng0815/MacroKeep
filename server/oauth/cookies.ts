@@ -1,49 +1,20 @@
-import type { VercelResponse } from "@vercel/node";
-
-function secureFlag(): string {
-  return process.env.VERCEL || process.env.NODE_ENV === "production"
-    ? "; Secure"
-    : "";
+export function cookieClear(name: string, secure: boolean): string {
+  return `${name}=; Path=/; HttpOnly${secure ? "; Secure" : ""}; SameSite=Lax; Max-Age=0`;
 }
 
-export function appendSetCookie(res: VercelResponse, cookie: string): void {
-  if (typeof res.appendHeader === "function") {
-    res.appendHeader("Set-Cookie", cookie);
-    return;
-  }
-  const prev = res.getHeader("Set-Cookie");
-  if (!prev) {
-    res.setHeader("Set-Cookie", cookie);
-    return;
-  }
-  if (Array.isArray(prev)) {
-    res.setHeader("Set-Cookie", [...prev, cookie]);
-    return;
-  }
-  res.setHeader("Set-Cookie", [prev as string, cookie]);
+export function cookieSession(
+  name: string,
+  value: string,
+  maxAgeSec: number,
+  secure: boolean,
+): string {
+  return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly${secure ? "; Secure" : ""}; SameSite=Lax; Max-Age=${maxAgeSec}`;
 }
 
-export function cookieClear(name: string): string {
-  return `${name}=; Path=/; HttpOnly${secureFlag()}; SameSite=Lax; Max-Age=0`;
-}
-
-export function cookieSession(name: string, value: string, maxAgeSec: number): string {
-  return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly${secureFlag()}; SameSite=Lax; Max-Age=${maxAgeSec}`;
-}
-
-function normalizeCookieHeader(header: string | string[] | undefined): string {
-  if (header == null) return "";
-  if (Array.isArray(header)) return header.join("; ");
-  return header;
-}
-
-export function parseCookies(
-  header: string | string[] | undefined,
-): Record<string, string> {
-  const raw = normalizeCookieHeader(header);
-  if (!raw) return {};
+export function parseCookies(header: string | null | undefined): Record<string, string> {
+  if (!header) return {};
   const out: Record<string, string> = {};
-  for (const part of raw.split(";")) {
+  for (const part of header.split(";")) {
     const idx = part.indexOf("=");
     if (idx === -1) continue;
     const k = part.slice(0, idx).trim();
@@ -59,7 +30,7 @@ export function parseCookies(
   return out;
 }
 
-export function safeNextPath(raw: string | undefined): string {
+export function safeNextPath(raw: string | null | undefined): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
   return raw;
 }

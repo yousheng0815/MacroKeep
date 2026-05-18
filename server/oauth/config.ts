@@ -1,4 +1,4 @@
-import type { IncomingHttpHeaders } from "node:http";
+import type { OAuthBindings } from "./bindings.js";
 
 /** Same scopes as the SPA Drive client — see {@link src/lib/gapi.ts} `DRIVE_APPDATA_SCOPE` etc. */
 export const GOOGLE_OAUTH_SCOPES = [
@@ -11,14 +11,13 @@ export const GOOGLE_OAUTH_SCOPES = [
 export const OAUTH_STATE_COOKIE = "mk_oauth_state";
 export const OAUTH_NEXT_COOKIE = "mk_oauth_next";
 
-function forwardedFirst(v: string | string[] | undefined): string | undefined {
+function forwardedFirst(v: string | null): string | undefined {
   if (!v) return undefined;
-  const s = Array.isArray(v) ? v[0] : v;
-  return s.split(",")[0]?.trim();
+  return v.split(",")[0]?.trim();
 }
 
 function inferScheme(protoHeader: string | undefined, host: string): "http" | "https" {
-  const p = forwardedFirst(protoHeader)?.toLowerCase();
+  const p = protoHeader?.toLowerCase();
   if (p === "http" || p === "https") return p;
   const h = host.toLowerCase();
   if (h === "localhost" || h.startsWith("localhost:")) return "http";
@@ -26,47 +25,50 @@ function inferScheme(protoHeader: string | undefined, host: string): "http" | "h
   return "https";
 }
 
-/** OAuth redirects: `MK_SITE_ORIGIN` if set, else `Host`/`x-forwarded-*` from the request. */
-export function siteOriginFromRequestHeaders(headers: IncomingHttpHeaders): string | null {
+function siteOriginFromHeaders(headers: Headers): string | null {
   const host =
-    forwardedFirst(headers["x-forwarded-host"]) ??
-    forwardedFirst(headers[":authority"]) ??
-    forwardedFirst(headers.host);
+    forwardedFirst(headers.get("x-forwarded-host")) ??
+    forwardedFirst(headers.get("host"));
   if (!host) return null;
-  const scheme = inferScheme(forwardedFirst(headers["x-forwarded-proto"]), host);
+  const scheme = inferScheme(
+    forwardedFirst(headers.get("x-forwarded-proto")),
+    host,
+  );
   return `${scheme}://${host}`;
 }
 
-export type SiteOriginRequest = { headers: IncomingHttpHeaders };
-
-export function getSiteOrigin(req?: SiteOriginRequest): string {
-  const explicit = process.env.MK_SITE_ORIGIN?.trim().replace(/\/$/, "");
+export function getSiteOrigin(
+  env: OAuthBindings,
+  request?: Request,
+): string {
+  const explicit = env.MK_SITE_ORIGIN?.trim().replace(/\/$/, "");
   if (explicit) return explicit;
-  if (req) {
-    const fromReq = siteOriginFromRequestHeaders(req.headers);
+  if (request) {
+    const fromReq = siteOriginFromHeaders(request.headers);
     if (fromReq) return fromReq;
   }
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) return `https://${vercel}`;
-  return "http://localhost:3000";
+  return "http://localhost:8788";
 }
 
-export function oauthRedirectUri(req?: SiteOriginRequest): string {
-  return `${getSiteOrigin(req)}/api/auth/google/callback`;
+export function oauthRedirectUri(
+  env: OAuthBindings,
+  request?: Request,
+): string {
+  return `${getSiteOrigin(env, request)}/api/auth/google/callback`;
 }
 
 export function absoluteSitePath(
-  req: SiteOriginRequest,
+  env: OAuthBindings,
+  request: Request,
   pathnameAndQuery: string,
 ): string {
   const path = pathnameAndQuery.startsWith("/")
     ? pathnameAndQuery
     : `/${pathnameAndQuery}`;
-  return `${getSiteOrigin(req)}${path}`;
+  return `${getSiteOrigin(env, request)}${path}`;
 }
 
-export function requireEnv(name: string): string {
-  const v = process.env[name]?.trim();
-  if (!v) throw new Error(`Missing required env: ${name}`);
-  return v;
+export function isSecureRequest(request: Request): boolean {
+  const url = new URL(request.url);
+  return url.protocol === "https:";
 }
