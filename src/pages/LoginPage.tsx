@@ -11,7 +11,10 @@ import {
   ButtonSpinner,
 } from "@/components/ButtonSpinner";
 import { useGoogleSession } from "@/contexts/google-session";
-import { startGoogleOAuthRedirect } from "@/lib/gapi";
+import {
+  shouldPromptConsentForSignIn,
+  startGoogleOAuthRedirect,
+} from "@/lib/gapi";
 import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -132,7 +135,11 @@ export function LoginPage() {
           aria-busy={signInPending}
           onClick={() => {
             setSignInPending(true);
-            signIn(needsConsent ? { promptConsent: true } : undefined);
+            signIn(
+              needsConsent || shouldPromptConsentForSignIn()
+                ? { promptConsent: true }
+                : undefined,
+            );
           }}
           className="relative btn-mobile-block-lg gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
         >

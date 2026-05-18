@@ -51,6 +51,10 @@ export default async function handler(
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "refresh_failed";
-    res.status(401).json({ error: msg });
+    const lower = msg.toLowerCase();
+    const invalid_grant =
+      lower.includes("invalid_grant") ||
+      lower.includes("token has been expired or revoked");
+    res.status(401).json({ error: msg, invalid_grant });
   }
 }

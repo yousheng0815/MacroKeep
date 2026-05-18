@@ -61,6 +61,11 @@ body{margin:0;min-height:100dvh;display:flex;flex-direction:column;align-items:c
       email: d.email || undefined
     }));
     var next = typeof d.next === "string" && d.next.indexOf("/") === 0 ? d.next : "/";
+    if (!refresh) {
+      var retryQs = "oauth_retry=1&prompt_consent=1&next=" + encodeURIComponent(next);
+      window.location.replace("/login?" + retryQs);
+      return;
+    }
     window.location.replace(next);
   } catch (e) {
     window.location.replace("/login?oauth_error=" + encodeURIComponent("oauth_complete_script"));

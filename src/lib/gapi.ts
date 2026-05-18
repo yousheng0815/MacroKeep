@@ -26,8 +26,22 @@ let cachedUserEmail: string | null = null;
 let cachedRefreshToken: string | null = null;
 
 const EXPIRY_SKEW_MS = 60_000;
+/** Refresh access token this long before the in-memory expiry window ends. */
+const PROACTIVE_REFRESH_MS = 5 * 60_000;
 
 let brokerAccessTokenRefresh: Promise<string | null> | null = null;
+
+function mergeScopeStrings(existing: string, incoming: string): string {
+  const parts = new Set(
+    `${existing} ${incoming}`.split(/\s+/).filter(Boolean),
+  );
+  return [...parts].join(" ");
+}
+
+function isInvalidGrantError(message: string): boolean {
+  const m = message.toLowerCase();
+  return m.includes("invalid_grant") || m.includes("token has been expired or revoked");
+}
 
 function notifyOAuthChanged(): void {
   if (typeof window === "undefined") return;
@@ -69,7 +83,9 @@ async function hydrateScopesFromToken(token: string): Promise<void> {
     if (!res.ok) return;
     const data = (await res.json()) as { scope?: string };
     if (typeof data.scope === "string" && data.scope.length > 0) {
-      lastGrantedScopeRaw = data.scope;
+      lastGrantedScopeRaw = lastGrantedScopeRaw
+        ? mergeScopeStrings(lastGrantedScopeRaw, data.scope)
+        : data.scope;
     }
   } catch {
     /* ignore */
@@ -127,6 +143,23 @@ export function hasValidGoogleAccessToken(): boolean {
   return !!accessToken && Date.now() < accessValidUntilMs;
 }
 
+export function hasPersistedRefreshToken(): boolean {
+  return !!(cachedRefreshToken ?? loadPersistedOAuth()?.refreshToken);
+}
+
+/** Use `prompt=consent` when we need Google to issue a refresh token. */
+export function shouldPromptConsentForSignIn(): boolean {
+  return !hasPersistedRefreshToken();
+}
+
+/** Refresh soon if the access token expires within `withinMs` (default: proactive window). */
+export function accessTokenExpiresWithinMs(
+  withinMs: number = PROACTIVE_REFRESH_MS,
+): boolean {
+  if (!accessToken || accessValidUntilMs <= 0) return false;
+  return accessValidUntilMs - Date.now() < withinMs;
+}
+
 /** Signed in for UX: valid token or remembered Google account from storage. */
 export function hasGoogleSession(): boolean {
   return (
@@ -166,7 +199,16 @@ async function refreshAccessTokenFromServer(
       cache: "no-store",
     });
     if (!res.ok) {
-      if (res.status === 401) {
+      let revokeRefresh = false;
+      try {
+        const err = (await res.json()) as { error?: string; invalid_grant?: boolean };
+        const msg = typeof err.error === "string" ? err.error : "";
+        revokeRefresh =
+          err.invalid_grant === true || (msg.length > 0 && isInvalidGrantError(msg));
+      } catch {
+        /* keep refresh token on unknown 401 (e.g. server misconfig) */
+      }
+      if (revokeRefresh) {
         cachedRefreshToken = null;
       }
       accessToken = null;
@@ -185,7 +227,11 @@ async function refreshAccessTokenFromServer(
       hydrateUserFromGoogle(data.access_token),
       data.scope ? Promise.resolve() : hydrateScopesFromToken(data.access_token),
     ]);
-    if (data.scope) lastGrantedScopeRaw = data.scope;
+    if (data.scope) {
+      lastGrantedScopeRaw = lastGrantedScopeRaw
+        ? mergeScopeStrings(lastGrantedScopeRaw, data.scope)
+        : data.scope;
+    }
     persistOAuthSnapshot();
     notifyOAuthChanged();
     return true;
@@ -279,6 +325,19 @@ export async function ensureGoogleAccessToken(): Promise<string | null> {
     });
   }
   return brokerAccessTokenRefresh;
+}
+
+/** Keeps the access token fresh; safe to call periodically while signed in. */
+export async function maintainGoogleAccessToken(): Promise<void> {
+  if (hasValidGoogleAccessToken()) {
+    if (accessTokenExpiresWithinMs()) {
+      await ensureGoogleAccessToken();
+    }
+    return;
+  }
+  if (hasPersistedRefreshToken()) {
+    await ensureGoogleAccessToken();
+  }
 }
 
 /** JSON `fetch` to `/api/auth/google` then redirect to Google (avoids navigating to `/api/…` as a document). */

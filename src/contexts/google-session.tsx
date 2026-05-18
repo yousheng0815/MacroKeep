@@ -1,14 +1,15 @@
 import {
   ensureGoogleAccessToken,
-  getAccessToken,
   hasDriveAppDataScope as readHasDriveAppDataScope,
   hasGoogleSession,
   hasValidGoogleAccessToken,
+  maintainGoogleAccessToken,
   restoreOAuthSessionFromStorage,
   signOutGoogle,
   startGoogleOAuthRedirect,
   type GoogleSignInOptions,
 } from "@/lib/gapi";
+import { OAUTH_STORAGE_KEY } from "@/lib/oauth-session-storage";
 import { useNavigate } from "@tanstack/react-router";
 import {
   createContext,
@@ -95,11 +96,25 @@ export function GoogleSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!ready) return;
-    const id = window.setInterval(() => {
-      getAccessToken();
-    }, 60_000);
+    const tick = () => {
+      void maintainGoogleAccessToken();
+    };
+    tick();
+    const id = window.setInterval(tick, 60_000);
     return () => window.clearInterval(id);
   }, [ready]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== OAUTH_STORAGE_KEY) return;
+      void restoreOAuthSessionFromStorage().then(() => {
+        refresh();
+      });
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [ready, refresh]);
 
   useEffect(() => {
     if (!ready || !hasGoogleSession()) return;

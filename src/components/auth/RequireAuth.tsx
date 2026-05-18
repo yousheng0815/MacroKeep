@@ -10,6 +10,7 @@ import {
   ButtonSpinner,
 } from "@/components/ButtonSpinner";
 import { useGoogleSession } from "@/contexts/google-session";
+import { shouldPromptConsentForSignIn } from "@/lib/gapi";
 import { useRecords } from "@/hooks/use-records";
 import { getGoogleUserEmail, getGoogleUserId } from "@/lib/gapi";
 import { Navigate, useRouterState } from "@tanstack/react-router";
@@ -168,7 +169,11 @@ export function RequireAuth({ children }: { children: ReactNode }) {
             aria-busy={signInPending}
             onClick={() => {
               setSignInPending(true);
-              signIn(needsConsent ? { promptConsent: true } : undefined);
+              signIn(
+                needsConsent || shouldPromptConsentForSignIn()
+                  ? { promptConsent: true }
+                  : undefined,
+              );
             }}
             className="relative btn-mobile-block-lg gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
