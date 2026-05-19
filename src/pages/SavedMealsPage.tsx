@@ -77,6 +77,7 @@ function SavedMealRowContent({
       <MealPhotoThumb
         photoFileId={item.photoFileId}
         alt={item.food_name}
+        enlargeOnClick={false}
         cachePolicy={{ tier: "saved" }}
         className={SAVED_MEAL_ROW_PHOTO_CLASS}
       />

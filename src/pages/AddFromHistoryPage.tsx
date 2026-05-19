@@ -186,6 +186,7 @@ export function AddFromHistoryPage() {
                   <MealPhotoThumb
                     photoFileId={item.sourcePhotoFileId}
                     alt={item.food_name}
+                    enlargeOnClick={false}
                     cachePolicy={{
                       tier: "log",
                       recordedAt: item.sourceRecordedAt,

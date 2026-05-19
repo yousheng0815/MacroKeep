@@ -1,8 +1,9 @@
 import { MealPhotoViewerScreen } from "@/components/MealPhotoViewerScreen";
 import { useDrivePhotoUrl } from "@/hooks/use-drive-photo-url";
+import { useHistoryOverlay } from "@/hooks/use-history-overlay";
 import type { MealPhotoCachePolicy } from "@/lib/meal-photo-cache";
 import { ImagePlus } from "lucide-react";
-import { useState, type MouseEvent } from "react";
+import { useCallback, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 type MealPhotoThumbProps = {
@@ -29,6 +30,8 @@ export function MealPhotoThumb({
   const { t } = useTranslation();
   const src = useDrivePhotoUrl(photoFileId, cachePolicy);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const closeViewer = useCallback(() => setViewerOpen(false), []);
+  const dismissViewer = useHistoryOverlay(viewerOpen, closeViewer);
 
   const canEnlarge = enlargeOnClick && !!photoFileId && !!src;
 
@@ -88,7 +91,7 @@ export function MealPhotoThumb({
           photoFileId={photoFileId}
           alt={alt}
           cachePolicy={cachePolicy}
-          onDismiss={() => setViewerOpen(false)}
+          onDismiss={dismissViewer}
         />
       ) : null}
     </>
