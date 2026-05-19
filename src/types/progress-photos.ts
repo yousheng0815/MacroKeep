@@ -1,4 +1,4 @@
-/** Metadata row in Drive manifest `progress-photos.json` (image stored as a separate file). */
+/** Metadata row in Drive manifest `progress-photos.json` (image in App Data `progress-photos/`). */
 export type ProgressPhotoDriveMeta = {
   id: string;
   driveFileId: string;

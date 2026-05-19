@@ -8,7 +8,7 @@ export type MealRecord = {
   fats: number;
   carbs: number;
   recordedAt: string;
-  /** Google Drive file id (App Data folder) for the meal photo. */
+  /** Google Drive file id (App Data `meal-photos/`) for the meal photo. */
   photoFileId?: string;
 };
 

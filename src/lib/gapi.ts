@@ -1,5 +1,6 @@
 /** Client-stored refresh tokens; access tokens via `/api/google/access-token`. */
 
+import { clearDriveAppDataFolderCache } from "@/lib/google-drive";
 import { clearMealPhotoCache } from "@/lib/meal-photo-cache-memory";
 import {
   clearPersistedOAuth,
@@ -283,6 +284,7 @@ export type GoogleSignInOptions = {
 
 export async function signOutGoogle(): Promise<void> {
   await clearMealPhotoCache();
+  clearDriveAppDataFolderCache();
   clearSession();
 }
 

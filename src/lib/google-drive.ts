@@ -26,16 +26,29 @@ import type {
 /** Drive App Data JSON: profile, macro targets, optional Gemini BYOK key (no meal rows). */
 export const CORE_DRIVE_FILE = "core.json";
 
-/** Index of body progress shots; JPEG files named `progress-photo-<id>.jpg` in the same folder. */
+/** Index of body progress shots; JPEG files in {@link PROGRESS_PHOTOS_IMAGES_FOLDER_NAME}. */
 export const PROGRESS_PHOTOS_MANIFEST_FILE = "progress-photos.json";
 
 /** Quick-add meal snapshots (not tied to `meals-YYYY-MM.json` rows). */
 export const SAVED_MEALS_DRIVE_FILE = "saved-meals.json";
 
+/** App Data subfolder for meal snapshot images (`meal-<id>.<ext>`). */
+export const MEAL_PHOTOS_FOLDER_NAME = "meal-photos";
+
+/** App Data subfolder for progress shot JPEGs (`progress-photo-<id>.jpg`). */
+export const PROGRESS_PHOTOS_IMAGES_FOLDER_NAME = "progress-photos";
+
 const DRIVE_FILES = "https://www.googleapis.com/drive/v3/files";
 const UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3/files";
 
+const GOOGLE_FOLDER_MIME = "application/vnd.google-apps.folder";
 const MEALS_SHARD_RE = /^meals-(\d{4}-\d{2})\.json$/;
+const LEGACY_MEAL_PHOTO_RE = /^meal-.+\.(jpg|jpeg|png|webp|gif)$/i;
+const LEGACY_PROGRESS_PHOTO_RE = /^progress-photo-.+\.jpg$/i;
+
+/** Per-session cache of App Data subfolder ids (cleared on sign-out). */
+const appDataSubfolderIdCache = new Map<string, string>();
+let legacyFlatPhotoMigration: Promise<void> | null = null;
 
 export function monthKeyFromRecordedAt(recordedAtIso: string): string {
   const d = new Date(recordedAtIso);
@@ -107,6 +120,234 @@ function authHeaders(token: string): HeadersInit {
   return {
     Authorization: `Bearer ${token}`,
   };
+}
+
+function isGoogleFolderMime(mimeType: string | undefined): boolean {
+  return (mimeType ?? "").toLowerCase() === GOOGLE_FOLDER_MIME;
+}
+
+/** True when the App Data list item is a Drive folder (e.g. `meal-photos`). */
+export function isAppDataDriveFolder(f: AppDataDriveFileListItem): boolean {
+  return isGoogleFolderMime(f.mimeType);
+}
+
+function escapeDriveQueryString(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
+/** Clears cached App Data subfolder ids (call on Google sign-out). */
+export function clearDriveAppDataFolderCache(): void {
+  appDataSubfolderIdCache.clear();
+  legacyFlatPhotoMigration = null;
+}
+
+async function findAppDataSubfolderId(
+  token: string,
+  folderName: string,
+): Promise<string | null> {
+  const q = encodeURIComponent(
+    `name='${escapeDriveQueryString(folderName)}' and mimeType='${GOOGLE_FOLDER_MIME}' and 'appDataFolder' in parents and trashed=false`,
+  );
+  const url = `${DRIVE_FILES}?spaces=appDataFolder&q=${q}&fields=files(id,name)`;
+  const res = await fetch(url, { headers: authHeaders(token) });
+  if (!res.ok) throw new Error(`Drive list folder failed: ${res.status}`);
+  const data = (await res.json()) as { files?: { id: string }[] };
+  return data.files?.[0]?.id ?? null;
+}
+
+async function createAppDataSubfolder(
+  token: string,
+  folderName: string,
+): Promise<string> {
+  const res = await fetch(DRIVE_FILES, {
+    method: "POST",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: folderName,
+      mimeType: GOOGLE_FOLDER_MIME,
+      parents: ["appDataFolder"],
+    }),
+  });
+  if (!res.ok) throw new Error(`Drive create folder failed: ${res.status}`);
+  const data = (await res.json()) as { id?: string };
+  if (!data.id) throw new Error("Drive create folder missing id");
+  return data.id;
+}
+
+async function ensureAppDataSubfolder(
+  token: string,
+  folderName: string,
+): Promise<string> {
+  const cached = appDataSubfolderIdCache.get(folderName);
+  if (cached) return cached;
+  let id = await findAppDataSubfolderId(token, folderName);
+  if (!id) id = await createAppDataSubfolder(token, folderName);
+  appDataSubfolderIdCache.set(folderName, id);
+  return id;
+}
+
+async function moveAppDataFileToParent(
+  token: string,
+  fileId: string,
+  removeParentId: string,
+  addParentId: string,
+): Promise<void> {
+  const params = new URLSearchParams({
+    addParents: addParentId,
+    removeParents: removeParentId,
+  });
+  const url = `${DRIVE_FILES}/${encodeURIComponent(fileId)}?${params.toString()}`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error(`Drive move failed: ${res.status}`);
+}
+
+async function listDirectAppDataChildren(
+  token: string,
+  parentId: string,
+  signal?: AbortSignal,
+): Promise<AppDataDriveFileListItem[]> {
+  const out: AppDataDriveFileListItem[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const params = new URLSearchParams({
+      spaces: "appDataFolder",
+      q: `'${parentId}' in parents and trashed=false`,
+      fields: "nextPageToken,files(id,name,mimeType,size,modifiedTime)",
+      pageSize: "100",
+    });
+    if (pageToken) params.set("pageToken", pageToken);
+
+    const url = `${DRIVE_FILES}?${params.toString()}`;
+    const res = await fetch(url, { headers: authHeaders(token), signal });
+    if (!res.ok) throw new Error(`Drive list app data children failed: ${res.status}`);
+    const data = (await res.json()) as {
+      nextPageToken?: string;
+      files?: AppDataDriveFileListItem[];
+    };
+    for (const f of data.files ?? []) {
+      if (f?.id && f?.name) out.push(f);
+    }
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  return out;
+}
+
+/** Ensures photo subfolders exist and moves legacy flat `meal-*` / `progress-photo-*` files into them. */
+async function ensurePhotoSubfoldersReady(token: string): Promise<void> {
+  await Promise.all([
+    ensureAppDataSubfolder(token, MEAL_PHOTOS_FOLDER_NAME),
+    ensureAppDataSubfolder(token, PROGRESS_PHOTOS_IMAGES_FOLDER_NAME),
+  ]);
+  if (!legacyFlatPhotoMigration) {
+    legacyFlatPhotoMigration = migrateLegacyFlatPhotosToSubfolders(token).catch((err) => {
+      legacyFlatPhotoMigration = null;
+      throw err;
+    });
+  }
+  await legacyFlatPhotoMigration;
+}
+
+async function migrateLegacyFlatPhotosToSubfolders(token: string): Promise<void> {
+  const mealFolderId = appDataSubfolderIdCache.get(MEAL_PHOTOS_FOLDER_NAME);
+  const progressFolderId = appDataSubfolderIdCache.get(PROGRESS_PHOTOS_IMAGES_FOLDER_NAME);
+  if (!mealFolderId || !progressFolderId) return;
+
+  const rootFiles = await listDirectAppDataChildren(token, "appDataFolder");
+  for (const f of rootFiles) {
+    if (isGoogleFolderMime(f.mimeType)) continue;
+    try {
+      if (LEGACY_MEAL_PHOTO_RE.test(f.name)) {
+        await moveAppDataFileToParent(token, f.id, "appDataFolder", mealFolderId);
+      } else if (LEGACY_PROGRESS_PHOTO_RE.test(f.name)) {
+        await moveAppDataFileToParent(token, f.id, "appDataFolder", progressFolderId);
+      }
+    } catch {
+      /* best-effort — ids in manifests still resolve */
+    }
+  }
+}
+
+async function uploadMultipartImageToAppDataParent(
+  token: string,
+  parentId: string,
+  fileName: string,
+  bytes: Uint8Array,
+  mimeType: string,
+  uploadErrorLabel: string,
+): Promise<string> {
+  const boundary = `boundary_${crypto.randomUUID?.() ?? String(Date.now())}`;
+  const partBreak = `\r\n--${boundary}\r\n`;
+
+  const metadata = JSON.stringify({
+    name: fileName,
+    parents: [parentId],
+  });
+
+  const enc = new TextEncoder();
+  const mime = mimeType.trim() || "image/jpeg";
+
+  const chunks: Uint8Array[] = [
+    enc.encode(`--${boundary}\r\n`),
+    enc.encode("Content-Type: application/json; charset=UTF-8\r\n\r\n"),
+    enc.encode(metadata),
+    enc.encode(partBreak),
+    enc.encode(`Content-Type: ${mime}\r\n\r\n`),
+    bytes,
+    enc.encode(`\r\n--${boundary}--`),
+  ];
+
+  const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+  const body = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  const url = `${UPLOAD_BASE}?uploadType=multipart`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      ...authHeaders(token),
+      "Content-Type": `multipart/related; boundary=${boundary}`,
+    },
+    body,
+  });
+  if (!res.ok) throw new Error(`${uploadErrorLabel}: ${res.status}`);
+  const data = (await res.json()) as { id?: string };
+  if (!data.id) throw new Error(`${uploadErrorLabel} missing id`);
+  return data.id;
+}
+
+async function listAppDataTree(
+  token: string,
+  parentId: string,
+  pathPrefix: string,
+  signal?: AbortSignal,
+): Promise<AppDataDriveFileListItem[]> {
+  const children = await listDirectAppDataChildren(token, parentId, signal);
+  const out: AppDataDriveFileListItem[] = [];
+
+  for (const f of children) {
+    const relPath = pathPrefix ? `${pathPrefix}/${f.name}` : f.name;
+    if (isGoogleFolderMime(f.mimeType)) {
+      out.push({ ...f, name: relPath });
+      const nested = await listAppDataTree(token, f.id, relPath, signal);
+      out.push(...nested);
+    } else {
+      out.push({ ...f, name: relPath });
+    }
+  }
+
+  return out;
 }
 
 function normalizeOnboardingDraft(
@@ -291,38 +532,16 @@ export type AppDataDriveFileListItem = {
 };
 
 /**
- * Lists all non-trashed files in `appDataFolder` (paginated).
+ * Lists all non-trashed files and folders in `appDataFolder` (recursive).
+ * `name` includes subfolder paths (e.g. `meal-photos/meal-<id>.jpg`).
  * Requires OAuth scope `drive.appdata`.
  */
 export async function listAllAppDataFiles(
   token: string,
   signal?: AbortSignal,
 ): Promise<AppDataDriveFileListItem[]> {
-  const out: AppDataDriveFileListItem[] = [];
-  let pageToken: string | undefined;
-
-  do {
-    const params = new URLSearchParams({
-      spaces: "appDataFolder",
-      q: "trashed=false",
-      fields: "nextPageToken,files(id,name,mimeType,size,modifiedTime)",
-      pageSize: "100",
-    });
-    if (pageToken) params.set("pageToken", pageToken);
-
-    const url = `${DRIVE_FILES}?${params.toString()}`;
-    const res = await fetch(url, { headers: authHeaders(token), signal });
-    if (!res.ok) throw new Error(`Drive list app data failed: ${res.status}`);
-    const data = (await res.json()) as {
-      nextPageToken?: string;
-      files?: AppDataDriveFileListItem[];
-    };
-    for (const f of data.files ?? []) {
-      if (f?.id && f?.name) out.push(f);
-    }
-    pageToken = data.nextPageToken;
-  } while (pageToken);
-
+  await ensurePhotoSubfoldersReady(token);
+  const out = await listAppDataTree(token, "appDataFolder", "", signal);
   out.sort((a, b) => {
     const ta = a.modifiedTime ? Date.parse(a.modifiedTime) : 0;
     const tb = b.modifiedTime ? Date.parse(b.modifiedTime) : 0;
@@ -888,58 +1107,27 @@ export async function pullRecordsFromDrive(
   return normalizeRecordsDocument({ ...core, meals });
 }
 
-/** Upload a meal snapshot image into the App Data folder; returns the Drive file id. */
+/** Upload a meal snapshot image into {@link MEAL_PHOTOS_FOLDER_NAME}; returns the Drive file id. */
 export async function uploadMealPhotoToAppData(
   token: string,
   mealId: string,
   base64: string,
   mimeType: string,
 ): Promise<string> {
+  await ensurePhotoSubfoldersReady(token);
+  const parentId = appDataSubfolderIdCache.get(MEAL_PHOTOS_FOLDER_NAME);
+  if (!parentId) throw new Error("Drive meal photos folder missing");
   const ext = extensionForMime(mimeType || "image/jpeg");
   const fileName = `meal-${mealId}.${ext}`;
   const bytes = base64ToUint8Array(base64);
-  const boundary = `boundary_${crypto.randomUUID?.() ?? String(Date.now())}`;
-  const partBreak = `\r\n--${boundary}\r\n`;
-
-  const metadata = JSON.stringify({
-    name: fileName,
-    parents: ["appDataFolder"],
-  });
-
-  const enc = new TextEncoder();
-  const mime = (mimeType || "").trim() || "image/jpeg";
-
-  const chunks: Uint8Array[] = [
-    enc.encode(`--${boundary}\r\n`),
-    enc.encode("Content-Type: application/json; charset=UTF-8\r\n\r\n"),
-    enc.encode(metadata),
-    enc.encode(partBreak),
-    enc.encode(`Content-Type: ${mime}\r\n\r\n`),
+  return uploadMultipartImageToAppDataParent(
+    token,
+    parentId,
+    fileName,
     bytes,
-    enc.encode(`\r\n--${boundary}--`),
-  ];
-
-  const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
-  const body = new Uint8Array(totalLen);
-  let offset = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  const url = `${UPLOAD_BASE}?uploadType=multipart`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      ...authHeaders(token),
-      "Content-Type": `multipart/related; boundary=${boundary}`,
-    },
-    body,
-  });
-  if (!res.ok) throw new Error(`Drive meal photo upload failed: ${res.status}`);
-  const data = (await res.json()) as { id?: string };
-  if (!data.id) throw new Error("Drive meal photo upload missing id");
-  return data.id;
+    mimeType || "image/jpeg",
+    "Drive meal photo upload failed",
+  );
 }
 
 export function normalizeSavedMeal(row: unknown): SavedMealRecord | null {
@@ -1075,58 +1263,25 @@ async function upsertProgressPhotosManifest(
   else await createMultipartJsonAppData(token, PROGRESS_PHOTOS_MANIFEST_FILE, payload);
 }
 
-/** Upload a progress photo JPEG into App Data; returns Drive file id. */
+/** Upload a progress photo JPEG into {@link PROGRESS_PHOTOS_IMAGES_FOLDER_NAME}; returns Drive file id. */
 export async function uploadProgressPhotoImageToAppData(
   token: string,
   photoId: string,
   blob: Blob,
 ): Promise<string> {
+  await ensurePhotoSubfoldersReady(token);
+  const parentId = appDataSubfolderIdCache.get(PROGRESS_PHOTOS_IMAGES_FOLDER_NAME);
+  if (!parentId) throw new Error("Drive progress photos folder missing");
   const bytes = new Uint8Array(await blob.arrayBuffer());
   const fileName = `progress-photo-${photoId}.jpg`;
-  const boundary = `boundary_${crypto.randomUUID?.() ?? String(Date.now())}`;
-  const partBreak = `\r\n--${boundary}\r\n`;
-
-  const metadata = JSON.stringify({
-    name: fileName,
-    parents: ["appDataFolder"],
-  });
-
-  const enc = new TextEncoder();
-  const mime = blob.type?.trim() || "image/jpeg";
-
-  const chunks: Uint8Array[] = [
-    enc.encode(`--${boundary}\r\n`),
-    enc.encode("Content-Type: application/json; charset=UTF-8\r\n\r\n"),
-    enc.encode(metadata),
-    enc.encode(partBreak),
-    enc.encode(`Content-Type: ${mime}\r\n\r\n`),
+  return uploadMultipartImageToAppDataParent(
+    token,
+    parentId,
+    fileName,
     bytes,
-    enc.encode(`\r\n--${boundary}--`),
-  ];
-
-  const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
-  const body = new Uint8Array(totalLen);
-  let offset = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  const url = `${UPLOAD_BASE}?uploadType=multipart`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      ...authHeaders(token),
-      "Content-Type": `multipart/related; boundary=${boundary}`,
-    },
-    body,
-  });
-  if (!res.ok) {
-    throw new Error(`Drive progress photo upload failed: ${res.status}`);
-  }
-  const data = (await res.json()) as { id?: string };
-  if (!data.id) throw new Error("Drive progress photo upload missing id");
-  return data.id;
+    blob.type?.trim() || "image/jpeg",
+    "Drive progress photo upload failed",
+  );
 }
 
 /**
@@ -1253,7 +1408,11 @@ export async function deleteAllAppDataFiles(
   const files = await listAllAppDataFiles(token, signal);
   const failures: { name: string; message: string }[] = [];
   let deleted = 0;
-  for (const f of files) {
+  const nonFolders = files.filter((f) => !isGoogleFolderMime(f.mimeType));
+  const folders = files.filter((f) => isGoogleFolderMime(f.mimeType));
+  folders.sort((a, b) => b.name.length - a.name.length);
+
+  for (const f of [...nonFolders, ...folders]) {
     try {
       await deleteDriveFile(token, f.id);
       deleted++;
@@ -1264,5 +1423,6 @@ export async function deleteAllAppDataFiles(
       });
     }
   }
+  clearDriveAppDataFolderCache();
   return { deleted, failures };
 }

@@ -10,6 +10,7 @@ import { ensureGoogleAccessToken, getGoogleUserId } from "@/lib/gapi";
 import {
   downloadAppDataFileBlob,
   downloadAppDataFileText,
+  isAppDataDriveFolder,
   isImagePreviewAppDataFile,
   isJsonAppDataFile,
   listAllAppDataFiles,
@@ -19,7 +20,7 @@ import {
 import i18n from "@/i18n";
 import { intlLocaleTag, type AppLocale } from "@/i18n/config";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileJson, ImageIcon, Loader2, X } from "lucide-react";
+import { ChevronRight, FileJson, Folder, ImageIcon, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -65,6 +66,11 @@ function formatModified(iso: string | undefined): string {
   });
 }
 
+function driveEntryDisplayName(path: string): string {
+  const i = path.lastIndexOf("/");
+  return i === -1 ? path : path.slice(i + 1);
+}
+
 function formatJsonForDisplay(raw: string): string {
   try {
     return JSON.stringify(JSON.parse(raw) as unknown, null, 2);
@@ -82,7 +88,59 @@ function parseJsonDraft(draft: string, invalidMsg: string): { ok: true; text: st
   }
 }
 
+type DriveBrowseRow = {
+  file: AppDataDriveFileListItem;
+  label: string;
+};
+
+/** Direct children at `browsePath` (`""` = App Data root). */
+function listDriveBrowseRows(
+  files: AppDataDriveFileListItem[],
+  browsePath: string,
+): DriveBrowseRow[] {
+  if (browsePath === "") {
+    return files
+      .filter((f) => !f.name.includes("/"))
+      .map((f) => ({ file: f, label: f.name }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  const prefix = `${browsePath}/`;
+  const rows: DriveBrowseRow[] = [];
+  const seenSubfolders = new Set<string>();
+
+  for (const f of files) {
+    if (!f.name.startsWith(prefix)) continue;
+    const rest = f.name.slice(prefix.length);
+    if (!rest) continue;
+    const slash = rest.indexOf("/");
+    if (slash === -1) {
+      rows.push({ file: f, label: rest });
+      continue;
+    }
+    const sub = rest.slice(0, slash);
+    if (seenSubfolders.has(sub)) continue;
+    seenSubfolders.add(sub);
+    const subPath = `${browsePath}/${sub}`;
+    const folderFile = files.find(
+      (x) => x.name === subPath && isAppDataDriveFolder(x),
+    );
+    if (folderFile) rows.push({ file: folderFile, label: sub });
+  }
+
+  rows.sort((a, b) => {
+    const aFolder = isAppDataDriveFolder(a.file);
+    const bFolder = isAppDataDriveFolder(b.file);
+    if (aFolder !== bFolder) return aFolder ? -1 : 1;
+    return a.label.localeCompare(b.label);
+  });
+  return rows;
+}
+
 function fileKindIcon(f: AppDataDriveFileListItem) {
+  if (isAppDataDriveFolder(f)) {
+    return <Folder className="size-4 shrink-0 text-sky-400" aria-hidden />;
+  }
   const mime = (f.mimeType ?? "").toLowerCase();
   if (mime.startsWith("image/")) {
     return <ImageIcon className="size-4 shrink-0 text-amber-400" aria-hidden />;
@@ -107,6 +165,8 @@ export function DriveFilesPage() {
   const [jsonEditing, setJsonEditing] = useState(false);
   const [jsonDraft, setJsonDraft] = useState("");
   const [jsonParseError, setJsonParseError] = useState<string | null>(null);
+  /** Slash-separated path under App Data (`""` = root). */
+  const [browsePath, setBrowsePath] = useState("");
 
   const closeViewer = useCallback(() => {
     setViewerFile(null);
@@ -129,6 +189,9 @@ export function DriveFilesPage() {
 
   const viewerIsJson = !!(viewerFile && isJsonAppDataFile(viewerFile));
   const viewerIsImage = !!(viewerFile && isImagePreviewAppDataFile(viewerFile));
+  const viewerDisplayName = viewerFile
+    ? driveEntryDisplayName(viewerFile.name)
+    : "";
 
   const previewImageFileId =
     viewerFile &&
@@ -164,6 +227,11 @@ export function DriveFilesPage() {
   });
 
   const files = q.data ?? [];
+  const browseRows = useMemo(
+    () => listDriveBrowseRows(files, browsePath),
+    [files, browsePath],
+  );
+  const breadcrumbSegments = browsePath ? browsePath.split("/") : [];
   const errMsg =
     q.error instanceof Error
       ? q.error.message
@@ -253,6 +321,26 @@ export function DriveFilesPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [viewerFile, closeViewer]);
 
+  const openFolder = useCallback(
+    (folderLabel: string) => {
+      closeViewer();
+      setBrowsePath((prev) => (prev ? `${prev}/${folderLabel}` : folderLabel));
+    },
+    [closeViewer],
+  );
+
+  const navigateToBreadcrumb = useCallback(
+    (index: number) => {
+      closeViewer();
+      if (index < 0) {
+        setBrowsePath("");
+        return;
+      }
+      setBrowsePath(breadcrumbSegments.slice(0, index + 1).join("/"));
+    },
+    [breadcrumbSegments, closeViewer],
+  );
+
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
@@ -309,34 +397,109 @@ export function DriveFilesPage() {
         <Card>
           <p className="text-sm text-mk-muted">{t("drive.noFiles")}</p>
         </Card>
+      ) : browseRows.length === 0 && browsePath !== "" ? (
+        <Card className="overflow-hidden p-0">
+          {breadcrumbSegments.length > 0 ? (
+            <nav
+              aria-label={t("drive.breadcrumbRoot")}
+              className="flex min-w-0 flex-wrap items-center gap-1 border-b border-mk-border bg-zinc-900/40 px-4 py-2.5 text-sm"
+            >
+              <button
+                type="button"
+                onClick={() => navigateToBreadcrumb(-1)}
+                className="shrink-0 font-medium text-emerald-300/90 underline decoration-emerald-500/40 underline-offset-2 hover:text-emerald-200"
+              >
+                {t("drive.breadcrumbRoot")}
+              </button>
+              {breadcrumbSegments.map((seg, i) => (
+                <span key={seg} className="flex min-w-0 items-center gap-1">
+                  <ChevronRight
+                    className="size-3.5 shrink-0 text-zinc-600"
+                    aria-hidden
+                  />
+                  {i === breadcrumbSegments.length - 1 ? (
+                    <span className="min-w-0 truncate font-mono text-zinc-300">
+                      {seg}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigateToBreadcrumb(i)}
+                      className="min-w-0 truncate font-mono text-emerald-300/90 underline decoration-emerald-500/40 underline-offset-2 hover:text-emerald-200"
+                    >
+                      {seg}
+                    </button>
+                  )}
+                </span>
+              ))}
+            </nav>
+          ) : null}
+          <p className="px-4 py-8 text-sm text-mk-muted">{t("drive.emptyFolder")}</p>
+        </Card>
       ) : (
         <Card className="overflow-hidden p-0">
+          {breadcrumbSegments.length > 0 ? (
+            <nav
+              aria-label={t("drive.breadcrumbRoot")}
+              className="flex min-w-0 flex-wrap items-center gap-1 border-b border-mk-border bg-zinc-900/40 px-4 py-2.5 text-sm"
+            >
+              <button
+                type="button"
+                onClick={() => navigateToBreadcrumb(-1)}
+                className="shrink-0 font-medium text-emerald-300/90 underline decoration-emerald-500/40 underline-offset-2 hover:text-emerald-200"
+              >
+                {t("drive.breadcrumbRoot")}
+              </button>
+              {breadcrumbSegments.map((seg, i) => (
+                <span key={seg} className="flex min-w-0 items-center gap-1">
+                  <ChevronRight
+                    className="size-3.5 shrink-0 text-zinc-600"
+                    aria-hidden
+                  />
+                  {i === breadcrumbSegments.length - 1 ? (
+                    <span className="min-w-0 truncate font-mono text-zinc-300">
+                      {seg}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigateToBreadcrumb(i)}
+                      className="min-w-0 truncate font-mono text-emerald-300/90 underline decoration-emerald-500/40 underline-offset-2 hover:text-emerald-200"
+                    >
+                      {seg}
+                    </button>
+                  )}
+                </span>
+              ))}
+            </nav>
+          ) : null}
           <div className="min-w-0 overflow-x-auto">
             <table className="w-full table-fixed text-left text-sm">
               <thead>
                 <tr className="border-b border-mk-border bg-zinc-900/40 text-sm text-zinc-500">
                   <th className="min-w-0 px-4 py-3 font-medium">{t("drive.tableFile")}</th>
                   <th className="hidden min-w-0 px-4 py-3 font-medium sm:table-cell sm:w-[28%]">
-                    Type
+                    {t("drive.tableType")}
                   </th>
                   <th className="w-[3.5rem] whitespace-nowrap px-2 py-3 font-medium sm:w-[5.5rem] sm:px-4">
-                    Size
+                    {t("drive.tableSize")}
                   </th>
                   <th className="hidden whitespace-nowrap px-4 py-3 font-medium md:table-cell md:w-[11rem]">
-                    Modified
+                    {t("drive.tableModified")}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {files.map((f) => {
-                  const jsonFile = isJsonAppDataFile(f);
-                  const imageFile = isImagePreviewAppDataFile(f);
+                {browseRows.map(({ file: f, label }) => {
+                  const folder = isAppDataDriveFolder(f);
+                  const jsonFile = !folder && isJsonAppDataFile(f);
+                  const imageFile = !folder && isImagePreviewAppDataFile(f);
                   const previewable = jsonFile || imageFile;
                   return (
                     <tr
                       key={f.id}
                       className={`border-b border-mk-border/60 last:border-0 ${
-                        previewable
+                        previewable || folder
                           ? "hover:bg-zinc-900/40"
                           : "hover:bg-zinc-900/30"
                       }`}
@@ -345,27 +508,36 @@ export function DriveFilesPage() {
                         <div className="flex min-w-0 items-start gap-2">
                           {fileKindIcon(f)}
                           <div className="min-w-0 flex-1">
-                            {jsonFile ? (
+                            {folder ? (
+                              <button
+                                type="button"
+                                onClick={() => openFolder(label)}
+                                className="w-full min-w-0 text-left font-mono text-sm text-sky-300/95 break-all underline decoration-sky-500/40 underline-offset-2 hover:text-sky-200 hover:decoration-sky-400/70"
+                                aria-label={t("drive.openFolderAria", { name: label })}
+                              >
+                                {label}
+                              </button>
+                            ) : jsonFile ? (
                               <button
                                 type="button"
                                 onClick={() => setViewerFile(f)}
                                 className="w-full min-w-0 text-left font-mono text-sm text-emerald-300/95 break-all underline decoration-emerald-500/40 underline-offset-2 hover:text-emerald-200 hover:decoration-emerald-400/70"
-                                aria-label={t("drive.viewJsonAria", { fileName: f.name })}
+                                aria-label={t("drive.viewJsonAria", { fileName: label })}
                               >
-                                {f.name}
+                                {label}
                               </button>
                             ) : imageFile ? (
                               <button
                                 type="button"
                                 onClick={() => setViewerFile(f)}
                                 className="w-full min-w-0 text-left font-mono text-sm text-amber-300/95 break-all underline decoration-amber-500/40 underline-offset-2 hover:text-amber-200 hover:decoration-amber-400/70"
-                                aria-label={t("drive.previewImageAria", { fileName: f.name })}
+                                aria-label={t("drive.previewImageAria", { fileName: label })}
                               >
-                                {f.name}
+                                {label}
                               </button>
                             ) : (
                               <span className="block min-w-0 font-mono text-sm text-white break-all">
-                                {f.name}
+                                {label}
                               </span>
                             )}
                           </div>
@@ -418,7 +590,7 @@ export function DriveFilesPage() {
                 id="drive-viewer-title"
                 className="min-w-0 flex-1 font-mono text-sm font-semibold text-white break-all pr-2"
               >
-                {viewerFile.name}
+                {viewerDisplayName}
               </h2>
               <div className="flex shrink-0 items-center gap-2">
                 {viewerIsJson ? (
@@ -531,7 +703,7 @@ export function DriveFilesPage() {
                       }}
                       spellCheck={false}
                       className="min-h-[min(50dvh,480px)] w-full flex-1 resize-y rounded-xl border border-mk-border bg-mk-bg px-3 py-2 font-mono text-sm leading-relaxed text-zinc-200 outline-none ring-emerald-500/40 focus:ring-2"
-                      aria-label={t("drive.editJsonAria", { fileName: viewerFile.name })}
+                      aria-label={t("drive.editJsonAria", { fileName: viewerDisplayName })}
                     />
                     {jsonParseError ? (
                       <p className="text-sm text-red-300" role="alert">
@@ -567,7 +739,7 @@ export function DriveFilesPage() {
                   <DrivePreviewImage
                     key={previewImageFileId}
                     blob={imageBlobQuery.data}
-                    alt={viewerFile.name}
+                    alt={viewerDisplayName}
                   />
                 </div>
               ) : null}
