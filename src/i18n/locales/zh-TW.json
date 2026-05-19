@@ -74,7 +74,11 @@
     "play": "播放",
     "pause": "暫停",
     "language": "語言",
-    "languageSubtitle": "選擇介面顯示語言。"
+    "languageSubtitle": "選擇介面顯示語言。",
+    "languageCurrent": "目前：{{language}}",
+    "languageChanged": "已設定為 {{language}}",
+    "languageChangeFailed": "無法儲存語言設定。",
+    "languageSaving": "正在儲存語言…"
   },
   "nav": {
     "dashboard": "今日",

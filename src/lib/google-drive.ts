@@ -15,6 +15,7 @@ import type {
   SavedMealRecord,
   UserProfile,
 } from "@/types/records";
+import { isAppLocale } from "@/i18n/config";
 import { emptyRecords } from "@/types/records";
 import type {
   ProgressPhotoDriveMeta,
@@ -245,12 +246,17 @@ export function normalizeRecordsCoreDocument(
       ? parsed.geminiApiKey.trim()
       : undefined;
   const onboardingDraft = normalizeOnboardingDraft(parsed.onboardingDraft);
+  const locale =
+    typeof parsed.locale === "string" && isAppLocale(parsed.locale)
+      ? parsed.locale
+      : undefined;
   return {
     version: typeof parsed.version === "number" ? parsed.version : empty.version,
     profile: normalizeUserProfile(parsed.profile, empty.profile),
     ...(gemini !== undefined ? { geminiApiKey: gemini } : {}),
     ...(parsed.onboardingCompleted === true ? { onboardingCompleted: true } : {}),
     ...(onboardingDraft ? { onboardingDraft } : {}),
+    ...(locale !== undefined ? { locale } : {}),
   };
 }
 
@@ -835,6 +841,7 @@ export async function persistRecordsToDrive(
     ...(normalized.geminiApiKey ? { geminiApiKey: normalized.geminiApiKey } : {}),
     ...(normalized.onboardingCompleted === true ? { onboardingCompleted: true } : {}),
     ...(normalized.onboardingDraft ? { onboardingDraft: normalized.onboardingDraft } : {}),
+    ...(normalized.locale ? { locale: normalized.locale } : {}),
   };
   if (!options?.mealsOnly) {
     await upsertCoreRecordsToDrive(token, core);

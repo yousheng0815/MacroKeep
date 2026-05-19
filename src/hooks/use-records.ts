@@ -39,7 +39,8 @@ import { emptyRecords } from "@/types/records";
 import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import i18n from "@/i18n";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { readStoredLocale, type AppLocale } from "@/i18n/config";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /** How many newest month shards to download on first meals sync. */
 const INITIAL_MEAL_SHARD_MONTHS = 4;
@@ -333,6 +334,42 @@ export function useRecords() {
     },
     [getCurrentRecords, replaceMutation],
   );
+
+  const updateLocale = useCallback(
+    async (locale: AppLocale) => {
+      if (i18n.language !== locale) {
+        await i18n.changeLanguage(locale);
+      }
+      if (!canSyncToDriveAppData()) return;
+      const prev = getCurrentRecords();
+      if (prev.locale === locale) return;
+      const next: RecordsDocument = { ...prev, locale };
+      await replaceMutation.mutateAsync({ next, coreOnly: true });
+    },
+    [getCurrentRecords, replaceMutation],
+  );
+
+  const localeBackfillStarted = useRef(false);
+  useEffect(() => {
+    localeBackfillStarted.current = false;
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId || !coreQuery.isSuccess || !coreQuery.data) return;
+
+    const driveLocale = coreQuery.data.locale;
+    if (driveLocale) {
+      if (i18n.language !== driveLocale) {
+        void i18n.changeLanguage(driveLocale);
+      }
+      return;
+    }
+
+    const stored = readStoredLocale();
+    if (!stored || localeBackfillStarted.current) return;
+    localeBackfillStarted.current = true;
+    void updateLocale(stored);
+  }, [userId, coreQuery.isSuccess, coreQuery.data, updateLocale]);
 
   const addMeal = useCallback(
     async (
@@ -1021,6 +1058,7 @@ export function useRecords() {
     error: coreQuery.error,
     geminiKey,
     updateGeminiKey,
+    updateLocale,
     addMeal,
     addSavedMeal,
     addSavedMealFromMeal,

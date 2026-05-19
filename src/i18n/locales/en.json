@@ -74,7 +74,11 @@
     "play": "Play",
     "pause": "Pause",
     "language": "Language",
-    "languageSubtitle": "Choose the language for menus and labels."
+    "languageSubtitle": "Choose the language for menus and labels.",
+    "languageCurrent": "Current: {{language}}",
+    "languageChanged": "Language set to {{language}}",
+    "languageChangeFailed": "Couldn't save language preference.",
+    "languageSaving": "Saving language…"
   },
   "nav": {
     "dashboard": "Today",

@@ -1,3 +1,5 @@
+import type { AppLocale } from "@/i18n/config";
+
 export type MealRecord = {
   id: string;
   food_name: string;
@@ -83,6 +85,8 @@ export type RecordsCoreDocument = {
   onboardingCompleted?: boolean;
   /** Saved onboarding result so refresh doesn't lose generated Step 3 targets. */
   onboardingDraft?: OnboardingDraft;
+  /** UI language — synced across devices via Drive; also mirrored in localStorage. */
+  locale?: AppLocale;
 };
 
 /** In-memory / UI document: core fields plus meals merged from monthly shards on pull. */
