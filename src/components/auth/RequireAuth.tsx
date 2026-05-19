@@ -1,8 +1,3 @@
-import {
-  AUTH_SIGN_IN_AGAIN_TITLE,
-  GOOGLE_DRIVE_APP_DATA_BLURB,
-  GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE,
-} from "@/components/auth/auth-copy";
 import { GoogleAuthPageLayout } from "@/components/auth/GoogleAuthPageLayout";
 import { GoogleGMark } from "@/components/auth/GoogleGMark";
 import {
@@ -18,29 +13,34 @@ import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { toast } from "@/lib/app-toast";
+import { useTranslation } from "react-i18next";
 
-function recordsLoadErrorMessage(error: unknown): string {
+function recordsLoadErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error) return error.message;
   if (error && typeof error === "object") {
     const rec = error as Record<string, unknown>;
     if (typeof rec.message === "string") return rec.message;
   }
-  return "Could not load your diary from Google Drive.";
+  return fallback;
 }
 
 function RecordsReadyGate({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const { isRecordsReady, records, error, refetch } = useRecords();
   const [retryPending, setRetryPending] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   if (!isRecordsReady) {
     if (error) {
-      const msg = recordsLoadErrorMessage(error);
+      const msg = recordsLoadErrorMessage(
+        error,
+        t("auth.couldntLoadDiaryDefault"),
+      );
       return (
         <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-mk-bg px-6 text-center text-zinc-100">
           <div className="max-w-md space-y-3">
             <h1 className="text-lg font-semibold tracking-tight text-white">
-              Couldn&apos;t load diary
+              {t("auth.couldntLoadDiaryTitle")}
             </h1>
             <p className="text-sm leading-relaxed text-mk-muted">{msg}</p>
           </div>
@@ -64,7 +64,7 @@ function RecordsReadyGate({ children }: { children: ReactNode }) {
               pending={retryPending}
               spinner={<ButtonSpinner />}
             >
-              Try again
+              {t("auth.tryAgain")}
             </ButtonPendingContents>
           </button>
         </div>
@@ -73,7 +73,7 @@ function RecordsReadyGate({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-mk-bg text-zinc-400">
         <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
-        <p className="text-sm">Loading your diary…</p>
+        <p className="text-sm">{t("auth.loadingDiary")}</p>
       </div>
     );
   }
@@ -86,6 +86,7 @@ function RecordsReadyGate({ children }: { children: ReactNode }) {
 }
 
 export function RequireAuth({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const {
     ready,
     sessionReady,
@@ -110,7 +111,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-mk-bg text-zinc-400">
         <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
-        <p className="text-sm">Checking Google sign-in…</p>
+        <p className="text-sm">{t("auth.checkingSignIn")}</p>
       </div>
     );
   }
@@ -129,7 +130,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
             className="size-9 animate-spin text-emerald-400"
             aria-hidden
           />
-          <p className="text-sm">Signing you back in…</p>
+          <p className="text-sm">{t("auth.signingBackIn")}</p>
         </div>
       );
     }
@@ -138,24 +139,18 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       <GoogleAuthPageLayout
         title={
           needsConsent
-            ? GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE
-            : AUTH_SIGN_IN_AGAIN_TITLE
+            ? t("auth.driveConsentTitle")
+            : t("auth.signInAgainTitle")
         }
         description={
           needsConsent ? (
-            GOOGLE_DRIVE_APP_DATA_BLURB
+            t("auth.driveConsentBlurb")
           ) : (
             <>
-              <span className="block">
-                Your session may have expired. Continue to sign in with Google
-                again.
-              </span>
+              <span className="block">{t("auth.sessionExpiredLead")}</span>
               {rememberedEmail ? (
                 <span className="mt-2 block text-zinc-500">
-                  Reconnecting as{" "}
-                  <span className="font-medium text-zinc-400">
-                    {rememberedEmail}
-                  </span>
+                  {t("auth.reconnectingAs", { email: rememberedEmail })}
                 </span>
               ) : null}
             </>
@@ -182,7 +177,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
               spinner={<ButtonSpinner />}
             >
               <GoogleGMark />
-              Continue with Google
+              {t("auth.continueWithGoogle")}
             </ButtonPendingContents>
           </button>
         </div>
@@ -194,7 +189,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-mk-bg text-zinc-400">
         <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
-        <p className="text-sm">Loading account…</p>
+        <p className="text-sm">{t("auth.loadingAccount")}</p>
       </div>
     );
   }

@@ -9,6 +9,7 @@ import {
   UnitsPreferenceSegment,
 } from "@/components/profile/body-measurement-fields";
 import { InstallAppCard } from "@/components/settings/InstallAppCard";
+import { LanguageCard } from "@/components/settings/LanguageCard";
 import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
 import { toast } from "@/lib/app-toast";
@@ -20,6 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, ChevronRight, FolderOpen } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 
 type ProfileBodyDraft = Pick<
   UserProfile,
@@ -78,25 +80,34 @@ function GeminiKeyCard({
   updateGeminiKey: (key: string) => Promise<void>;
   isSaving: boolean;
 }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState(geminiKey);
   const [keyFlowBusy, setKeyFlowBusy] = useState(false);
+  const aiStudioLink = (
+    <a
+      className="font-medium text-blue-400 underline decoration-blue-400/40 underline-offset-2 hover:text-blue-300"
+      href="https://aistudio.google.com/app/apikey"
+      target="_blank"
+      rel="noreferrer"
+    />
+  );
+  const stepEmphasis = <span className="text-zinc-300" />;
+  const stepMono = <span className="font-mono text-zinc-400" />;
 
   return (
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-white">Gemini API Key</h2>
-          <p className="mt-1 text-sm text-mk-muted">
-            Add an API key for AI-powered macro estimates from photos or meal
-            descriptions. The key is saved with your MacroKeep data on Google
-            Drive.
-          </p>
+          <h2 className="text-sm font-semibold text-white">
+            {t("settings.geminiApiKey")}
+          </h2>
+          <p className="mt-1 text-sm text-mk-muted">{t("settings.geminiBlurb")}</p>
         </div>
         <div className="flex items-center gap-2 text-sm">
           {geminiKey.trim() && (
             <>
               <CheckCircle2 className="size-4 text-emerald-400" />
-              <span className="text-emerald-400">Connected</span>
+              <span className="text-emerald-400">{t("common.connected")}</span>
             </>
           )}
         </div>
@@ -105,45 +116,45 @@ function GeminiKeyCard({
       {!geminiKey.trim() && (
         <div className="mt-4 rounded-xl border border-mk-border bg-zinc-950/40 px-4 py-3">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            How to get a key
+            {t("settings.howToGetKey")}
           </h3>
           <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-mk-muted marker:text-zinc-500">
             <li>
-              Open{" "}
-              <a
-                className="font-medium text-blue-400 underline decoration-blue-400/40 underline-offset-2 hover:text-blue-300"
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Google AI Studio → API keys
-              </a>{" "}
-              and sign in with Google.
+              <Trans
+                i18nKey="settings.howToStep1"
+                components={{ 1: aiStudioLink }}
+              />
             </li>
             <li>
-              Click <span className="text-zinc-300">Create API key</span>. Pick
-              an existing Cloud project or let Google create one when prompted.
+              <Trans
+                i18nKey="settings.howToStep2"
+                components={{ 1: stepEmphasis }}
+              />
             </li>
             <li>
-              Copy the new key, which starts with{" "}
-              <span className="font-mono text-zinc-400">AIza</span>, then paste
-              it in the field below.
+              <Trans
+                i18nKey="settings.howToStep3"
+                components={{ 1: stepMono }}
+              />
             </li>
             <li>
-              Press <span className="text-zinc-300">Save key</span>.
+              <Trans
+                i18nKey="settings.howToStep4"
+                components={{ 1: stepEmphasis }}
+              />
             </li>
           </ol>
         </div>
       )}
 
       <label className="mt-4 block text-sm text-zinc-400">
-        API key
+        {t("settings.apiKeyLabel")}
         <input
           value={draft}
           onChange={(e) => {
             setDraft(e.target.value);
           }}
-          placeholder="AIza…"
+          placeholder={t("settings.apiKeyPlaceholder")}
           autoComplete="off"
           className="mt-1 w-full mk-text-input font-mono"
         />
@@ -159,17 +170,17 @@ function GeminiKeyCard({
               const trimmed = draft.trim();
               if (!trimmed) {
                 await updateGeminiKey("");
-                toast.success("API key removed");
+                toast.success(t("errors.apiKeyRemoved"));
                 return;
               }
               setKeyFlowBusy(true);
               try {
                 await validateGeminiApiKey(trimmed);
                 await updateGeminiKey(trimmed);
-                toast.success("API key saved");
+                toast.success(t("errors.apiKeySaved"));
               } catch (e) {
                 toast.error(
-                  e instanceof Error ? e.message : "Could not verify key.",
+                  e instanceof Error ? e.message : t("errors.couldNotVerifyKey"),
                 );
               } finally {
                 setKeyFlowBusy(false);
@@ -182,7 +193,7 @@ function GeminiKeyCard({
             pending={isSaving || keyFlowBusy}
             spinner={<ButtonSpinner />}
           >
-            Save key
+            {t("settings.saveKey")}
           </ButtonPendingContents>
         </button>
         <a
@@ -191,7 +202,7 @@ function GeminiKeyCard({
           target="_blank"
           rel="noreferrer"
         >
-          Open Google AI Studio
+          {t("settings.openGoogleAiStudio")}
         </a>
       </div>
     </Card>
@@ -209,17 +220,18 @@ function ProfileBodyCard({
   formsDisabled: boolean;
   savePending: boolean;
 }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState<ProfileBodyDraft>(() =>
     profileBodyFromUser(profile),
   );
 
   return (
     <Card>
-      <h2 className="text-sm font-semibold text-white">Profile</h2>
+      <h2 className="text-sm font-semibold text-white">{t("settings.profile")}</h2>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block text-sm text-zinc-400">
-          Birthday
+          {t("common.birthday")}
           <input
             type="date"
             disabled={formsDisabled}
@@ -234,7 +246,7 @@ function ProfileBodyCard({
           />
         </label>
         <label className="block text-sm text-zinc-400">
-          Gender
+          {t("common.gender")}
           <select
             value={draft.gender}
             disabled={formsDisabled}
@@ -246,12 +258,12 @@ function ProfileBodyCard({
             }
             className="mt-1 w-full mk-text-input"
           >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
+            <option value="male">{t("common.male")}</option>
+            <option value="female">{t("common.female")}</option>
           </select>
         </label>
         <div className="sm:col-span-2">
-          <span className="text-sm text-zinc-400">Units</span>
+          <span className="text-sm text-zinc-400">{t("common.units")}</span>
           <UnitsPreferenceSegment
             id="settings-profile-units"
             value={draft.unitsPreference}
@@ -294,7 +306,7 @@ function ProfileBodyCard({
           pending={savePending}
           spinner={<ButtonSpinner />}
         >
-          Save profile
+          {t("settings.saveProfile")}
         </ButtonPendingContents>
       </button>
     </Card>
@@ -312,17 +324,20 @@ function MacroTargetsCard({
   formsDisabled: boolean;
   savePending: boolean;
 }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState<MacroTargetsDraft>(() =>
     macroTargetsFromUser(profile),
   );
 
   return (
     <Card>
-      <h2 className="text-sm font-semibold text-white">Macro targets</h2>
+      <h2 className="text-sm font-semibold text-white">
+        {t("settings.macroTargets")}
+      </h2>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block text-sm text-zinc-400">
-          Daily target (kcal)
+          {t("common.dailyTargetKcal")}
           <input
             inputMode="numeric"
             disabled={formsDisabled}
@@ -337,7 +352,7 @@ function MacroTargetsCard({
           />
         </label>
         <label className="block text-sm text-zinc-400">
-          Protein target (g)
+          {t("common.proteinTargetG")}
           <input
             inputMode="decimal"
             disabled={formsDisabled}
@@ -352,7 +367,7 @@ function MacroTargetsCard({
           />
         </label>
         <label className="block text-sm text-zinc-400">
-          Fats target (g)
+          {t("common.fatsTargetG")}
           <input
             inputMode="decimal"
             disabled={formsDisabled}
@@ -367,7 +382,7 @@ function MacroTargetsCard({
           />
         </label>
         <label className="block text-sm text-zinc-400">
-          Carbs target (g)
+          {t("common.carbsTargetG")}
           <input
             inputMode="decimal"
             disabled={formsDisabled}
@@ -395,7 +410,7 @@ function MacroTargetsCard({
             pending={savePending}
             spinner={<ButtonSpinner />}
           >
-            Save targets
+            {t("settings.saveTargets")}
           </ButtonPendingContents>
         </button>
 
@@ -403,7 +418,7 @@ function MacroTargetsCard({
           to="/tutorial"
           className="relative btn-mobile-block-lg cursor-pointer gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-white transition hover:bg-zinc-900"
         >
-          Calculate suggested targets again
+          {t("settings.recalculateTargets")}
         </Link>
       </div>
     </Card>
@@ -430,6 +445,7 @@ function GoogleAccountDriveCard({
   isSaving: boolean;
   wipeAllRemoteData: () => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [signOutBusy, setSignOutBusy] = useState(false);
   const [wipePhrase, setWipePhrase] = useState("");
   const [wipeBusy, setWipeBusy] = useState(false);
@@ -459,20 +475,17 @@ function GoogleAccountDriveCard({
 
     if (recent.length >= ADVANCED_DRIVE_HINT_MIN_TAPS) {
       const remaining = ADVANCED_DRIVE_TAP_COUNT - recent.length;
-      toast.info(
-        `You are now ${remaining} tap${remaining === 1 ? "" : "s"} away from advanced Drive options.`,
-        {
-          id: ADVANCED_DRIVE_TAP_HINT_TOAST_ID,
-          duration: 2200,
-        },
-      );
+      toast.info(t("settings.advancedTapHint", { count: remaining }), {
+        id: ADVANCED_DRIVE_TAP_HINT_TOAST_ID,
+        duration: 2200,
+      });
     }
-  }, [advancedDriveUnlocked]);
+  }, [advancedDriveUnlocked, t]);
 
   return (
     <Card>
       <h2 className="text-sm font-semibold text-white">
-        Google account & Drive
+        {t("settings.googleAccountDrive")}
       </h2>
 
       <dl className="mt-4 space-y-3 text-sm">
@@ -488,26 +501,28 @@ function GoogleAccountDriveCard({
           role="button"
           tabIndex={0}
           aria-label={
-            email ? `Signed in as ${email}` : "Signed in as unknown account"
+            email
+              ? t("settings.signedInAsAria", { email })
+              : t("settings.signedInAsUnknownAria")
           }
         >
-          <dt className="text-sm text-zinc-500">Signed in as</dt>
+          <dt className="text-sm text-zinc-500">{t("settings.signedInAs")}</dt>
           <dd className="mt-0.5 font-medium text-white">
-            {email ?? "Unknown"}
+            {email ?? t("common.unknown")}
           </dd>
         </div>
         <div>
-          <dt className="text-sm text-zinc-500">Drive access</dt>
+          <dt className="text-sm text-zinc-500">{t("settings.driveAccess")}</dt>
           <dd className="mt-1 flex flex-wrap items-center gap-2">
             {sessionReady ? (
               <>
                 <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
                 <span className="text-sm text-emerald-400/90">
-                  Access is set up correctly.
+                  {t("settings.driveAccessOk")}
                 </span>
               </>
             ) : (
-              <span className="text-zinc-400">Not connected</span>
+              <span className="text-zinc-400">{t("settings.notConnected")}</span>
             )}
           </dd>
         </div>
@@ -534,7 +549,7 @@ function GoogleAccountDriveCard({
           pending={signOutBusy}
           spinner={<ButtonSpinner className="text-zinc-200" />}
         >
-          Sign out
+          {t("settings.signOut")}
         </ButtonPendingContents>
       </button>
 
@@ -552,10 +567,10 @@ function GoogleAccountDriveCard({
                 />
                 <span className="min-w-0">
                   <span className="block font-medium text-zinc-100">
-                    Drive app data
+                    {t("settings.driveAppData")}
                   </span>
                   <span className="mt-0.5 block text-sm font-normal text-mk-muted">
-                    Files in your App Data folder
+                    {t("settings.driveAppDataSubtitle")}
                   </span>
                 </span>
               </span>
@@ -568,23 +583,25 @@ function GoogleAccountDriveCard({
 
           <div className="mt-6 border-t border-red-500/15 pt-6">
             <h3 className="text-sm font-semibold text-red-300">
-              Delete all cloud data
+              {t("settings.deleteAllCloudData")}
             </h3>
             <p className="mt-1 text-sm text-mk-muted">
-              Permanently removes every MacroKeep file from this Google
-              account&apos;s Drive App Data folder. This cannot be reversed.
-              Type <span className="font-mono text-zinc-300">DELETE</span> to
-              enable the button.
+              <Trans
+                i18nKey="settings.deleteAllCloudBlurb"
+                components={{
+                  1: <span className="font-mono text-zinc-300" />,
+                }}
+              />
             </p>
             <label className="mt-3 block text-sm text-zinc-500">
-              Confirmation
+              {t("settings.confirmation")}
               <input
                 value={wipePhrase}
                 onChange={(e) => {
                   setWipePhrase(e.target.value);
                 }}
                 autoComplete="off"
-                placeholder="DELETE"
+                placeholder={t("settings.deletePlaceholder")}
                 disabled={!sessionReady || wipeBusy}
                 className="mt-1 w-full max-w-xs rounded-xl border border-mk-border bg-mk-bg px-4 py-3 font-mono text-base text-white outline-none placeholder:text-zinc-600 focus:border-red-400/50"
               />
@@ -601,14 +618,14 @@ function GoogleAccountDriveCard({
                   try {
                     await wipeAllRemoteData();
                     setWipePhrase("");
-                    toast.success("All Drive data deleted", {
-                      description: "Your diary will reload empty.",
+                    toast.success(t("errors.allDriveDataDeleted"), {
+                      description: t("errors.allDriveDataDeletedDesc"),
                     });
                   } catch (e) {
                     toast.error(
                       e instanceof Error
                         ? e.message
-                        : "Could not delete all data.",
+                        : t("errors.couldNotDeleteAllData"),
                     );
                   } finally {
                     setWipeBusy(false);
@@ -621,7 +638,7 @@ function GoogleAccountDriveCard({
                 pending={wipeBusy}
                 spinner={<ButtonSpinner className="text-red-100" />}
               >
-                Delete all data in Drive
+                {t("settings.deleteAllDataInDrive")}
               </ButtonPendingContents>
             </button>
           </div>
@@ -632,6 +649,7 @@ function GoogleAccountDriveCard({
 }
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { sessionReady, signOut } = useGoogleSession();
   const {
@@ -673,8 +691,8 @@ export function SettingsPage() {
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
-        title="Settings"
-        subtitle="Authentication, AI keys, and your baseline targets."
+        title={t("settings.pageTitle")}
+        subtitle={t("settings.pageSubtitle")}
       />
 
       <GeminiKeyCard
@@ -695,6 +713,8 @@ export function SettingsPage() {
         isSaving={isSaving}
         wipeAllRemoteData={wipeAllRemoteData}
       />
+
+      <LanguageCard />
 
       <ProfileBodyCard
         key={profileBodySyncKey(records.profile)}

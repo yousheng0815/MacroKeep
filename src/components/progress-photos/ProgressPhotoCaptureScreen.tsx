@@ -15,6 +15,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "@/lib/app-toast";
+import { useTranslation } from "react-i18next";
 
 export function ProgressPhotoCaptureScreen({
   onDismiss,
@@ -27,6 +28,7 @@ export function ProgressPhotoCaptureScreen({
   savePhoto: (record: ProgressPhotoRecord) => Promise<void>;
   photosForGhost: ProgressPhotoItem[];
 }) {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -107,9 +109,7 @@ export function ProgressPhotoCaptureScreen({
         if (!cancelled) setCameraError(null);
       } catch {
         if (!cancelled) {
-          setCameraError(
-            "Camera unavailable. Allow camera access in your browser settings and reload.",
-          );
+          setCameraError(t("progress.cameraUnavailable"));
         }
       }
     })();
@@ -122,7 +122,7 @@ export function ProgressPhotoCaptureScreen({
       if (videoAttach) videoAttach.srcObject = null;
       videoAttach = null;
     };
-  }, [cameraFacing, phase]);
+  }, [cameraFacing, phase, t]);
 
   const mirrorPreview = cameraFacing === "user";
 
@@ -170,12 +170,12 @@ export function ProgressPhotoCaptureScreen({
       onDismiss();
     } catch (e) {
       toast.error(
-        e instanceof Error ? e.message : "Could not save this photo.",
+        e instanceof Error ? e.message : t("errors.couldNotSavePhoto"),
       );
     } finally {
       setBusy(false);
     }
-  }, [previewBlob, onDismiss, onSaved, savePhoto]);
+  }, [previewBlob, onDismiss, onSaved, savePhoto, t]);
 
   return createPortal(
     <div className="fixed inset-0 z-[90] flex flex-col bg-black pt-[env(safe-area-inset-top)]">
@@ -184,17 +184,16 @@ export function ProgressPhotoCaptureScreen({
           type="button"
           onClick={onDismiss}
           className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-zinc-700 text-zinc-300 hover:bg-zinc-900"
-          aria-label="Back"
+          aria-label={t("common.back")}
         >
           <ChevronLeft className="size-6" />
         </button>
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-sm font-semibold text-white">
-            Progress photo
+            {t("progress.progressPhoto")}
           </h2>
           <p className="text-sm text-zinc-500">
-            Synced to Google Drive (hidden app data folder, same account as
-            meals).
+            {t("progress.captureSyncedBlurb")}
           </p>
         </div>
       </header>
@@ -225,7 +224,7 @@ export function ProgressPhotoCaptureScreen({
                       )
                     }
                     className="absolute right-3 top-3 inline-flex size-11 items-center justify-center rounded-full border border-zinc-700/80 bg-black/55 text-white backdrop-blur-sm hover:bg-black/75 disabled:opacity-40"
-                    aria-label="Switch camera"
+                    aria-label={t("progress.switchCamera")}
                   >
                     <SwitchCamera className="size-5" />
                   </button>
@@ -249,12 +248,12 @@ export function ProgressPhotoCaptureScreen({
                   onChange={(e) => setGhostEnabled(e.target.checked)}
                   className="rounded border-zinc-600 bg-zinc-900"
                 />
-                Show last photo as ghost overlay
+                {t("progress.ghostOverlay")}
               </label>
               {ghostBlob ? (
                 <label className="flex flex-col gap-1.5 px-0.5">
                   <span className="flex items-center justify-between text-sm text-zinc-500">
-                    <span>Overlay opacity</span>
+                    <span>{t("progress.overlayOpacity")}</span>
                     <span className="tabular-nums text-zinc-400">
                       {Math.round(ghostOverlayOpacity * 100)}%
                     </span>
@@ -281,13 +280,13 @@ export function ProgressPhotoCaptureScreen({
                 disabled={!!cameraError || busy}
                 onClick={() =>
                   void captureFromVideo().catch(() =>
-                    toast.error("Could not capture frame."),
+                    toast.error(t("progress.couldNotCaptureFrame")),
                   )
                 }
                 className="flex w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-black hover:bg-emerald-400 disabled:opacity-40"
               >
                 <Camera className="size-5 shrink-0" />
-                Capture
+                {t("common.capture")}
               </button>
             </div>
           </>
@@ -297,7 +296,7 @@ export function ProgressPhotoCaptureScreen({
               {previewUrl ? (
                 <img
                   src={previewUrl}
-                  alt="Preview"
+                  alt={t("common.preview")}
                   className="size-full object-cover"
                 />
               ) : null}
@@ -313,7 +312,7 @@ export function ProgressPhotoCaptureScreen({
                 className="flex items-center justify-center gap-2 rounded-xl border border-zinc-600 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-900 disabled:opacity-60"
               >
                 <RotateCcw className="size-4 shrink-0" />
-                Retake
+                {t("common.retake")}
               </button>
               <button
                 type="button"
@@ -326,7 +325,7 @@ export function ProgressPhotoCaptureScreen({
                   spinner={<ButtonSpinner />}
                 >
                   <Check className="size-5 shrink-0" />
-                  Save
+                  {t("common.save")}
                 </ButtonPendingContents>
               </button>
             </div>

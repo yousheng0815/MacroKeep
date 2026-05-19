@@ -12,6 +12,7 @@ import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import { Camera, ImagePlus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 function parseNumber(value: string): number {
   const parsed = Number(value);
@@ -19,6 +20,7 @@ function parseNumber(value: string): number {
 }
 
 export function SavedMealNewPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { addSavedMeal } = useRecords();
   const [savePending, setSavePending] = useState(false);
@@ -56,10 +58,10 @@ export function SavedMealNewPage() {
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
-        title="Add a saved meal"
+        title={t("meals.addSavedMealPageTitle")}
         backTo={paths.add.savedMeals}
-        backAriaLabel="Back to saved meals"
-        subtitle="Add a quick-add template."
+        backAriaLabel={t("meals.backToSavedMeals")}
+        subtitle={t("meals.addSavedMealSubtitle")}
       />
 
       <Card>
@@ -71,7 +73,7 @@ export function SavedMealNewPage() {
               const form = new FormData(e.currentTarget);
               const foodName = String(form.get("foodName") ?? "").trim();
               if (!foodName) {
-                toast.error("Enter a food name.");
+                toast.error(t("common.enterFoodName"));
                 return;
               }
               const calories = String(form.get("calories") ?? "0");
@@ -93,13 +95,13 @@ export function SavedMealNewPage() {
                   },
                   photoOpts,
                 );
-                toast.success("Saved meal added");
+                toast.success(t("errors.savedMealAdded"));
                 await navigate({ to: paths.add.savedMeals });
               } catch (err) {
                 toast.error(
                   err instanceof Error
                     ? err.message
-                    : "Could not add saved meal.",
+                    : t("errors.couldNotAddSavedMeal"),
                 );
               } finally {
                 setSavePending(false);
@@ -108,19 +110,19 @@ export function SavedMealNewPage() {
           }}
         >
           <label className="block">
-            <span className="mb-1 block text-sm text-mk-muted">Food name</span>
+            <span className="mb-1 block text-sm text-mk-muted">{t("common.foodName")}</span>
             <input
               name="foodName"
               type="text"
               autoComplete="off"
-              placeholder="e.g. Chicken salad"
+              placeholder={t("common.placeholderFoodName")}
               className="w-full mk-text-input"
             />
           </label>
 
           <div className="space-y-2">
             <span className="block text-sm text-mk-muted">
-              Photo (optional)
+              {t("common.photoOptional")}
             </span>
             <input
               key={`cam-${photoInputKey}`}
@@ -144,12 +146,12 @@ export function SavedMealNewPage() {
                 {photoChoice ? (
                   <img
                     src={photoChoice.previewUrl}
-                    alt="Meal photo preview"
+                    alt={t("common.mealPhotoPreview")}
                     className="size-full object-cover"
                   />
                 ) : (
                   <MealPhotoThumb
-                    alt="No meal photo yet"
+                    alt={t("common.noMealPhotoYet")}
                     className="size-full shrink-0 overflow-hidden rounded-xl border-0 bg-zinc-800/80"
                   />
                 )}
@@ -162,7 +164,7 @@ export function SavedMealNewPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                 >
                   <Camera className="size-4 text-emerald-400 md:size-5" />
-                  Take a photo
+                  {t("common.takePhoto")}
                 </button>
                 <button
                   type="button"
@@ -171,7 +173,7 @@ export function SavedMealNewPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                 >
                   <ImagePlus className="size-4 text-orange-500 md:size-5" />
-                  Choose a photo
+                  {t("common.choosePhoto")}
                 </button>
               </div>
             </div>
@@ -179,7 +181,7 @@ export function SavedMealNewPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="mb-1 block text-sm text-mk-muted">Calories</span>
+              <span className="mb-1 block text-sm text-mk-muted">{t("common.calories")}</span>
               <input
                 name="calories"
                 type="number"
@@ -191,7 +193,7 @@ export function SavedMealNewPage() {
             </label>
             <label className="block">
               <span className="mb-1 block text-sm text-mk-muted">
-                Protein (g)
+                {t("common.proteinG")}
               </span>
               <input
                 name="protein"
@@ -203,7 +205,7 @@ export function SavedMealNewPage() {
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm text-mk-muted">Fats (g)</span>
+              <span className="mb-1 block text-sm text-mk-muted">{t("common.fatsG")}</span>
               <input
                 name="fats"
                 type="number"
@@ -215,7 +217,7 @@ export function SavedMealNewPage() {
             </label>
             <label className="block">
               <span className="mb-1 block text-sm text-mk-muted">
-                Carbs (g)
+                {t("common.carbsG")}
               </span>
               <input
                 name="carbs"
@@ -238,7 +240,7 @@ export function SavedMealNewPage() {
               pending={savePending}
               spinner={<ButtonSpinner />}
             >
-              Save
+              {t("common.save")}
             </ButtonPendingContents>
           </button>
         </form>

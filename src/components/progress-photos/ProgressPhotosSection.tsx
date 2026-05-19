@@ -20,6 +20,7 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "@/lib/app-toast";
+import { useTranslation } from "react-i18next";
 
 function overlayFromSearch(search: Record<string, unknown>) {
   return {
@@ -68,6 +69,7 @@ function ViewerFallbackChrome({
   onDismiss: () => void;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-[92] flex flex-col bg-black pt-[env(safe-area-inset-top)]">
       <header className="flex shrink-0 items-center gap-3 border-b border-zinc-800 px-4 py-3">
@@ -75,7 +77,7 @@ function ViewerFallbackChrome({
           type="button"
           onClick={onDismiss}
           className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-zinc-700 text-zinc-300 hover:bg-zinc-900"
-          aria-label="Back"
+          aria-label={t("common.back")}
         >
           <ChevronLeft className="size-6" />
         </button>
@@ -95,6 +97,7 @@ export function ProgressPhotosSection({
 }: {
   className?: string;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const searchRecord = useRouterState({ select: (s) => s.location.search });
   const { capture, view } = useMemo(
@@ -263,10 +266,10 @@ export function ProgressPhotosSection({
     <>
       <Card className={`max-w-full min-w-0 overflow-hidden ${className}`}>
         <h2 className="text-sm font-semibold text-white">
-          Body progress photos
+          {t("progress.bodyProgressPhotos")}
         </h2>
         <p className="mt-1 text-sm text-mk-muted">
-          Capture photos of your body progress.
+          {t("progress.bodyProgressBlurb")}
         </p>
 
         <div className="mt-4">
@@ -281,7 +284,7 @@ export function ProgressPhotosSection({
                   <div
                     className="flex w-max flex-nowrap items-center gap-2 py-2"
                     aria-busy="true"
-                    aria-label="Loading photos"
+                    aria-label={t("common.loadingPhotos")}
                   >
                     {Array.from({ length: batchSize }).map((_, i) => (
                       <div
@@ -295,7 +298,7 @@ export function ProgressPhotosSection({
               ) : photos.length === 0 ? (
                 <div className="flex min-h-28 items-center">
                   <p className="text-sm text-zinc-400">
-                    No photos yet — capture your first check-in.
+                    {t("progress.noPhotosYet")}
                   </p>
                 </div>
               ) : (
@@ -308,7 +311,7 @@ export function ProgressPhotosSection({
                       <ProgressPhotoThumb
                         key={p.id}
                         photo={p}
-                        alt={`Progress photo ${i + 1}`}
+                        alt={t("progress.progressPhotoN", { n: i + 1 })}
                       />
                     ))}
                   </div>
@@ -325,7 +328,7 @@ export function ProgressPhotosSection({
             className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-black hover:bg-emerald-400"
           >
             <Camera className="size-5" />
-            Add photo
+            {t("progress.addPhoto")}
           </Link>
           {photos.length < 2 ? (
             <span
@@ -333,7 +336,7 @@ export function ProgressPhotosSection({
               aria-disabled
             >
               <Play className="size-5 text-emerald-400" />
-              Play back
+              {t("progress.playBack")}
             </span>
           ) : (
             <Link
@@ -341,7 +344,7 @@ export function ProgressPhotosSection({
               className="flex items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-900"
             >
               <Play className="size-5 text-emerald-400" />
-              Play back
+              {t("progress.playBack")}
             </Link>
           )}
         </div>
@@ -358,12 +361,12 @@ export function ProgressPhotosSection({
       {showViewerShell && loading && photos.length === 0 ? (
         <div className="fixed inset-0 z-[92] flex flex-col items-center justify-center gap-3 bg-black pt-[env(safe-area-inset-top)] text-zinc-400">
           <ButtonSpinner />
-          <p className="text-sm">Loading photo…</p>
+          <p className="text-sm">{t("progress.loadingPhoto")}</p>
         </div>
       ) : null}
 
       {showViewerShell && error ? (
-        <ViewerFallbackChrome title="Progress photo" onDismiss={dismissOverlay}>
+        <ViewerFallbackChrome title={t("progress.progressPhoto")} onDismiss={dismissOverlay}>
           <p className="max-w-sm text-center text-sm text-zinc-400">
             Couldn&apos;t open this photo. Check the notification for details.
           </p>
@@ -372,23 +375,22 @@ export function ProgressPhotosSection({
             onClick={dismissOverlay}
             className="mt-6 text-sm font-medium text-emerald-400 hover:text-emerald-300"
           >
-            Go back
+            {t("common.goBack")}
           </button>
         </ViewerFallbackChrome>
       ) : null}
 
       {showViewerShell && !loading && !error && view && viewIndex < 0 ? (
-        <ViewerFallbackChrome title="Progress photo" onDismiss={dismissOverlay}>
+        <ViewerFallbackChrome title={t("progress.progressPhoto")} onDismiss={dismissOverlay}>
           <p className="max-w-sm text-center text-sm text-zinc-400">
-            This photo was not found. It may have been removed or the link is
-            outdated.
+            {t("progress.photoNotFound")}
           </p>
           <button
             type="button"
             onClick={dismissOverlay}
             className="mt-6 btn-mobile-block-lg rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black hover:bg-emerald-400"
           >
-            Go back
+            {t("common.goBack")}
           </button>
         </ViewerFallbackChrome>
       ) : null}

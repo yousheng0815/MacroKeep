@@ -38,6 +38,7 @@ import type {
 import { emptyRecords } from "@/types/records";
 import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import i18n from "@/i18n";
 import { useCallback, useMemo, useRef, useState } from "react";
 
 /** How many newest month shards to download on first meals sync. */
@@ -118,7 +119,7 @@ async function fetchRecordsMealsFromDrive(
   signal?: AbortSignal,
 ): Promise<RecordsMealsQueryData> {
   const token = await ensureGoogleAccessToken();
-  if (!token) throw new Error("Missing Google access token");
+  if (!token) throw new Error(i18n.t("errors.missingGoogleAccessToken"));
   const shardsOnDriveDesc = await listMealShardFilesSortedDesc(token, signal);
   const initialRefs = pickInitialMealShards(
     shardsOnDriveDesc,
@@ -154,7 +155,7 @@ export function useRecords() {
     staleTime: DRIVE_QUERY_STALE_TIME_MS,
     queryFn: async (): Promise<RecordsCoreDocument> => {
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing Google access token");
+      if (!token) throw new Error(i18n.t("errors.missingGoogleAccessToken"));
 
       const pulled = await pullRecordsCoreFromDrive(token);
       if (!pulled) {
@@ -179,7 +180,7 @@ export function useRecords() {
     staleTime: DRIVE_QUERY_STALE_TIME_MS,
     queryFn: async ({ signal }) => {
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing Google access token");
+      if (!token) throw new Error(i18n.t("errors.missingGoogleAccessToken"));
       return pullSavedMealsFromDrive(token, signal);
     },
   });
@@ -193,10 +194,10 @@ export function useRecords() {
       shardFileIdsPrefetched?: Readonly<Record<string, string | null>>;
     }): Promise<ReplaceMutationResult> => {
       if (!canSyncToDriveAppData()) {
-        throw new Error("Not signed in or Drive scope unavailable");
+        throw new Error(i18n.t("errors.notSignedInDrive"));
       }
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing access token");
+      if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
       const uid = getGoogleUserId() ?? "";
       let nextDoc = payload.next;
       let hydratedMonthKeysForSync: string[] = [];
@@ -364,10 +365,10 @@ export function useRecords() {
 
         if (options?.photoFileId) {
           if (!canSyncToDriveAppData()) {
-            throw new Error("Not signed in or Drive scope unavailable");
+            throw new Error(i18n.t("errors.notSignedInDrive"));
           }
           const token = await ensureGoogleAccessToken();
-          if (!token) throw new Error("Missing access token");
+          if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
           const shardDriveId = await resolveMealsShardDriveFileId(token, mealMonthKey);
 
           const rowWithPhoto: MealRecord = {
@@ -397,10 +398,10 @@ export function useRecords() {
 
         if (options?.preparedPhoto || options?.photo) {
           if (!canSyncToDriveAppData()) {
-            throw new Error("Not signed in or Drive scope unavailable");
+            throw new Error(i18n.t("errors.notSignedInDrive"));
           }
           const token = await ensureGoogleAccessToken();
-          if (!token) throw new Error("Missing access token");
+          if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
           const prepared = options.preparedPhoto
             ? options.preparedPhoto
             : await prepareMealPhotoForUpload(
@@ -473,7 +474,7 @@ export function useRecords() {
     async (id: string) => {
       const prev = getCurrentRecords();
       const removed = prev.meals.find((m) => m.id === id);
-      if (!removed) throw new Error("Meal not found");
+      if (!removed) throw new Error(i18n.t("errors.mealNotFound"));
       const photoId = removed.photoFileId;
       const next: RecordsDocument = {
         ...prev,
@@ -525,7 +526,7 @@ export function useRecords() {
     ) => {
       const prev = getCurrentRecords();
       const hasTarget = prev.meals.some((m) => m.id === id);
-      if (!hasTarget) throw new Error("Meal not found");
+      if (!hasTarget) throw new Error(i18n.t("errors.mealNotFound"));
       const prevMeal = prev.meals.find((m) => m.id === id)!;
       const oldPhotoId = prevMeal.photoFileId;
 
@@ -600,13 +601,13 @@ export function useRecords() {
       },
     ): Promise<string> => {
       if (!canSyncToDriveAppData()) {
-        throw new Error("Not signed in or Drive scope unavailable");
+        throw new Error(i18n.t("errors.notSignedInDrive"));
       }
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing access token");
+      if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
       const uid = getGoogleUserId() ?? "";
       const foodName = snapshot.food_name.trim();
-      if (!foodName) throw new Error("Enter a food name.");
+      if (!foodName) throw new Error(i18n.t("common.enterFoodName"));
 
       const newId = options?.id ?? crypto.randomUUID?.() ?? String(Date.now());
       let photoFileId = options?.photoFileId;
@@ -638,9 +639,7 @@ export function useRecords() {
 
       const prev = await pullSavedMealsFromDrive(token);
       if (savedMealDuplicatesExisting(row, prev)) {
-        throw new Error(
-          "A saved meal with the same name and macros is already on your list.",
-        );
+        throw new Error(i18n.t("errors.duplicateSavedMeal"));
       }
 
       const next = [row, ...prev];
@@ -654,13 +653,13 @@ export function useRecords() {
   const addSavedMealFromMeal = useCallback(
     async (meal: MealRecord) => {
       if (!canSyncToDriveAppData()) {
-        throw new Error("Not signed in or Drive scope unavailable");
+        throw new Error(i18n.t("errors.notSignedInDrive"));
       }
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing access token");
+      if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
       const prev = await pullSavedMealsFromDrive(token);
       if (isMealAlreadySavedAsTemplate(meal, prev)) {
-        throw new Error("This meal is already in your saved meals.");
+        throw new Error(i18n.t("errors.alreadyInSavedMeals"));
       }
       const newId = crypto.randomUUID?.() ?? String(Date.now());
       let photoFileId = meal.photoFileId;
@@ -695,18 +694,18 @@ export function useRecords() {
       },
     ) => {
       if (!canSyncToDriveAppData()) {
-        throw new Error("Not signed in or Drive scope unavailable");
+        throw new Error(i18n.t("errors.notSignedInDrive"));
       }
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing access token");
+      if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
       const uid = getGoogleUserId() ?? "";
       const prev = await pullSavedMealsFromDrive(token);
       const prevRow = prev.find((s) => s.id === id);
-      if (!prevRow) throw new Error("Saved meal not found");
+      if (!prevRow) throw new Error(i18n.t("errors.savedMealNotFound"));
       const oldPhotoId = prevRow.photoFileId;
 
       const foodName = patch.food_name.trim();
-      if (!foodName) throw new Error("Enter a food name.");
+      if (!foodName) throw new Error(i18n.t("common.enterFoodName"));
 
       const updated: SavedMealRecord = {
         ...prevRow,
@@ -726,9 +725,7 @@ export function useRecords() {
       }
 
       if (savedMealDuplicatesExisting(updated, prev, id)) {
-        throw new Error(
-          "A saved meal with the same name and macros is already on your list.",
-        );
+        throw new Error(i18n.t("errors.duplicateSavedMeal"));
       }
 
       const next = prev.map((s) => (s.id === id ? updated : s));
@@ -764,10 +761,10 @@ export function useRecords() {
   const commitSavedMeals = useCallback(
     async (nextFromClient: SavedMealRecord[]) => {
       if (!canSyncToDriveAppData()) {
-        throw new Error("Not signed in or Drive scope unavailable");
+        throw new Error(i18n.t("errors.notSignedInDrive"));
       }
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing access token");
+      if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
       const uid = getGoogleUserId() ?? "";
       const prev = await pullSavedMealsFromDrive(token);
       const prevById = new Map(prev.map((s) => [s.id, s]));
@@ -775,12 +772,12 @@ export function useRecords() {
       const merged: SavedMealRecord[] = [];
       for (const row of nextFromClient) {
         if (seen.has(row.id)) {
-          throw new Error("Invalid order: duplicate entries.");
+          throw new Error(i18n.t("errors.invalidOrder"));
         }
         seen.add(row.id);
         const fresh = prevById.get(row.id);
         if (!fresh) {
-          throw new Error("Saved meals list changed; try again.");
+          throw new Error(i18n.t("errors.savedMealsListChanged"));
         }
         merged.push(fresh);
       }
@@ -865,10 +862,10 @@ export function useRecords() {
 
   const wipeAllRemoteData = useCallback(async () => {
     if (!canSyncToDriveAppData()) {
-      throw new Error("Not signed in or Drive scope unavailable");
+      throw new Error(i18n.t("errors.notSignedInDrive"));
     }
     const token = await ensureGoogleAccessToken();
-    if (!token) throw new Error("Missing access token");
+    if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
     const { deleted, failures } = await deleteAllAppDataFiles(token);
     if (failures.length > 0) {
       throw new Error(
@@ -906,7 +903,7 @@ export function useRecords() {
       setLoadingMoreMeals(true);
       try {
         const token = await ensureGoogleAccessToken();
-        if (!token) throw new Error("Missing access token");
+        if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
         const newMeals = await pullMealsFromShardRefs(token, toFetch);
         qc.setQueryData<RecordsMealsQueryData>(["records-meals", uid], (cur) => {
           if (!cur) return cur;

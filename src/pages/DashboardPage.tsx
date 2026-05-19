@@ -17,6 +17,7 @@ import { Link } from "@tanstack/react-router";
 import { Camera, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 function sumToday(meals: MealRecord[]): {
   kcal: number;
@@ -47,9 +48,12 @@ function MealsLoadErrorBanner({
   error: unknown;
   onRetry: () => void | Promise<unknown>;
 }) {
+  const { t } = useTranslation();
   const [retryPending, setRetryPending] = useState(false);
   const msg =
-    error instanceof Error ? error.message : "Could not load meals from Drive.";
+    error instanceof Error
+      ? error.message
+      : t("dashboard.couldNotLoadMeals");
   return (
     <div
       role="alert"
@@ -76,7 +80,7 @@ function MealsLoadErrorBanner({
           pending={retryPending}
           spinner={<ButtonSpinner />}
         >
-          Retry
+          {t("common.retry")}
         </ButtonPendingContents>
       </button>
     </div>
@@ -94,12 +98,13 @@ function MealDerivedPlaceholder({
   onRetry: () => void | Promise<unknown>;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   const [retryPending, setRetryPending] = useState(false);
   if (loading) {
     return (
       <div className="flex min-h-[140px] flex-col items-center justify-center gap-3 py-10">
         <Loader2 className="size-8 animate-spin text-emerald-400" aria-hidden />
-        <p className="text-sm text-mk-muted">Loading meals…</p>
+        <p className="text-sm text-mk-muted">{t("dashboard.loadingMeals")}</p>
       </div>
     );
   }
@@ -109,7 +114,7 @@ function MealDerivedPlaceholder({
         <p className="text-sm text-red-300">
           {error instanceof Error
             ? error.message
-            : "Could not load meals from Drive."}
+            : t("dashboard.couldNotLoadMeals")}
         </p>
         <button
           type="button"
@@ -131,7 +136,7 @@ function MealDerivedPlaceholder({
             pending={retryPending}
             spinner={<ButtonSpinner />}
           >
-            Retry
+            {t("common.retry")}
           </ButtonPendingContents>
         </button>
       </div>
@@ -141,6 +146,7 @@ function MealDerivedPlaceholder({
 }
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const { records, geminiKey, isMealsLoading, mealsError, refetchMeals } =
     useRecords();
   const quickCameraInputRef = useRef<HTMLInputElement>(null);
@@ -187,7 +193,7 @@ export function DashboardPage() {
 
           <Card className="lg:hidden">
             <h2 className="mb-4 text-sm font-semibold text-white">
-              Macros today
+              {t("dashboard.macrosToday")}
             </h2>
             <MacroSummary
               proteinG={today.protein}
@@ -207,21 +213,20 @@ export function DashboardPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-white">
-                  Gemini API Key
+                  {t("dashboard.geminiKeyCardTitle")}
                 </h2>
                 <p className="mt-1 text-sm text-mk-muted">
-                  Needed for photo meal scanning. Configure under Settings —
-                  saved with your Drive diary file.
+                  {t("dashboard.geminiKeyCardBlurb")}
                 </p>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 {connected ? (
                   <>
                     <CheckCircle2 className="size-4 text-emerald-400" />
-                    <span className="text-emerald-400">Connected</span>
+                    <span className="text-emerald-400">{t("common.connected")}</span>
                   </>
                 ) : (
-                  <span className="text-zinc-400">Not set</span>
+                  <span className="text-zinc-400">{t("common.notSet")}</span>
                 )}
               </div>
             </div>
@@ -230,7 +235,7 @@ export function DashboardPage() {
                 to={paths.settings}
                 className="mt-4 inline-block text-sm text-blue-400 underline underline-offset-4 hover:text-blue-300"
               >
-                Add your API key in Settings
+                {t("dashboard.addApiKeyInSettings")}
               </Link>
             )}
           </Card>
@@ -239,7 +244,7 @@ export function DashboardPage() {
         <div className="mt-6 space-y-6 lg:mt-0">
           <Card className="hidden lg:block">
             <h2 className="mb-4 text-sm font-semibold text-white">
-              Macros today
+              {t("dashboard.macrosToday")}
             </h2>
             <MacroSummary
               proteinG={today.protein}
@@ -257,7 +262,7 @@ export function DashboardPage() {
 
           <Card className="lg:mt-0">
             <h2 className="mb-4 text-sm font-semibold text-white">
-              Today&apos;s meals
+              {t("dashboard.todaysMeals")}
             </h2>
             <MealDerivedPlaceholder
               loading={isMealsLoading}
@@ -267,7 +272,7 @@ export function DashboardPage() {
               <ul className="divide-y divide-zinc-800">
                 {mealsToday.length === 0 ? (
                   <li className="py-6 text-center text-sm text-mk-muted">
-                    No meals logged today yet.
+                    {t("dashboard.noMealsToday")}
                   </li>
                 ) : (
                   mealsToday.map((m) => (
@@ -292,7 +297,7 @@ export function DashboardPage() {
                           </div>
                           <div className="text-sm text-mk-muted">
                             {formatTime(new Date(m.recordedAt))} ·{" "}
-                            {Math.round(m.calories)} kcal
+                            {Math.round(m.calories)} {t("common.kcal")}
                           </div>
                         </div>
                         <ChevronRight className="size-4 text-zinc-600" />
@@ -321,7 +326,7 @@ export function DashboardPage() {
           quickCameraInputRef.current?.click();
         }}
         className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] right-[max(1rem,env(safe-area-inset-right,0px))] z-30 inline-flex items-center gap-2 rounded-full bg-emerald-400 p-4 text-sm font-semibold text-black shadow-lg transition hover:bg-emerald-300 lg:hidden"
-        aria-label="Quick scan meal photo"
+        aria-label={t("dashboard.quickScanAria")}
       >
         <Camera className="size-6" />
       </button>

@@ -32,6 +32,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 function sameOrderAndIds(
   a: readonly SavedMealRecord[],
@@ -110,6 +111,7 @@ function ManageRow({
   onRemove,
   editDisabled,
 }: ManageRowProps) {
+  const { t } = useTranslation();
   return (
     <li className="min-w-0 overflow-hidden">
       <SavedMealRowContent
@@ -120,7 +122,7 @@ function ManageRow({
             <Link
               to={paths.add.savedMealEdit}
               params={{ savedMealId: item.id }}
-              aria-label={`Edit ${item.food_name}`}
+              aria-label={t("meals.editAria", { foodName: item.food_name })}
               className={`relative z-10 inline-flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900/50 p-2.5 text-zinc-300 transition hover:border-zinc-600 hover:bg-zinc-800 hover:text-white ${
                 editDisabled || committing
                   ? "pointer-events-none opacity-40"
@@ -132,7 +134,7 @@ function ManageRow({
             <button
               type="button"
               disabled={committing}
-              aria-label={`Remove ${item.food_name} from list`}
+              aria-label={t("meals.removeAria", { foodName: item.food_name })}
               onClick={() => onRemove(item.id)}
               className="inline-flex items-center justify-center rounded-lg border border-red-900/60 bg-red-950/40 p-2.5 text-red-400 transition hover:bg-red-950/70 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -151,6 +153,7 @@ type SortableReorderRowProps = {
 };
 
 function SortableReorderRow({ item, committing }: SortableReorderRowProps) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -183,7 +186,7 @@ function SortableReorderRow({ item, committing }: SortableReorderRowProps) {
             ref={setActivatorNodeRef}
             {...listeners}
             {...attributes}
-            aria-label={`Drag to reorder ${item.food_name}`}
+            aria-label={t("meals.dragReorderAria", { foodName: item.food_name })}
             disabled={committing}
             className={`inline-flex items-center justify-center rounded-lg p-1.5 text-zinc-500 outline-none transition hover:bg-zinc-800 hover:text-zinc-300 focus-visible:ring-2 focus-visible:ring-sky-500/80 ${
               committing
@@ -200,6 +203,7 @@ function SortableReorderRow({ item, committing }: SortableReorderRowProps) {
 }
 
 export function SavedMealsPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     savedMeals,
@@ -228,7 +232,7 @@ export function SavedMealsPage() {
     toast.error(
       savedMealsError instanceof Error
         ? savedMealsError.message
-        : "Could not load saved meals from Drive.",
+        : t("errors.couldNotLoadSavedMealsDrive"),
     );
   }, [savedMealsError]);
 
@@ -264,10 +268,10 @@ export function SavedMealsPage() {
     setCommitting(true);
     try {
       await commitSavedMeals(draft);
-      toast.success("Saved");
+      toast.success(t("errors.saved"));
       exitDiscard();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save changes.");
+      toast.error(e instanceof Error ? e.message : t("errors.couldNotSaveChanges"));
     } finally {
       setCommitting(false);
     }
@@ -298,10 +302,10 @@ export function SavedMealsPage() {
         },
         item.photoFileId ? { photoFileId: item.photoFileId } : undefined,
       );
-      toast.success("Meal added");
+      toast.success(t("errors.mealAdded"));
       await navigate({ to: paths.history });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not add meal.");
+      toast.error(e instanceof Error ? e.message : t("errors.couldNotAddMeal"));
     } finally {
       setPendingId(null);
     }
@@ -322,15 +326,15 @@ export function SavedMealsPage() {
   return (
     <div className="min-w-0 space-y-6 overflow-x-hidden">
       <PageHeader
-        title="Add From Saved Meals"
+        title={t("meals.addFromSavedTitle")}
         backTo={paths.add.root}
-        backAriaLabel="Back to add meal"
-        subtitle="Pick a saved meal to quickly log it again."
+        backAriaLabel={t("addMeal.backToAddMeal")}
+        subtitle={t("meals.addFromSavedSubtitle")}
       />
 
       <Card>
         <div className="mb-4 flex min-h-9 flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-white">Saved meals</h2>
+          <h2 className="text-sm font-semibold text-white">{t("meals.savedMealsSection")}</h2>
           {showSavedMealsActions ? (
             inSession ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -340,21 +344,19 @@ export function SavedMealsPage() {
                   onClick={exitDiscard}
                   className={`${SAVED_MEALS_HEADER_ACTION_BTN} text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50`}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="button"
                   disabled={committing}
                   aria-busy={committing}
-                  aria-label={committing ? "Saving" : undefined}
+                  aria-label={committing ? t("common.saving") : undefined}
                   onClick={() => void exitDone()}
                   className={`${SAVED_MEALS_HEADER_ACTION_BTN} relative text-sky-400 transition hover:bg-zinc-800 hover:text-sky-300 disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   {committing ? (
                     <span className="relative inline-flex items-center justify-center">
-                      <span className="invisible" aria-hidden>
-                        Done
-                      </span>
+                      <span className="invisible" aria-hidden>{t("common.done")}</span>
                       <span
                         className="absolute inset-0 flex items-center justify-center"
                         aria-hidden
@@ -363,7 +365,7 @@ export function SavedMealsPage() {
                       </span>
                     </span>
                   ) : (
-                    "Done"
+                    t("common.done")
                   )}
                 </button>
               </div>
@@ -374,7 +376,7 @@ export function SavedMealsPage() {
                   onClick={enterManage}
                   className={`${SAVED_MEALS_HEADER_ACTION_BTN} text-sky-400 transition hover:bg-zinc-800 hover:text-sky-300`}
                 >
-                  Edit
+                  {t("meals.edit")}
                 </button>
                 {canReorder ? (
                   <button
@@ -382,7 +384,7 @@ export function SavedMealsPage() {
                     onClick={enterReorder}
                     className={`${SAVED_MEALS_HEADER_ACTION_BTN} text-sky-400 transition hover:bg-zinc-800 hover:text-sky-300`}
                   >
-                    Reorder
+                    {t("meals.reorder")}
                   </button>
                 ) : null}
               </div>
@@ -390,7 +392,7 @@ export function SavedMealsPage() {
           ) : null}
         </div>
         {isSavedMealsLoading ? (
-          <p className="text-sm text-mk-muted">Loading saved meals…</p>
+          <p className="text-sm text-mk-muted">{t("meals.loadingSavedMeals")}</p>
         ) : savedMealsError ? (
           <p className="text-sm text-mk-muted">
             Couldn&apos;t load saved meals. Check your connection or try
@@ -398,8 +400,7 @@ export function SavedMealsPage() {
           </p>
         ) : savedMeals.length === 0 && !inSession ? (
           <p className="text-sm text-mk-muted">
-            No saved meals yet. Tap Edit to add one, or use &quot;Add to saved
-            meals&quot; on a logged meal&apos;s details screen.
+            {t("meals.noSavedMealsBrowse")}
           </p>
         ) : listMode === "reorder" && draft ? (
           <DndContext
@@ -426,8 +427,7 @@ export function SavedMealsPage() {
           <div className="space-y-4">
             {draft.length === 0 ? (
               <p className="text-sm text-mk-muted">
-                No saved meals yet. Use the button below to create your first
-                one.
+                {t("meals.noSavedMealsManage")}
               </p>
             ) : (
               <ul className="divide-y divide-zinc-800">
@@ -447,7 +447,7 @@ export function SavedMealsPage() {
               className="btn-mobile-block-lg flex items-center justify-center gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900"
             >
               <Plus className="size-4 text-emerald-400" aria-hidden />
-              Add a saved meal
+              {t("meals.addSavedMeal")}
             </Link>
           </div>
         ) : (

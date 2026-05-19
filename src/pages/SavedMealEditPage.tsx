@@ -16,6 +16,7 @@ import type { SavedMealRecord } from "@/types/records";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Camera, ImagePlus, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type EditPhotoState =
   | { mode: "unchanged" }
@@ -37,6 +38,7 @@ function SavedMealEditForm({
   updateSavedMeal,
   onDone,
 }: SavedMealEditFormProps) {
+  const { t } = useTranslation();
   const [savePending, setSavePending] = useState(false);
   const [editPhoto, setEditPhoto] = useState<EditPhotoState>({
     mode: "unchanged",
@@ -92,7 +94,7 @@ function SavedMealEditForm({
               const form = new FormData(e.currentTarget);
               const foodName = String(form.get("foodName") ?? "").trim();
               if (!foodName) {
-                toast.error("Enter a food name.");
+                toast.error(t("common.enterFoodName"));
                 return;
               }
               const calories = String(form.get("calories") ?? "0");
@@ -111,11 +113,11 @@ function SavedMealEditForm({
               if (editPhoto.mode === "replacement") {
                 if (!canSyncToDriveAppData()) {
                   throw new Error(
-                    "Sign in with Google Drive access to attach a meal photo.",
+                    t("errors.signInForPhoto"),
                   );
                 }
                 const token = await ensureGoogleAccessToken();
-                if (!token) throw new Error("Missing access token");
+                if (!token) throw new Error(t("errors.missingAccessToken"));
                 const { base64, mimeType } = await fileToBase64(editPhoto.file);
                 const prepared = await prepareMealPhotoForUpload(
                   base64,
@@ -139,7 +141,7 @@ function SavedMealEditForm({
               orphanUploadId = null;
               revokeEditPhotoPreview(editPhoto);
               setEditPhoto({ mode: "unchanged" });
-              toast.success("Saved meal updated");
+              toast.success(t("errors.savedMealUpdated"));
               onDone();
             } catch (err) {
               if (orphanUploadId) {
@@ -151,7 +153,7 @@ function SavedMealEditForm({
                 }
               }
               toast.error(
-                err instanceof Error ? err.message : "Could not save changes.",
+                err instanceof Error ? err.message : t("errors.couldNotSaveChanges"),
               );
             } finally {
               setSavePending(false);
@@ -160,7 +162,7 @@ function SavedMealEditForm({
         }}
       >
         <label className="block">
-          <span className="mb-1 block text-sm text-mk-muted">Food name</span>
+          <span className="mb-1 block text-sm text-mk-muted">{t("common.foodName")}</span>
           <input
             name="foodName"
             type="text"
@@ -170,7 +172,7 @@ function SavedMealEditForm({
         </label>
 
         <div className="space-y-2">
-          <span className="block text-sm text-mk-muted">Photo</span>
+          <span className="block text-sm text-mk-muted">{t("common.photo")}</span>
           <input
             key={`cam-${fileInputKey}`}
             ref={cameraInputRef}
@@ -197,7 +199,7 @@ function SavedMealEditForm({
               {editPhoto.mode === "replacement" ? (
                 <img
                   src={editPhoto.previewUrl}
-                  alt="New meal photo preview"
+                  alt={t("common.newMealPhotoPreview")}
                   className="size-full object-cover"
                 />
               ) : saved.photoFileId ? (
@@ -209,7 +211,7 @@ function SavedMealEditForm({
                 />
               ) : (
                 <MealPhotoThumb
-                  alt="No meal photo"
+                  alt={t("common.noMealPhoto")}
                   className="size-full shrink-0 overflow-hidden rounded-xl border-0"
                 />
               )}
@@ -222,7 +224,7 @@ function SavedMealEditForm({
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
               >
                 <Camera className="size-4 text-emerald-400 md:size-5" />
-                Take a photo
+                {t("common.takePhoto")}
               </button>
               <button
                 type="button"
@@ -231,7 +233,7 @@ function SavedMealEditForm({
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
               >
                 <ImagePlus className="size-4 text-orange-500 md:size-5" />
-                Choose a photo
+                {t("common.choosePhoto")}
               </button>
             </div>
           </div>
@@ -239,7 +241,7 @@ function SavedMealEditForm({
 
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="mb-1 block text-sm text-mk-muted">Calories</span>
+            <span className="mb-1 block text-sm text-mk-muted">{t("common.calories")}</span>
             <input
               name="calories"
               type="number"
@@ -251,7 +253,7 @@ function SavedMealEditForm({
           </label>
           <label className="block">
             <span className="mb-1 block text-sm text-mk-muted">
-              Protein (g)
+              {t("common.proteinG")}
             </span>
             <input
               name="protein"
@@ -263,7 +265,7 @@ function SavedMealEditForm({
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm text-mk-muted">Fats (g)</span>
+            <span className="mb-1 block text-sm text-mk-muted">{t("common.fatsG")}</span>
             <input
               name="fats"
               type="number"
@@ -274,7 +276,7 @@ function SavedMealEditForm({
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm text-mk-muted">Carbs (g)</span>
+            <span className="mb-1 block text-sm text-mk-muted">{t("common.carbsG")}</span>
             <input
               name="carbs"
               type="number"
@@ -297,7 +299,7 @@ function SavedMealEditForm({
               pending={savePending}
               spinner={<ButtonSpinner />}
             >
-              Save changes
+              {t("common.saveChanges")}
             </ButtonPendingContents>
           </button>
 
@@ -307,7 +309,7 @@ function SavedMealEditForm({
             onClick={() => onDone()}
             className="flex items-center justify-center gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
         </div>
       </form>
@@ -316,6 +318,7 @@ function SavedMealEditForm({
 }
 
 export function SavedMealEditPage() {
+  const { t } = useTranslation();
   const { savedMealId } = useParams({ strict: false });
   const navigate = useNavigate();
   const {
@@ -335,7 +338,7 @@ export function SavedMealEditPage() {
     toast.error(
       savedMealsError instanceof Error
         ? savedMealsError.message
-        : "Could not load saved meals from Drive.",
+        : t("errors.couldNotLoadSavedMealsDrive"),
     );
   }, [savedMealsError]);
 
@@ -347,13 +350,13 @@ export function SavedMealEditPage() {
     return (
       <Card>
         <div className="space-y-3 py-4 text-center">
-          <p className="text-sm text-mk-muted">Invalid link.</p>
+          <p className="text-sm text-mk-muted">{t("meals.invalidLink")}</p>
           <Link
             to={paths.add.savedMeals}
             className="btn-mobile-block-lg gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
-            Back to saved meals
+            {t("meals.backToSavedMeals")}
           </Link>
         </div>
       </Card>
@@ -368,7 +371,7 @@ export function SavedMealEditPage() {
             className="size-8 animate-spin text-emerald-400"
             aria-hidden
           />
-          <p className="text-sm text-mk-muted">Loading saved meal…</p>
+          <p className="text-sm text-mk-muted">{t("meals.loadingSavedMeal")}</p>
         </div>
       </Card>
     );
@@ -379,14 +382,14 @@ export function SavedMealEditPage() {
       <Card>
         <div className="space-y-3 py-4 text-center">
           <p className="text-sm text-mk-muted">
-            This saved meal could not be found.
+            {t("meals.savedMealNotFound")}
           </p>
           <Link
             to={paths.add.savedMeals}
             className="btn-mobile-block-lg gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
-            Back to saved meals
+            {t("meals.backToSavedMeals")}
           </Link>
         </div>
       </Card>
@@ -396,10 +399,10 @@ export function SavedMealEditPage() {
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
-        title="Edit saved meal"
+        title={t("meals.editSavedMealTitle")}
         onBack={goBackToList}
-        backAriaLabel="Back to saved meals"
-        subtitle="Update the name, macros, or photo for this quick-add entry."
+        backAriaLabel={t("meals.backToSavedMeals")}
+        subtitle={t("meals.editSavedMealSubtitle")}
       />
 
       <SavedMealEditForm

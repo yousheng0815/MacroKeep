@@ -8,8 +8,10 @@ import { useRecords } from "@/hooks/use-records";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 import { useCallback, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { records, refetch } = useRecords();
   const onPullRefresh = useCallback(() => refetch(), [refetch]);
@@ -48,7 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   ? "bg-zinc-900 text-emerald-400 hover:bg-zinc-900"
                   : "bg-mk-surface text-zinc-300 hover:bg-zinc-800"
               }`}
-              aria-label="Settings"
+              aria-label={t("nav.settingsAria")}
               aria-current={settingsActive ? "page" : undefined}
             >
               <Settings className="size-5" />

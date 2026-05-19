@@ -19,6 +19,7 @@ import { Link } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 function groupByDay(meals: MealRecord[]): Map<number, MealRecord[]> {
   const map = new Map<number, MealRecord[]>();
@@ -35,6 +36,7 @@ function groupByDay(meals: MealRecord[]): Map<number, MealRecord[]> {
 }
 
 export function HistoryPage() {
+  const { t } = useTranslation();
   const {
     records,
     userId,
@@ -101,7 +103,7 @@ export function HistoryPage() {
             className="size-8 animate-spin text-emerald-400"
             aria-hidden
           />
-          <p className="text-sm text-mk-muted">Loading meal history…</p>
+          <p className="text-sm text-mk-muted">{t("history.loadingHistory")}</p>
         </div>
       </Card>
     );
@@ -109,7 +111,7 @@ export function HistoryPage() {
     const msg =
       mealsError instanceof Error
         ? mealsError.message
-        : "Could not load meals from Drive.";
+        : t("errors.couldNotLoadMealsDrive");
     body = (
       <Card>
         <div className="flex flex-col items-center justify-center gap-4 px-4 py-12 text-center">
@@ -134,7 +136,7 @@ export function HistoryPage() {
               pending={retryPending}
               spinner={<ButtonSpinner />}
             >
-              Retry
+              {t("common.retry")}
             </ButtonPendingContents>
           </button>
         </div>
@@ -148,7 +150,7 @@ export function HistoryPage() {
             className="size-8 animate-spin text-emerald-400"
             aria-hidden
           />
-          <p className="text-sm text-mk-muted">Loading meal history…</p>
+          <p className="text-sm text-mk-muted">{t("history.loadingHistory")}</p>
         </div>
       </Card>
     );
@@ -156,7 +158,7 @@ export function HistoryPage() {
     body = (
       <Card>
         <p className="py-10 text-center text-sm text-mk-muted">
-          Nothing logged yet.
+          {t("history.nothingLogged")}
         </p>
       </Card>
     );
@@ -181,10 +183,10 @@ export function HistoryPage() {
               <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <div className="text-sm font-semibold text-white">
-                    {today ? "Today" : formatLocalDateLabel(dayDate)}
+                    {today ? t("common.today") : formatLocalDateLabel(dayDate)}
                   </div>
                   <div className="mt-1 text-sm text-mk-muted">
-                    {Math.round(totals.kcal)} kcal
+                    {Math.round(totals.kcal)} {t("common.kcal")}
                   </div>
                 </div>
               </div>
@@ -214,7 +216,7 @@ export function HistoryPage() {
                         </div>
                         <div className="mt-1 truncate text-sm text-mk-muted">
                           {formatTime(new Date(m.recordedAt))} ·{" "}
-                          {Math.round(m.calories)} kcal
+                          {Math.round(m.calories)} {t("common.kcal")}
                         </div>
                       </div>
                     </Link>
@@ -235,10 +237,10 @@ export function HistoryPage() {
                   className="size-6 animate-spin text-emerald-400"
                   aria-hidden
                 />
-                <p className="text-xs text-mk-muted">Loading more meals…</p>
+                <p className="text-xs text-mk-muted">{t("history.loadingMore")}</p>
               </>
             ) : (
-              <p className="text-xs text-mk-muted">Scroll for more history</p>
+              <p className="text-xs text-mk-muted">{t("history.scrollForMore")}</p>
             )}
           </div>
         ) : null}
@@ -249,8 +251,8 @@ export function HistoryPage() {
   return (
     <div className="min-w-0 space-y-6 overflow-x-hidden">
       <PageHeader
-        title="History"
-        subtitle="Meals grouped by day with macro totals."
+        title={t("history.pageTitle")}
+        subtitle={t("history.pageSubtitle")}
       />
 
       {body}

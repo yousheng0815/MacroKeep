@@ -5,6 +5,9 @@ import type {
 } from "@/types/progress-photos";
 import { ChevronLeft, Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import i18n from "@/i18n";
+import { intlLocaleTag, type AppLocale } from "@/i18n/config";
+import { useTranslation } from "react-i18next";
 
 export function ProgressPhotoSlideshowViewer({
   photos,
@@ -13,6 +16,7 @@ export function ProgressPhotoSlideshowViewer({
   photos: ProgressPhotoItem[];
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const sorted = useMemo(() => {
     const ready: ProgressPhotoRecord[] = [];
     for (const p of photos) {
@@ -62,7 +66,7 @@ export function ProgressPhotoSlideshowViewer({
 
   const label = useMemo(() => {
     if (!slide) return "";
-    return new Date(slide.capturedAt).toLocaleString(undefined, {
+    return new Date(slide.capturedAt).toLocaleString(intlLocaleTag(i18n.language as AppLocale) ?? undefined, {
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -88,7 +92,7 @@ export function ProgressPhotoSlideshowViewer({
         {url ? (
           <img
             src={url}
-            alt={`Progress photo ${displayIndex + 1} of ${sorted.length}`}
+            alt={t("progress.slideshowPhotoAlt", { index: displayIndex + 1, total: sorted.length })}
             className="max-h-full max-w-full object-contain"
           />
         ) : null}
@@ -105,7 +109,7 @@ export function ProgressPhotoSlideshowViewer({
               type="button"
               onClick={goPrev}
               className="absolute left-2 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-700 bg-black/50 text-white backdrop-blur hover:bg-black/70 md:left-6"
-              aria-label="Previous photo"
+              aria-label={t("common.previousPhoto")}
             >
               <ChevronLeft className="size-7" />
             </button>
@@ -113,7 +117,7 @@ export function ProgressPhotoSlideshowViewer({
               type="button"
               onClick={goNext}
               className="absolute right-2 top-1/2 inline-flex size-11 -translate-y-1/2 rotate-180 items-center justify-center rounded-full border border-zinc-700 bg-black/50 text-white backdrop-blur hover:bg-black/70 md:right-6"
-              aria-label="Next photo"
+              aria-label={t("common.nextPhoto")}
             >
               <ChevronLeft className="size-7" />
             </button>
@@ -135,11 +139,11 @@ export function ProgressPhotoSlideshowViewer({
           >
             {playing ? (
               <>
-                <Pause className="size-4" /> Pause
+                <Pause className="size-4" /> {t("common.pause")}
               </>
             ) : (
               <>
-                <Play className="size-4" /> Play
+                <Play className="size-4" /> {t("common.play")}
               </>
             )}
           </button>
@@ -147,8 +151,8 @@ export function ProgressPhotoSlideshowViewer({
 
         <div className="mx-auto flex max-w-md flex-col gap-2">
           <label className="flex items-center justify-between text-sm text-zinc-500">
-            <span>Slide interval</span>
-            <span className="tabular-nums text-zinc-400">{intervalMs} ms</span>
+            <span>{t("progress.slideInterval")}</span>
+            <span className="tabular-nums text-zinc-400">{t("progress.slideIntervalMs", { ms: intervalMs })}</span>
           </label>
           <input
             type="range"

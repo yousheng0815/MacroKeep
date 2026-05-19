@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type MacroSummaryProps = {
   proteinG: number;
@@ -82,27 +83,28 @@ export function MacroSummary({
   variant = "compact",
   consumptionPending,
 }: MacroSummaryProps) {
+  const { t } = useTranslation();
   const expanded = variant === "expanded";
   return (
     <div
       className={`grid gap-4 ${expanded ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-3"}`}
     >
       <MacroCell
-        label="Protein"
+        label={t("common.protein")}
         cur={proteinG}
         tgt={targets.p}
         expanded={expanded}
         consumptionPending={consumptionPending}
       />
       <MacroCell
-        label="Fat"
+        label={t("common.fat")}
         cur={fatsG}
         tgt={targets.f}
         expanded={expanded}
         consumptionPending={consumptionPending}
       />
       <MacroCell
-        label="Carbs"
+        label={t("common.carbs")}
         cur={carbsG}
         tgt={targets.c}
         expanded={expanded}

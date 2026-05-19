@@ -1,5 +1,6 @@
 import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function PullToRefreshIndicator({
   pullPx,
@@ -10,6 +11,7 @@ export function PullToRefreshIndicator({
   refreshing: boolean;
   thresholdPx: number;
 }) {
+  const { t } = useTranslation();
   const visible = pullPx > 0 || refreshing;
   const progress = Math.min(1, pullPx / thresholdPx);
 
@@ -18,7 +20,7 @@ export function PullToRefreshIndicator({
       role="status"
       aria-live="polite"
       aria-busy={refreshing}
-      aria-label={refreshing ? "Refreshing" : undefined}
+      aria-label={refreshing ? t("common.refreshing") : undefined}
       className="pointer-events-none fixed left-1/2 z-25 flex size-9 items-center justify-center rounded-full border border-mk-border bg-mk-bg/95 text-emerald-400 shadow-md backdrop-blur transition-[transform,opacity] duration-150 ease-out lg:hidden"
       style={{
         top: "calc(env(safe-area-inset-top, 0px) + 3.25rem)",

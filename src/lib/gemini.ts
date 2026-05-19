@@ -1,8 +1,26 @@
+import i18n from "@/i18n";
+import {
+  DEFAULT_LOCALE,
+  type AppLocale,
+  isAppLocale,
+} from "@/i18n/config";
 import {
   GoogleGenerativeAI,
   SchemaType,
   type GenerationConfig,
 } from "@google/generative-ai";
+
+function currentLocale(): AppLocale {
+  const lng = i18n.language;
+  return isAppLocale(lng) ? lng : DEFAULT_LOCALE;
+}
+
+function foodNameLanguageRule(locale: AppLocale): string {
+  if (locale === "zh-TW") {
+    return `- food_name: short human label in Traditional Chinese (繁體中文, Taiwan). Use natural local wording (e.g. "雞肉飯" or "吐司、蛋、酪梨"). Max about 80 characters. Always use this language for food_name even if the user description is in another language.`;
+  }
+  return `- food_name: short human label in English (e.g. "Chicken rice bowl" or "Toast, eggs, avocado"). Max about 80 characters. Always use this language for food_name even if the user description is in another language.`;
+}
 
 /** Stable Flash model for AI Studio / Generative Language API (`generateContent`). */
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
@@ -84,18 +102,18 @@ const KCAL_PER_PROTEIN = 4;
 const KCAL_PER_CARB = 4;
 const KCAL_PER_FAT = 9;
 
-const MEAL_ESTIMATE_JSON_RULES = `Rules for the JSON you return:
-- food_name: short human label (e.g. "Chicken rice bowl" or "Toast, eggs, avocado"). Max about 80 characters.
+function buildMealEstimateJsonRules(locale: AppLocale): string {
+  return `Rules for the JSON you return:
+${foodNameLanguageRule(locale)}
 - protein, fats, carbs: non-negative numbers in grams; use your best single estimate (one decimal is fine).
 - calories: MUST equal (${KCAL_PER_PROTEIN} × protein) + (${KCAL_PER_CARB} × carbs) + (${KCAL_PER_FAT} × fats) in kilocalories, rounded to the nearest whole number. Do not pick calories independently of these macros.
 
 Return only one JSON object with keys: food_name, calories, protein, fats, carbs.`;
+}
 
-/**
- * Meal-scan instructions: decomposition, assumptions, then one JSON object.
- * Output shape is unchanged — reasoning stays implicit.
- */
-const MEAL_SCAN_PROMPT = `You are an expert at estimating nutrition from a single meal photo.
+/** Meal-scan instructions: decomposition, assumptions, then one JSON object. */
+function buildMealScanPrompt(locale: AppLocale): string {
+  return `You are an expert at estimating nutrition from a single meal photo.
 
 Work through this mentally before you answer (do not output these steps as text):
 1) List each distinct food you can see (including sauces, oils, cheese, drinks if they are clearly part of the meal).
@@ -103,11 +121,13 @@ Work through this mentally before you answer (do not output these steps as text)
 3) Sum protein, carbs, and fat in grams across items. Prefer cooked weights unless the food is clearly raw.
 4) If cooking fat, dressing, or gravy is visible or very likely, include a realistic amount — this is a common source of underestimation.
 
-${MEAL_ESTIMATE_JSON_RULES}`;
+${buildMealEstimateJsonRules(locale)}`;
+}
 
 function buildMealDescribePrompt(
   description: string,
   hasImage: boolean,
+  locale: AppLocale,
 ): string {
   const source = hasImage
     ? "A meal photo is included. Combine the user's description with what you see in the image. Prefer visible portions in the photo when sizing; use the text for ingredients, brands, or amounts that are not clear from the picture."
@@ -130,7 +150,7 @@ Work through this mentally before you answer (do not output these steps as text)
 User description:
 ${JSON.stringify(description.trim())}
 
-${MEAL_ESTIMATE_JSON_RULES}`;
+${buildMealEstimateJsonRules(locale)}`;
 }
 
 function mealJsonModel(apiKey: string) {
@@ -232,7 +252,8 @@ function parseAiMealJson(text: string): AiMealEstimate {
     if (!Number.isFinite(v) || v < 0) return 0;
     return v;
   };
-  const food_name = String(parsed.food_name ?? "Meal").trim() || "Meal";
+  const fallback = i18n.t("common.defaultMealName");
+  const food_name = String(parsed.food_name ?? fallback).trim() || fallback;
   const protein = nonNeg(parsed.protein);
   const fats = nonNeg(parsed.fats);
   const carbs = nonNeg(parsed.carbs);
@@ -249,8 +270,9 @@ export async function analyzeFoodPhoto(
   base64: string,
   mimeType: string,
 ): Promise<AiMealEstimate> {
+  const locale = currentLocale();
   return generateMealEstimateFromParts(apiKey, [
-    { text: MEAL_SCAN_PROMPT },
+    { text: buildMealScanPrompt(locale) },
     {
       inlineData: {
         mimeType,
@@ -271,10 +293,11 @@ export async function analyzeFoodFromDescription(
 ): Promise<AiMealEstimate> {
   const trimmed = description.trim();
   if (!trimmed) {
-    throw new Error("Add a short description of what you ate.");
+    throw new Error(i18n.t("addMeal.describeBeforeEstimate"));
   }
+  const locale = currentLocale();
   const parts: MealEstimatePart[] = [
-    { text: buildMealDescribePrompt(trimmed, Boolean(image)) },
+    { text: buildMealDescribePrompt(trimmed, Boolean(image), locale) },
   ];
   if (image) {
     parts.push({

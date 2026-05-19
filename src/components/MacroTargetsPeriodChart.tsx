@@ -7,23 +7,24 @@ import {
   type MacroMetricKey,
 } from "@/lib/macro-intake-by-period";
 import type { MealRecord, UserProfile } from "@/types/records";
+import i18n from "@/i18n";
+import { intlLocaleTag, type AppLocale } from "@/i18n/config";
 import { Loader2 } from "lucide-react";
 import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 /** Rolling 7-day window vs daily targets. */
 const DAYS = 7;
 
-const CHART_TITLE = "Past week";
-
 const MACRO_CHART_METRICS: {
   key: MacroMetricKey;
-  short: string;
+  labelKey: string;
   stroke: string;
 }[] = [
-  { key: "kcal", short: "Cal", stroke: "#38bdf8" },
-  { key: "protein", short: "Protein", stroke: "#34d399" },
-  { key: "fats", short: "Fat", stroke: "#fbbf24" },
-  { key: "carbs", short: "Carbs", stroke: "#c084fc" },
+  { key: "kcal", labelKey: "progress.chartCal", stroke: "#38bdf8" },
+  { key: "protein", labelKey: "progress.chartProtein", stroke: "#34d399" },
+  { key: "fats", labelKey: "progress.chartFat", stroke: "#fbbf24" },
+  { key: "carbs", labelKey: "progress.chartCarbs", stroke: "#c084fc" },
 ];
 
 /** Stable Y-scale: padding from highs in any macro, not only toggled-on lines. */
@@ -170,6 +171,7 @@ function ChartBody({
   profile: UserProfile;
   enabledKeys: ReadonlySet<MacroMetricKey>;
 }) {
+  const { t } = useTranslation();
   const clipId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const [plotBox, setPlotBox] = useState({ width: 0, height: 0 });
@@ -272,9 +274,10 @@ function ChartBody({
     }));
     const d = linePathMonotonePchip(pixelPts);
     const fillD = areaPathUnderLine(d, pixelPts, baselineY);
-    const unit = m.key === "kcal" ? " kcal" : " g";
+    const unit = m.key === "kcal" ? ` ${t("common.kcal")}` : " g";
+    const short = t(m.labelKey);
     const title =
-      `${m.short}: ` +
+      `${short}: ` +
       pts
         .map(
           ({ day, raw, tgt }) =>
@@ -309,7 +312,7 @@ function ChartBody({
         viewBox={`0 0 ${cw} ${ch}`}
         role="img"
         shapeRendering="auto"
-        aria-label="Past week: intake compared to macro targets by day."
+        aria-label={t("progress.chartAria")}
       >
         <defs>
           <clipPath id={clipId}>
@@ -395,7 +398,7 @@ function ChartBody({
           className="fill-zinc-500"
           style={{ fontSize: pctFontPx }}
         >
-          100%
+          {t("progress.yAxis100")}
         </text>
 
         <text
@@ -405,7 +408,7 @@ function ChartBody({
           className="fill-zinc-500"
           style={{ fontSize: pctFontPx }}
         >
-          50%
+          {t("progress.yAxis50")}
         </text>
 
         <text
@@ -415,14 +418,17 @@ function ChartBody({
           className="fill-zinc-500"
           style={{ fontSize: pctFontPx }}
         >
-          0
+          {t("progress.yAxis0")}
         </text>
 
         {series.map((day, i) => {
-          const short = new Date(day.dayStartMs).toLocaleDateString(undefined, {
-            month: "numeric",
-            day: "numeric",
-          });
+          const short = new Date(day.dayStartMs).toLocaleDateString(
+            intlLocaleTag(i18n.language as AppLocale) ?? undefined,
+            {
+              month: "numeric",
+              day: "numeric",
+            },
+          );
           return (
             <text
               key={day.dayStartMs}
@@ -449,6 +455,7 @@ export function MacroTargetsPeriodChart({
   error,
   onRetry,
 }: Props) {
+  const { t } = useTranslation();
   const [retryPending, setRetryPending] = useState(false);
   const [macroShown, setMacroShown] = useState<Record<MacroMetricKey, boolean>>(
     () => macroVisibilityDefaults(),
@@ -469,13 +476,13 @@ export function MacroTargetsPeriodChart({
   if (loading) {
     return (
       <Card>
-        <h2 className="text-sm font-semibold text-white">{CHART_TITLE}</h2>
+        <h2 className="text-sm font-semibold text-white">{t("progress.pastWeek")}</h2>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 py-12">
           <Loader2
             className="size-8 animate-spin text-emerald-400"
             aria-hidden
           />
-          <p className="text-sm text-mk-muted">Loading meals…</p>
+          <p className="text-sm text-mk-muted">{t("addMeal.loadingMeals")}</p>
         </div>
       </Card>
     );
@@ -485,10 +492,10 @@ export function MacroTargetsPeriodChart({
     const msg =
       error instanceof Error
         ? error.message
-        : "Could not load meals from Drive.";
+        : t("errors.couldNotLoadMealsDrive");
     return (
       <Card>
-        <h2 className="text-sm font-semibold text-white">{CHART_TITLE}</h2>
+        <h2 className="text-sm font-semibold text-white">{t("progress.pastWeek")}</h2>
         <div className="mt-4 flex flex-col items-center gap-4 py-8 text-center">
           <p className="text-sm text-red-300">{msg}</p>
           <button
@@ -507,7 +514,7 @@ export function MacroTargetsPeriodChart({
             }
             className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-60"
           >
-            Retry
+            {t("common.retry")}
           </button>
         </div>
       </Card>
@@ -516,7 +523,7 @@ export function MacroTargetsPeriodChart({
 
   return (
     <Card>
-      <h2 className="text-sm font-semibold text-white">{CHART_TITLE}</h2>
+      <h2 className="text-sm font-semibold text-white">{t("progress.pastWeek")}</h2>
 
       <div className="mt-3 flex w-full flex-col gap-4 md:mt-4 md:flex-row md:items-start md:gap-8">
         <div className="order-2 min-w-0 flex-1 md:order-1">
@@ -529,7 +536,7 @@ export function MacroTargetsPeriodChart({
         <div
           className="order-1 flex w-full shrink-0 flex-wrap gap-2 md:order-2 md:w-auto md:min-w-[7.5rem] md:flex-col md:flex-nowrap md:gap-3"
           role="group"
-          aria-label="Macros shown on chart"
+          aria-label={t("progress.macrosOnChartAria")}
         >
           {MACRO_CHART_METRICS.map((m) => {
             const pressed = macroShown[m.key];
@@ -552,7 +559,7 @@ export function MacroTargetsPeriodChart({
                   style={{ backgroundColor: m.stroke }}
                   aria-hidden
                 />
-                <span>{m.short}</span>
+                <span>{t(m.labelKey)}</span>
               </button>
             );
           })}

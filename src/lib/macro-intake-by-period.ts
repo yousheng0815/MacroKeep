@@ -1,3 +1,5 @@
+import i18n from "@/i18n";
+import { intlLocaleTag, type AppLocale } from "@/i18n/config";
 import { startOfLocalDay } from "@/lib/date";
 import type { MealRecord, UserProfile } from "@/types/records";
 
@@ -76,10 +78,13 @@ export function buildMacroDaySeries(
     const row = totals.get(d.getTime())!;
     return {
       dayStartMs: d.getTime(),
-      label: d.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      }),
+      label: d.toLocaleDateString(
+        intlLocaleTag(i18n.language as AppLocale) ?? undefined,
+        {
+          month: "short",
+          day: "numeric",
+        },
+      ),
       ...row,
     };
   });

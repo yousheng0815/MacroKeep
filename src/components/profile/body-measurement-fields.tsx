@@ -2,6 +2,7 @@ import { totalInchesFromFeetInches } from "@/lib/units";
 import type { UnitsPreference } from "@/types/records";
 import type { ClipboardEvent, KeyboardEvent } from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 /** Parse digits-only text (non-digits stripped). Empty → 0. */
 function intFromDigitsOnly(raw: string): number {
@@ -39,6 +40,7 @@ function ImperialHeightRow({
   onChange: (next: { height: number; weight: number }) => void;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const totalIn = Math.round(height);
   const [pair, setPair] = useState(() => ({
     feet: Math.floor(totalIn / 12),
@@ -61,7 +63,7 @@ function ImperialHeightRow({
   return (
     <>
       <div className="block min-w-0 text-sm text-zinc-400">
-        <span className="block">Height</span>
+        <span className="block">{t("common.height")}</span>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <input
             type="text"
@@ -69,7 +71,7 @@ function ImperialHeightRow({
             pattern="[0-9]*"
             autoComplete="off"
             disabled={disabled}
-            aria-label="Height feet"
+            aria-label={t("common.heightFeet")}
             value={String(feet)}
             onKeyDown={blockNonDigitKeyDown}
             onPaste={blockInvalidIntPaste}
@@ -84,14 +86,14 @@ function ImperialHeightRow({
             }}
             className="mk-text-input w-20 px-3"
           />
-          <span className="text-zinc-500">ft</span>
+          <span className="text-zinc-500">{t("common.ft")}</span>
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
             autoComplete="off"
             disabled={disabled}
-            aria-label="Height inches"
+            aria-label={t("common.heightInches")}
             value={String(inches)}
             onKeyDown={blockNonDigitKeyDown}
             onPaste={blockInvalidIntPaste}
@@ -106,11 +108,11 @@ function ImperialHeightRow({
             }}
             className="mk-text-input w-24 px-3"
           />
-          <span className="text-zinc-500">in</span>
+          <span className="text-zinc-500">{t("common.in")}</span>
         </div>
       </div>
       <label className="block text-sm text-zinc-400">
-        Weight (lb)
+        {t("common.weightLb")}
         <input
           type="text"
           inputMode="numeric"
@@ -145,17 +147,18 @@ export function UnitsPreferenceSegment({
   /** Optional id prefix for `aria-controls` / labels. */
   id?: string;
 }) {
+  const { t } = useTranslation();
   const baseId = id ?? "units-pref";
   return (
     <div
       role="radiogroup"
-      aria-label="Units for height and weight"
+      aria-label={t("common.unitsAria")}
       className="mt-2 flex rounded-xl border border-mk-border p-1"
     >
       {(
         [
-          { v: "metric" as const, label: "Metric (cm, kg)" },
-          { v: "imperial" as const, label: "Imperial (ft, lb)" },
+          { v: "metric" as const, label: t("common.unitsMetric") },
+          { v: "imperial" as const, label: t("common.unitsImperial") },
         ] as const
       ).map(({ v, label }) => {
         const selected = value === v;
@@ -195,11 +198,12 @@ export function HeightWeightFields({
   onChange: (next: { height: number; weight: number }) => void;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   if (units === "metric") {
     return (
       <>
         <label className="block text-sm text-zinc-400">
-          Height (cm)
+          {t("common.heightCm")}
           <input
             type="text"
             inputMode="numeric"
@@ -219,7 +223,7 @@ export function HeightWeightFields({
           />
         </label>
         <label className="block text-sm text-zinc-400">
-          Weight (kg)
+          {t("common.weightKg")}
           <input
             type="text"
             inputMode="numeric"

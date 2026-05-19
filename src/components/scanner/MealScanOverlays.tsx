@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 
 type MealScanOverlaysProps = {
   analyzing: boolean;
@@ -12,9 +13,12 @@ type MealScanOverlaysProps = {
 /** Full-screen analyzing blocker (shared Dashboard / Scanner / Describe). */
 export function MealScanOverlays({
   analyzing,
-  title = "Estimating your meal…",
-  subtitle = "Just a few seconds.",
+  title,
+  subtitle,
 }: MealScanOverlaysProps) {
+  const { t } = useTranslation();
+  const displayTitle = title ?? t("addMeal.estimatingTitle");
+  const displaySubtitle = subtitle ?? t("addMeal.estimatingSubtitle");
   if (!analyzing) return null;
 
   return createPortal(
@@ -23,11 +27,15 @@ export function MealScanOverlays({
       role="alertdialog"
       aria-busy="true"
       aria-live="polite"
-      aria-label={title}
+      aria-label={displayTitle}
     >
       <Loader2 className="size-12 animate-spin text-emerald-400" />
-      <p className="text-center text-sm font-medium text-zinc-100">{title}</p>
-      <p className="max-w-sm text-center text-sm text-zinc-400">{subtitle}</p>
+      <p className="text-center text-sm font-medium text-zinc-100">
+        {displayTitle}
+      </p>
+      <p className="max-w-sm text-center text-sm text-zinc-400">
+        {displaySubtitle}
+      </p>
     </div>,
     document.body,
   );

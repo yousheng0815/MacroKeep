@@ -15,6 +15,7 @@ import { paths, type MealDetailNavFrom } from "@/lib/routes";
 import { Link, useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Camera, ImagePlus, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type EditPhotoState =
   | { mode: "unchanged" }
@@ -41,6 +42,7 @@ function parseNumber(value: string): number {
 }
 
 export function MealEditPage() {
+  const { t } = useTranslation();
   const { mealId } = useParams({ strict: false });
   const navigate = useNavigate();
   const navFrom = useRouterState({
@@ -155,7 +157,7 @@ export function MealEditPage() {
               className="size-8 animate-spin text-emerald-400"
               aria-hidden
             />
-            <p className="text-sm text-mk-muted">Loading meal…</p>
+            <p className="text-sm text-mk-muted">{t("common.loadingMeal")}</p>
           </div>
         </Card>
       );
@@ -163,13 +165,13 @@ export function MealEditPage() {
     return (
       <Card>
         <div className="space-y-3 py-4 text-center">
-          <p className="text-sm text-mk-muted">This meal could not be found.</p>
+          <p className="text-sm text-mk-muted">{t("common.mealNotFound")}</p>
           <Link
             to={paths.history}
             className="btn-mobile-block-lg gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
-            Back to history
+            {t("common.backToHistory")}
           </Link>
         </div>
       </Card>
@@ -179,9 +181,9 @@ export function MealEditPage() {
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
-        title="Edit meal"
+        title={t("meals.editPageTitle")}
         onBack={goToDetail}
-        backAriaLabel="Back to meal details"
+        backAriaLabel={t("meals.backToMealDetails")}
       />
 
       <Card>
@@ -214,11 +216,11 @@ export function MealEditPage() {
                 if (editPhoto.mode === "replacement") {
                   if (!canSyncToDriveAppData()) {
                     throw new Error(
-                      "Sign in with Google Drive access to attach a meal photo.",
+                      t("errors.signInForPhoto"),
                     );
                   }
                   const token = await ensureGoogleAccessToken();
-                  if (!token) throw new Error("Missing access token");
+                  if (!token) throw new Error(t("errors.missingAccessToken"));
                   const { base64, mimeType } = await fileToBase64(
                     editPhoto.file,
                   );
@@ -244,7 +246,7 @@ export function MealEditPage() {
                 orphanUploadId = null;
                 revokeEditPhotoPreview(editPhoto);
                 setEditPhoto({ mode: "unchanged" });
-                toast.success("Meal saved");
+                toast.success(t("errors.mealSaved"));
                 goToDetail();
               } catch (err) {
                 if (orphanUploadId) {
@@ -256,7 +258,7 @@ export function MealEditPage() {
                   }
                 }
                 toast.error(
-                  err instanceof Error ? err.message : "Could not save meal.",
+                  err instanceof Error ? err.message : t("errors.couldNotSaveChanges"),
                 );
               } finally {
                 setSavePending(false);
@@ -265,7 +267,7 @@ export function MealEditPage() {
           }}
         >
           <label className="block">
-            <span className="mb-1 block text-sm text-mk-muted">Food name</span>
+            <span className="mb-1 block text-sm text-mk-muted">{t("common.foodName")}</span>
             <input
               name="foodName"
               type="text"
@@ -275,7 +277,7 @@ export function MealEditPage() {
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-sm text-mk-muted">Recorded at</span>
+            <span className="mb-1 block text-sm text-mk-muted">{t("common.recordedAt")}</span>
             <input
               name="recordedAt"
               type="datetime-local"
@@ -285,7 +287,7 @@ export function MealEditPage() {
           </label>
 
           <div className="space-y-2">
-            <span className="block text-sm text-mk-muted">Photo</span>
+            <span className="block text-sm text-mk-muted">{t("common.photo")}</span>
             <input
               key={`cam-${fileInputKey}`}
               ref={cameraInputRef}
@@ -312,7 +314,7 @@ export function MealEditPage() {
                 {editPhoto.mode === "replacement" ? (
                   <img
                     src={editPhoto.previewUrl}
-                    alt="New meal photo preview"
+                    alt={t("common.newMealPhotoPreview")}
                     className="size-full object-cover"
                   />
                 ) : meal.photoFileId ? (
@@ -327,7 +329,7 @@ export function MealEditPage() {
                   />
                 ) : (
                   <MealPhotoThumb
-                    alt="No meal photo"
+                    alt={t("common.noMealPhoto")}
                     className="size-full shrink-0 overflow-hidden rounded-xl border-0"
                   />
                 )}
@@ -340,7 +342,7 @@ export function MealEditPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                 >
                   <Camera className="size-4 text-emerald-400 md:size-5" />
-                  Take a photo
+                  {t("common.takePhoto")}
                 </button>
                 <button
                   type="button"
@@ -349,7 +351,7 @@ export function MealEditPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                 >
                   <ImagePlus className="size-4 text-orange-500 md:size-5" />
-                  Choose a photo
+                  {t("common.choosePhoto")}
                 </button>
               </div>
             </div>
@@ -357,7 +359,7 @@ export function MealEditPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="mb-1 block text-sm text-mk-muted">Calories</span>
+              <span className="mb-1 block text-sm text-mk-muted">{t("common.calories")}</span>
               <input
                 name="calories"
                 type="number"
@@ -369,7 +371,7 @@ export function MealEditPage() {
             </label>
             <label className="block">
               <span className="mb-1 block text-sm text-mk-muted">
-                Protein (g)
+                {t("common.proteinG")}
               </span>
               <input
                 name="protein"
@@ -381,7 +383,7 @@ export function MealEditPage() {
               />
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm text-mk-muted">Fats (g)</span>
+              <span className="mb-1 block text-sm text-mk-muted">{t("common.fatsG")}</span>
               <input
                 name="fats"
                 type="number"
@@ -393,7 +395,7 @@ export function MealEditPage() {
             </label>
             <label className="block">
               <span className="mb-1 block text-sm text-mk-muted">
-                Carbs (g)
+                {t("common.carbsG")}
               </span>
               <input
                 name="carbs"
@@ -417,7 +419,7 @@ export function MealEditPage() {
                 pending={savePending}
                 spinner={<ButtonSpinner />}
               >
-                Save changes
+                {t("common.saveChanges")}
               </ButtonPendingContents>
             </button>
 
@@ -427,7 +429,7 @@ export function MealEditPage() {
               onClick={() => goToDetail()}
               className="flex items-center justify-center gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
           </div>
         </form>

@@ -6,11 +6,11 @@ import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
+import i18n from "@/i18n";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "@/lib/app-toast";
 
-export const MISSING_GEMINI_API_KEY_ERROR =
-  "AI estimates need a Gemini API key. Add one in Settings.";
+export const MISSING_GEMINI_API_KEY_ERROR = "addMeal.missingGeminiKey";
 
 export function useMealScanFlow() {
   const { geminiKey, addMeal } = useRecords();
@@ -20,9 +20,9 @@ export function useMealScanFlow() {
   const hasKey = useMemo(() => geminiKey.trim().length > 0, [geminiKey]);
 
   const showMissingGeminiKeyToast = useCallback(() => {
-    toast.error(MISSING_GEMINI_API_KEY_ERROR, {
+    toast.error(i18n.t(MISSING_GEMINI_API_KEY_ERROR), {
       action: {
-        label: "Open Settings",
+        label: i18n.t("addMeal.openSettings"),
         onClick: () => {
           void navigate({ to: paths.settings });
         },
@@ -43,10 +43,10 @@ export function useMealScanFlow() {
         const snapshot = await prepareMealPhotoForUpload(base64, mimeType);
 
         if (!canSyncToDriveAppData()) {
-          throw new Error("Not signed in or Drive scope unavailable");
+          throw new Error(i18n.t("errors.notSignedInDrive"));
         }
         const token = await ensureGoogleAccessToken();
-        if (!token) throw new Error("Missing access token");
+        if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
 
         const mealId = crypto.randomUUID?.() ?? String(Date.now());
         const recordedAt = new Date().toISOString();
@@ -91,7 +91,9 @@ export function useMealScanFlow() {
           { photoFileId: uploadedPhotoId ?? undefined },
         );
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Estimate failed — try again.");
+        toast.error(
+          e instanceof Error ? e.message : i18n.t("addMeal.estimateFailed"),
+        );
         // If the photo uploaded but meal persistence failed, best-effort clean up.
         if (uploadedPhotoId) {
           try {
@@ -120,9 +122,7 @@ export function useMealScanFlow() {
     async (description: string, photoFile: File | null) => {
       const trimmed = description.trim();
       if (!trimmed) {
-        toast.error(
-          "Add a short note about what you ate before estimating.",
-        );
+        toast.error(i18n.t("addMeal.describeBeforeEstimate"));
         return;
       }
       if (!hasKey) {
@@ -135,10 +135,10 @@ export function useMealScanFlow() {
       let uploadedPhotoId: string | null = null;
       try {
         if (!canSyncToDriveAppData()) {
-          throw new Error("Not signed in or Drive scope unavailable");
+          throw new Error(i18n.t("errors.notSignedInDrive"));
         }
         const token = await ensureGoogleAccessToken();
-        if (!token) throw new Error("Missing access token");
+        if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
 
         const mealId = crypto.randomUUID?.() ?? String(Date.now());
         const recordedAt = new Date().toISOString();
@@ -207,7 +207,9 @@ export function useMealScanFlow() {
           );
         }
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Estimate failed — try again.");
+        toast.error(
+          e instanceof Error ? e.message : i18n.t("addMeal.estimateFailed"),
+        );
         if (uploadedPhotoId) {
           try {
             const token = await ensureGoogleAccessToken();
@@ -237,7 +239,9 @@ export function useMealScanFlow() {
         const { base64, mimeType } = await fileToBase64(file);
         await runAnalyzeSnapshot(base64, mimeType);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Estimate failed — try again.");
+        toast.error(
+          e instanceof Error ? e.message : i18n.t("addMeal.estimateFailed"),
+        );
       }
     },
     [runAnalyzeSnapshot],

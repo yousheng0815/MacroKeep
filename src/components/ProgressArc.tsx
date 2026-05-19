@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   consumed: number;
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export function ProgressArc({ consumed, target, consumptionPending }: Props) {
+  const { t } = useTranslation();
   const arcConsumed = consumptionPending ? 0 : consumed;
   const safeTarget = Math.max(1, target);
   const totalRatio = arcConsumed / safeTarget;
@@ -40,7 +42,7 @@ export function ProgressArc({ consumed, target, consumptionPending }: Props) {
         height={cy + stroke}
         viewBox={`0 0 ${size} ${cy + stroke}`}
         className="overflow-visible"
-        aria-label="Daily calorie progress"
+        aria-label={t("common.dailyCalorieProgressAria")}
       >
         <defs>
           <linearGradient id="omArc" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -84,7 +86,7 @@ export function ProgressArc({ consumed, target, consumptionPending }: Props) {
         <div className="text-4xl font-bold tabular-nums text-white">
           {remaining.toLocaleString()}
         </div>
-        <div className="text-sm text-zinc-400">Remaining kcal</div>
+        <div className="text-sm text-zinc-400">{t("common.remainingKcal")}</div>
         <div className="mt-3 flex min-h-[1rem] items-center justify-center gap-2 text-xs text-mk-muted">
           {consumptionPending ? (
             <Loader2

@@ -13,8 +13,10 @@ import {
   PenLine,
 } from "lucide-react";
 import { useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 export function AddMealPage() {
+  const { t } = useTranslation();
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -35,8 +37,8 @@ export function AddMealPage() {
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
-        title="Add Meal"
-        subtitle="Use a photo, describe what you had, enter macros yourself—or reuse something you've saved or logged before."
+        title={t("addMeal.pageTitle")}
+        subtitle={t("addMeal.pageSubtitle")}
       />
 
       <Card>
@@ -66,7 +68,7 @@ export function AddMealPage() {
             className="mk-add-tile-btn"
           >
             <Camera className="size-8 shrink-0 text-emerald-400" aria-hidden />
-            <span className="text-balance">Take photo & estimate</span>
+            <span className="text-balance">{t("addMeal.takePhotoEstimate")}</span>
           </button>
           <button
             type="button"
@@ -80,7 +82,7 @@ export function AddMealPage() {
               className="size-8 shrink-0 text-orange-500"
               aria-hidden
             />
-            <span className="text-balance">Choose photo & estimate</span>
+            <span className="text-balance">{t("addMeal.choosePhotoEstimate")}</span>
           </button>
           <button
             type="button"
@@ -91,7 +93,7 @@ export function AddMealPage() {
               className="size-8 shrink-0 text-fuchsia-400"
               aria-hidden
             />
-            <span className="text-balance">Describe meal & estimate</span>
+            <span className="text-balance">{t("addMeal.describeEstimate")}</span>
           </button>
           <button
             type="button"
@@ -99,7 +101,7 @@ export function AddMealPage() {
             className="mk-add-tile-btn"
           >
             <PenLine className="size-8 shrink-0 text-sky-400" aria-hidden />
-            <span className="text-balance">Enter macros manually</span>
+            <span className="text-balance">{t("addMeal.enterManually")}</span>
           </button>
           <button
             type="button"
@@ -107,7 +109,7 @@ export function AddMealPage() {
             className="mk-add-tile-btn"
           >
             <Bookmark className="size-8 shrink-0 text-amber-400" aria-hidden />
-            <span className="text-balance">From saved meals</span>
+            <span className="text-balance">{t("addMeal.fromSavedMeals")}</span>
           </button>
           <button
             type="button"
@@ -115,7 +117,7 @@ export function AddMealPage() {
             className="mk-add-tile-btn"
           >
             <History className="size-8 shrink-0 text-violet-400" aria-hidden />
-            <span className="text-balance">From history</span>
+            <span className="text-balance">{t("addMeal.fromHistory")}</span>
           </button>
         </div>
       </Card>

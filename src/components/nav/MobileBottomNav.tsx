@@ -1,7 +1,8 @@
-import { NAV_ITEMS, pathForNavHighlight } from "@/components/nav/nav-config";
+import { pathForNavHighlight, useNavItems } from "@/components/nav/nav-config";
 import { Link, useRouterState } from "@tanstack/react-router";
 
 export function MobileBottomNav() {
+  const navItems = useNavItems();
   const { pathname, mealDetailNavFrom } = useRouterState({
     select: (s) => ({
       pathname: s.location.pathname,
@@ -15,7 +16,7 @@ export function MobileBottomNav() {
   return (
     <nav className="mk-pwa-no-select fixed inset-x-0 bottom-0 z-40 border-t border-mk-border bg-mk-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
       <div className="mx-auto grid max-w-lg grid-cols-4 gap-1 px-2 py-2">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active =
             item.to === "/"
               ? highlightPath === "/"

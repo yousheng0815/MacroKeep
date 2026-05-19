@@ -1,9 +1,12 @@
 import { Logo } from "@/components/Logo";
-import { NAV_ITEMS, pathForNavHighlight } from "@/components/nav/nav-config";
+import { pathForNavHighlight, useNavItems } from "@/components/nav/nav-config";
+import { useTranslation } from "react-i18next";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 
 export function DesktopSidebar() {
+  const { t } = useTranslation();
+  const navItems = useNavItems();
   const { pathname, mealDetailNavFrom } = useRouterState({
     select: (s) => ({
       pathname: s.location.pathname,
@@ -23,7 +26,7 @@ export function DesktopSidebar() {
         </Link>
       </div>
       <nav className="flex flex-1 flex-col gap-1 px-3 pt-4">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active =
             item.to === "/"
               ? highlightPath === "/"
@@ -56,7 +59,7 @@ export function DesktopSidebar() {
           aria-current={settingsActive ? "page" : undefined}
         >
           <Settings className="size-5" />
-          Settings
+          {t("nav.settings")}
         </Link>
       </div>
     </aside>

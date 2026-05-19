@@ -1,3 +1,4 @@
+import "@/i18n";
 import { AppToaster } from "@/components/AppToaster";
 import { sweepExpiredMealPhotosFromCache } from "@/lib/meal-photo-cache-db";
 import { isInstalledPwa } from "@/lib/pwa";

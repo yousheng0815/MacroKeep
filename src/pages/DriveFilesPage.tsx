@@ -16,9 +16,12 @@ import {
   updateAppDataFileText,
   type AppDataDriveFileListItem,
 } from "@/lib/google-drive";
+import i18n from "@/i18n";
+import { intlLocaleTag, type AppLocale } from "@/i18n/config";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileJson, ImageIcon, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 function DrivePreviewImage({ blob, alt }: { blob: Blob; alt: string }) {
   const url = useBlobObjectUrl(blob);
@@ -53,7 +56,7 @@ function formatModified(iso: string | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString(undefined, {
+  return d.toLocaleString(intlLocaleTag(i18n.language as AppLocale) ?? undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -70,12 +73,12 @@ function formatJsonForDisplay(raw: string): string {
   }
 }
 
-function parseJsonDraft(draft: string): { ok: true; text: string } | { ok: false; message: string } {
+function parseJsonDraft(draft: string, invalidMsg: string): { ok: true; text: string } | { ok: false; message: string } {
   try {
     const parsed = JSON.parse(draft) as unknown;
     return { ok: true, text: JSON.stringify(parsed, null, 2) };
   } catch {
-    return { ok: false, message: "Invalid JSON — fix syntax before saving." };
+    return { ok: false, message: invalidMsg };
   }
 }
 
@@ -93,6 +96,7 @@ function fileKindIcon(f: AppDataDriveFileListItem) {
 }
 
 export function DriveFilesPage() {
+  const { t } = useTranslation();
   const { sessionReady } = useGoogleSession();
   const userId = getGoogleUserId() ?? "";
   const qc = useQueryClient();
@@ -142,7 +146,7 @@ export function DriveFilesPage() {
     gcTime: 0,
     queryFn: async ({ signal }) => {
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing Google access token");
+      if (!token) throw new Error(t("errors.missingGoogleAccessToken"));
       return downloadAppDataFileBlob(token, previewImageFileId!, signal);
     },
   });
@@ -154,7 +158,7 @@ export function DriveFilesPage() {
     staleTime: 0,
     queryFn: async ({ signal }) => {
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing Google access token");
+      if (!token) throw new Error(t("errors.missingGoogleAccessToken"));
       return listAllAppDataFiles(token, signal);
     },
   });
@@ -177,7 +181,7 @@ export function DriveFilesPage() {
       !viewerJsonOversized,
     queryFn: async ({ signal }) => {
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing Google access token");
+      if (!token) throw new Error(t("errors.missingGoogleAccessToken"));
       return downloadAppDataFileText(token, viewerFile!.id, signal);
     },
   });
@@ -201,10 +205,10 @@ export function DriveFilesPage() {
   const saveJsonMutation = useMutation({
     mutationFn: async () => {
       if (!viewerFile) throw new Error("No file selected");
-      const parsed = parseJsonDraft(jsonDraft);
+      const parsed = parseJsonDraft(jsonDraft, t("drive.invalidJson"));
       if (!parsed.ok) throw new Error(parsed.message);
       const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error("Missing Google access token");
+      if (!token) throw new Error(t("errors.missingGoogleAccessToken"));
       await updateAppDataFileText(token, viewerFile.id, parsed.text);
       return parsed.text;
     },
@@ -252,21 +256,14 @@ export function DriveFilesPage() {
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
-        title="Drive app data"
-        subtitle={
-          <>
-            Files MacroKeep stores in your Google Drive{" "}
-            <span className="text-zinc-400">App Data</span> folder (hidden from
-            My Drive).
-          </>
-        }
+        title={t("drive.pageTitle")}
+        subtitle={t("drive.pageSubtitle")}
       />
 
       {!sessionReady ? (
         <Card>
           <p className="text-sm text-mk-muted">
-            Connect your Google account with Drive access to list app data
-            files.
+            {t("drive.connectDriveToList")}
           </p>
         </Card>
       ) : q.isLoading ? (
@@ -276,7 +273,7 @@ export function DriveFilesPage() {
               className="size-8 animate-spin text-emerald-400"
               aria-hidden
             />
-            <p className="text-sm text-mk-muted">Loading files from Drive…</p>
+            <p className="text-sm text-mk-muted">{t("drive.loadingFiles")}</p>
           </div>
         </Card>
       ) : errMsg ? (
@@ -303,14 +300,14 @@ export function DriveFilesPage() {
                 pending={retryBusy}
                 spinner={<ButtonSpinner />}
               >
-                Retry
+                {t("common.retry")}
               </ButtonPendingContents>
             </button>
           </div>
         </Card>
       ) : files.length === 0 ? (
         <Card>
-          <p className="text-sm text-mk-muted">No files in app data yet.</p>
+          <p className="text-sm text-mk-muted">{t("drive.noFiles")}</p>
         </Card>
       ) : (
         <Card className="overflow-hidden p-0">
@@ -318,7 +315,7 @@ export function DriveFilesPage() {
             <table className="w-full table-fixed text-left text-sm">
               <thead>
                 <tr className="border-b border-mk-border bg-zinc-900/40 text-sm text-zinc-500">
-                  <th className="min-w-0 px-4 py-3 font-medium">File</th>
+                  <th className="min-w-0 px-4 py-3 font-medium">{t("drive.tableFile")}</th>
                   <th className="hidden min-w-0 px-4 py-3 font-medium sm:table-cell sm:w-[28%]">
                     Type
                   </th>
@@ -353,7 +350,7 @@ export function DriveFilesPage() {
                                 type="button"
                                 onClick={() => setViewerFile(f)}
                                 className="w-full min-w-0 text-left font-mono text-sm text-emerald-300/95 break-all underline decoration-emerald-500/40 underline-offset-2 hover:text-emerald-200 hover:decoration-emerald-400/70"
-                                aria-label={`View JSON contents of ${f.name}`}
+                                aria-label={t("drive.viewJsonAria", { fileName: f.name })}
                               >
                                 {f.name}
                               </button>
@@ -362,7 +359,7 @@ export function DriveFilesPage() {
                                 type="button"
                                 onClick={() => setViewerFile(f)}
                                 className="w-full min-w-0 text-left font-mono text-sm text-amber-300/95 break-all underline decoration-amber-500/40 underline-offset-2 hover:text-amber-200 hover:decoration-amber-400/70"
-                                aria-label={`Preview image ${f.name}`}
+                                aria-label={t("drive.previewImageAria", { fileName: f.name })}
                               >
                                 {f.name}
                               </button>
@@ -408,7 +405,7 @@ export function DriveFilesPage() {
           <button
             type="button"
             className="absolute inset-0 cursor-default"
-            aria-label="Close preview"
+            aria-label={t("drive.closePreview")}
             onClick={closeViewer}
           />
           <div
@@ -498,7 +495,7 @@ export function DriveFilesPage() {
                   type="button"
                   onClick={closeViewer}
                   className="rounded-xl border border-mk-border bg-mk-bg p-2 text-zinc-300 transition hover:bg-zinc-900"
-                  aria-label="Close"
+                  aria-label={t("drive.close")}
                 >
                   <X className="size-5" aria-hidden />
                 </button>
@@ -508,10 +505,7 @@ export function DriveFilesPage() {
               {viewerIsJson ? (
                 viewerJsonOversized ? (
                   <p className="text-sm text-mk-muted">
-                    This file is larger than{" "}
-                    {(MAX_JSON_PREVIEW_BYTES / (1024 * 1024)).toFixed(0)}
-                    &nbsp;MB. In-app preview is disabled to keep the tab
-                    responsive.
+                    {t("drive.jsonTooLarge", { mb: (MAX_JSON_PREVIEW_BYTES / (1024 * 1024)).toFixed(0) })}
                   </p>
                 ) : contentQuery.isLoading ? (
                   <div className="flex flex-col items-center gap-3 py-12">
@@ -519,13 +513,13 @@ export function DriveFilesPage() {
                       className="size-8 animate-spin text-emerald-400"
                       aria-hidden
                     />
-                    <p className="text-sm text-mk-muted">Loading file…</p>
+                    <p className="text-sm text-mk-muted">{t("drive.loadingFile")}</p>
                   </div>
                 ) : contentQuery.error ? (
                   <p className="text-sm text-red-300">
                     {contentQuery.error instanceof Error
                       ? contentQuery.error.message
-                      : "Could not load file."}
+                      : t("drive.couldNotLoadFile")}
                   </p>
                 ) : jsonEditing ? (
                   <div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -537,7 +531,7 @@ export function DriveFilesPage() {
                       }}
                       spellCheck={false}
                       className="min-h-[min(50dvh,480px)] w-full flex-1 resize-y rounded-xl border border-mk-border bg-mk-bg px-3 py-2 font-mono text-sm leading-relaxed text-zinc-200 outline-none ring-emerald-500/40 focus:ring-2"
-                      aria-label={`Edit JSON contents of ${viewerFile.name}`}
+                      aria-label={t("drive.editJsonAria", { fileName: viewerFile.name })}
                     />
                     {jsonParseError ? (
                       <p className="text-sm text-red-300" role="alert">
@@ -552,10 +546,7 @@ export function DriveFilesPage() {
                 )
               ) : viewerImageOversized ? (
                 <p className="text-sm text-mk-muted">
-                  This image is larger than{" "}
-                  {(MAX_IMAGE_PREVIEW_BYTES / (1024 * 1024)).toFixed(0)}
-                  &nbsp;MB. In-app preview is disabled to keep the tab
-                  responsive.
+                  {t("drive.imageTooLarge", { mb: (MAX_IMAGE_PREVIEW_BYTES / (1024 * 1024)).toFixed(0) })}
                 </p>
               ) : imageBlobQuery.isPending ? (
                 <div className="flex flex-col items-center gap-3 py-12">
@@ -563,13 +554,13 @@ export function DriveFilesPage() {
                     className="size-8 animate-spin text-amber-400"
                     aria-hidden
                   />
-                  <p className="text-sm text-mk-muted">Loading image…</p>
+                  <p className="text-sm text-mk-muted">{t("common.loadingImage")}</p>
                 </div>
               ) : imageBlobQuery.error ? (
                 <p className="text-sm text-red-300">
                   {imageBlobQuery.error instanceof Error
                     ? imageBlobQuery.error.message
-                    : "Could not load image."}
+                    : t("drive.couldNotLoadFile")}
                 </p>
               ) : imageBlobQuery.data ? (
                 <div className="flex justify-center">

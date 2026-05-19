@@ -9,6 +9,7 @@ import type { MealRecord } from "@/types/records";
 import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "@/lib/app-toast";
 
 type HistoryTemplate = {
@@ -46,6 +47,7 @@ function getHistoryTemplates(meals: MealRecord[]): HistoryTemplate[] {
 }
 
 export function AddFromHistoryPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     records,
@@ -70,7 +72,7 @@ export function AddFromHistoryPage() {
     toast.error(
       mealsError instanceof Error
         ? mealsError.message
-        : "Could not load meals from Drive.",
+        : t("errors.couldNotLoadMealsDrive"),
     );
   }, [mealsError]);
 
@@ -133,10 +135,10 @@ export function AddFromHistoryPage() {
           ? { photoFileId: template.sourcePhotoFileId }
           : undefined,
       );
-      toast.success("Meal added");
+      toast.success(t("errors.mealAdded"));
       await navigate({ to: paths.history });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not add meal.");
+      toast.error(e instanceof Error ? e.message : t("errors.couldNotAddMeal"));
     } finally {
       setPendingKey(null);
     }
@@ -148,29 +150,27 @@ export function AddFromHistoryPage() {
   return (
     <div className="min-w-0 space-y-6 overflow-x-hidden">
       <PageHeader
-        title="Add From History"
+        title={t("addMeal.addFromHistoryTitle")}
         backTo={paths.add.root}
-        backAriaLabel="Back to add meal"
-        subtitle="Pick a past meal to quickly log it again."
+        backAriaLabel={t("addMeal.backToAddMeal")}
+        subtitle={t("addMeal.addFromHistorySubtitle")}
       />
 
       <Card>
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-white">Past meals</div>
+            <div className="text-sm font-semibold text-white">{t("addMeal.pastMeals")}</div>
           </div>
         </div>
         {isMealsLoading ? (
-          <p className="text-sm text-mk-muted">Loading meals…</p>
+          <p className="text-sm text-mk-muted">{t("addMeal.loadingMeals")}</p>
         ) : mealsError ? (
           <p className="text-sm text-mk-muted">
-            Couldn&apos;t load meal history. Check your connection or try
-            refreshing the app.
+            {t("addMeal.couldntLoadHistory")}
           </p>
         ) : allMealShardsLoaded && templates.length === 0 ? (
           <p className="text-sm text-mk-muted">
-            Nothing logged yet. Add a meal first, then you can reuse it from
-            here.
+            {t("addMeal.nothingLoggedAddFirst")}
           </p>
         ) : templates.length > 0 ? (
           <ul className="divide-y divide-zinc-800">
@@ -218,7 +218,7 @@ export function AddFromHistoryPage() {
               aria-hidden
             />
             <p className="text-sm text-mk-muted">
-              Loading older months to find past meals…
+              {t("addMeal.loadingOlderMonths")}
             </p>
           </div>
         )}
@@ -233,10 +233,10 @@ export function AddFromHistoryPage() {
                   className="size-6 animate-spin text-emerald-400"
                   aria-hidden
                 />
-                <p className="text-xs text-mk-muted">Loading older meals…</p>
+                <p className="text-xs text-mk-muted">{t("addMeal.loadingOlderMeals")}</p>
               </>
             ) : (
-              <p className="text-xs text-mk-muted">Scroll for more</p>
+              <p className="text-xs text-mk-muted">{t("addMeal.scrollForMore")}</p>
             )}
           </div>
         ) : null}

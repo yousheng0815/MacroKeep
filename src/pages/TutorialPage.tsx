@@ -29,6 +29,7 @@ import type {
 } from "@/types/records";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 type TutorialForm = {
   birthDate: string;
@@ -40,30 +41,31 @@ type TutorialForm = {
   activityLevel: OnboardingActivityLevel;
 };
 
-const GOAL_OPTIONS: { value: OnboardingMacroGoal; label: string }[] = [
-  { value: "gain_muscle", label: "Gain muscle" },
-  { value: "lose_weight", label: "Lose weight" },
-  { value: "maintain_weight", label: "Maintain weight" },
-  { value: "improve_health", label: "Improve health" },
+const GOAL_OPTIONS: { value: OnboardingMacroGoal; labelKey: string }[] = [
+  { value: "gain_muscle", labelKey: "tutorial.goalGainMuscle" },
+  { value: "lose_weight", labelKey: "tutorial.goalLoseWeight" },
+  { value: "maintain_weight", labelKey: "tutorial.goalMaintain" },
+  { value: "improve_health", labelKey: "tutorial.goalImproveHealth" },
 ];
 
 const ACTIVITY_OPTIONS: {
   value: OnboardingActivityLevel;
-  label: string;
+  labelKey: string;
 }[] = [
-  { value: "sedentary", label: "Sedentary (little or no exercise)" },
-  { value: "light", label: "Light (1-3 days/week)" },
-  { value: "moderate", label: "Moderate (3-5 days/week)" },
-  { value: "active", label: "Active (6-7 days/week)" },
-  { value: "very_active", label: "Very active (hard training/physical job)" },
+  { value: "sedentary", labelKey: "tutorial.activitySedentary" },
+  { value: "light", labelKey: "tutorial.activityLight" },
+  { value: "moderate", labelKey: "tutorial.activityModerate" },
+  { value: "active", labelKey: "tutorial.activityActive" },
+  { value: "very_active", labelKey: "tutorial.activityVeryActive" },
 ];
 
-const GENDER_OPTIONS: { value: ProfileGender; label: string }[] = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
+const GENDER_OPTIONS: { value: ProfileGender; labelKey: string }[] = [
+  { value: "male", labelKey: "common.male" },
+  { value: "female", labelKey: "common.female" },
 ];
 
 export function TutorialPage() {
+  const { t } = useTranslation();
   const {
     records,
     updateProfile,
@@ -186,7 +188,7 @@ export function TutorialPage() {
       })
       .catch((e) => {
         toast.error(
-          e instanceof Error ? e.message : "Could not save suggested targets.",
+          e instanceof Error ? e.message : t("tutorial.couldNotSaveSuggested"),
         );
       })
       .finally(() => {
@@ -207,18 +209,13 @@ export function TutorialPage() {
       >
         {isRevisit ? (
           <PageHeader
-            title="Set your targets"
-            subtitle={
-              <>
-                Enter your profile, generate suggested macros, and then save
-                them as your daily targets.
-              </>
-            }
+            title={t("tutorial.pageTitle")}
+            subtitle={t("tutorial.pageSubtitle")}
             onBack={handleBack}
-            backAriaLabel="Go back"
+            backAriaLabel={t("common.goBack")}
             actions={
               <span className="rounded-full border border-mk-border bg-mk-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
-                Targets
+                {t("tutorial.targetsBadge")}
               </span>
             }
           />
@@ -227,24 +224,23 @@ export function TutorialPage() {
             <div className="flex items-center justify-between gap-3">
               <Logo variant="wordmark" />
               <span className="rounded-full border border-mk-border bg-mk-bg px-2.5 py-1 text-sm font-medium text-zinc-300">
-                Setup
+                {t("tutorial.setupBadge")}
               </span>
             </div>
             <h1 className="mt-6 text-xl font-bold tracking-tight text-white">
-              Set your targets
+              {t("tutorial.pageTitle")}
             </h1>
             <p className="mt-1 text-sm leading-relaxed text-mk-muted">
-              Enter your profile, generate suggested macros, and then save them
-              as your daily targets.
+              {t("tutorial.pageSubtitle")}
             </p>
           </Card>
         )}
 
         <Card>
-          <h2 className="text-sm font-semibold text-white">Profile</h2>
+          <h2 className="text-sm font-semibold text-white">{t("tutorial.profile")}</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="block text-sm text-zinc-400">
-              Birthday
+              {t("common.birthday")}
               <input
                 type="date"
                 value={form.birthDate}
@@ -255,7 +251,7 @@ export function TutorialPage() {
               />
             </label>
             <label className="block text-sm text-zinc-400">
-              Gender
+              {t("common.gender")}
               <select
                 value={form.gender}
                 onChange={(e) =>
@@ -268,14 +264,14 @@ export function TutorialPage() {
               >
                 {GENDER_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </option>
                 ))}
               </select>
             </label>
             <div className="sm:col-span-2">
               <span className="text-sm text-zinc-400">
-                Height & weight units
+                {t("common.heightWeightUnits")}
               </span>
               <UnitsPreferenceSegment
                 id="tutorial-units"
@@ -307,7 +303,7 @@ export function TutorialPage() {
               }
             />
             <label className="block text-sm text-zinc-400">
-              Goal
+              {t("tutorial.goal")}
               <select
                 value={form.goal}
                 onChange={(e) =>
@@ -320,13 +316,13 @@ export function TutorialPage() {
               >
                 {GOAL_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </option>
                 ))}
               </select>
             </label>
             <label className="block text-sm text-zinc-400 sm:col-span-2">
-              Activity level
+              {t("tutorial.activityLevel")}
               <select
                 value={form.activityLevel}
                 onChange={(e) =>
@@ -339,7 +335,7 @@ export function TutorialPage() {
               >
                 {ACTIVITY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </option>
                 ))}
               </select>
@@ -357,7 +353,7 @@ export function TutorialPage() {
               pending={isGeneratingPlan}
               spinner={<ButtonSpinner />}
             >
-              Save and calculate targets
+              {t("tutorial.saveAndCalculate")}
             </ButtonPendingContents>
           </button>
         </Card>
@@ -365,10 +361,10 @@ export function TutorialPage() {
         {generatedPlan ? (
           <div ref={step2Ref}>
             <Card>
-              <h2 className="text-sm font-semibold text-white">Targets</h2>
+              <h2 className="text-sm font-semibold text-white">{t("tutorial.targets")}</h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm text-zinc-400">
-                  Daily target (kcal)
+                  {t("common.dailyTargetKcal")}
                   <input
                     inputMode="numeric"
                     disabled={isGeneratingPlan}
@@ -387,7 +383,7 @@ export function TutorialPage() {
                   />
                 </label>
                 <label className="block text-sm text-zinc-400">
-                  Protein target (g)
+                  {t("common.proteinTargetG")}
                   <input
                     inputMode="decimal"
                     disabled={isGeneratingPlan}
@@ -406,7 +402,7 @@ export function TutorialPage() {
                   />
                 </label>
                 <label className="block text-sm text-zinc-400">
-                  Fats target (g)
+                  {t("common.fatsTargetG")}
                   <input
                     inputMode="decimal"
                     disabled={isGeneratingPlan}
@@ -425,7 +421,7 @@ export function TutorialPage() {
                   />
                 </label>
                 <label className="block text-sm text-zinc-400">
-                  Carbs target (g)
+                  {t("common.carbsTargetG")}
                   <input
                     inputMode="decimal"
                     disabled={isGeneratingPlan}
@@ -469,7 +465,7 @@ export function TutorialPage() {
                       toast.error(
                         e instanceof Error
                           ? e.message
-                          : "Could not save targets.",
+                          : t("tutorial.couldNotSaveTargets"),
                       );
                     }
                   })()
@@ -480,8 +476,8 @@ export function TutorialPage() {
                   pending={isSaving}
                   spinner={<ButtonSpinner />}
                 >
-                  Use these targets
-                </ButtonPendingContents>
+                  {t("tutorial.useTheseTargets")}
+            </ButtonPendingContents>
               </button>
             </Card>
           </div>

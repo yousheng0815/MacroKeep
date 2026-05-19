@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 type PageHeaderProps = {
   title: string;
@@ -17,10 +18,12 @@ export function PageHeader({
   title,
   subtitle,
   backTo,
-  backAriaLabel = "Go back",
+  backAriaLabel,
   onBack,
   actions,
 }: PageHeaderProps) {
+  const { t } = useTranslation();
+  const resolvedBackAriaLabel = backAriaLabel ?? t("common.goBack");
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -29,7 +32,7 @@ export function PageHeader({
             <button
               type="button"
               onClick={onBack}
-              aria-label={backAriaLabel}
+              aria-label={resolvedBackAriaLabel}
               className="mk-pwa-no-select inline-flex items-center rounded-xl p-1.5 text-zinc-300 transition hover:bg-zinc-900/60 hover:text-white"
             >
               <ArrowLeft className="size-4" />
@@ -37,7 +40,7 @@ export function PageHeader({
           ) : backTo ? (
             <Link
               to={backTo}
-              aria-label={backAriaLabel}
+              aria-label={resolvedBackAriaLabel}
               className="mk-pwa-no-select inline-flex items-center rounded-xl p-1.5 text-zinc-300 transition hover:bg-zinc-900/60 hover:text-white"
             >
               <ArrowLeft className="size-4" />

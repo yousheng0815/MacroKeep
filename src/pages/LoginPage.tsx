@@ -1,9 +1,3 @@
-import {
-  GOOGLE_DRIVE_APP_DATA_BLURB,
-  GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE,
-  LOGIN_WELCOME_BLURB,
-  LOGIN_WELCOME_TITLE,
-} from "@/components/auth/auth-copy";
 import { GoogleAuthPageLayout } from "@/components/auth/GoogleAuthPageLayout";
 import { GoogleGMark } from "@/components/auth/GoogleGMark";
 import {
@@ -19,6 +13,7 @@ import { Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "@/lib/app-toast";
+import { useTranslation } from "react-i18next";
 
 let oauthRetryRedirectStarted = false;
 
@@ -42,6 +37,7 @@ function safeNextPath(value: string | null): string {
 }
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const {
     ready,
     sessionReady,
@@ -105,7 +101,7 @@ export function LoginPage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-mk-bg text-zinc-400">
         <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
-        <p className="text-sm">Signing you back in…</p>
+        <p className="text-sm">{t("auth.signingBackIn")}</p>
       </div>
     );
   }
@@ -114,7 +110,7 @@ export function LoginPage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-mk-bg text-zinc-400">
         <Loader2 className="size-9 animate-spin text-emerald-400" aria-hidden />
-        <p className="text-sm">Checking Google sign-in…</p>
+        <p className="text-sm">{t("auth.checkingSignIn")}</p>
       </div>
     );
   }
@@ -122,10 +118,10 @@ export function LoginPage() {
   return (
     <GoogleAuthPageLayout
       title={
-        needsConsent ? GOOGLE_DRIVE_APP_DATA_CONSENT_TITLE : LOGIN_WELCOME_TITLE
+        needsConsent ? t("auth.driveConsentTitle") : t("auth.welcomeTitle")
       }
       description={
-        needsConsent ? GOOGLE_DRIVE_APP_DATA_BLURB : LOGIN_WELCOME_BLURB
+        needsConsent ? t("auth.driveConsentBlurb") : t("auth.welcomeBlurb")
       }
     >
       <div className="space-y-4">
@@ -148,7 +144,7 @@ export function LoginPage() {
             spinner={<ButtonSpinner />}
           >
             <GoogleGMark />
-            Continue with Google
+            {t("auth.continueWithGoogle")}
           </ButtonPendingContents>
         </button>
       </div>

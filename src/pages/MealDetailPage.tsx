@@ -28,8 +28,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export function MealDetailPage() {
+  const { t } = useTranslation();
   const { mealId } = useParams({ strict: false });
   const navigate = useNavigate();
   const router = useRouter();
@@ -112,7 +114,7 @@ export function MealDetailPage() {
               className="size-8 animate-spin text-emerald-400"
               aria-hidden
             />
-            <p className="text-sm text-mk-muted">Loading meal…</p>
+            <p className="text-sm text-mk-muted">{t("common.loadingMeal")}</p>
           </div>
         </Card>
       );
@@ -120,13 +122,13 @@ export function MealDetailPage() {
     return (
       <Card>
         <div className="space-y-3 py-4 text-center">
-          <p className="text-sm text-mk-muted">This meal could not be found.</p>
+          <p className="text-sm text-mk-muted">{t("common.mealNotFound")}</p>
           <Link
             to={paths.history}
             className="btn-mobile-block-lg gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
-            Back to history
+            {t("common.backToHistory")}
           </Link>
         </div>
       </Card>
@@ -136,9 +138,9 @@ export function MealDetailPage() {
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
-        title="Meal Details"
+        title={t("meals.detailTitle")}
         onBack={handleBack}
-        backAriaLabel="Go back"
+        backAriaLabel={t("common.goBack")}
       />
 
       <Card>
@@ -157,8 +159,10 @@ export function MealDetailPage() {
               {meal.food_name}
             </h1>
             <p className="mt-1 text-sm text-mk-muted">
-              {formatLocalDateLabel(new Date(meal.recordedAt))} at{" "}
-              {formatTime(new Date(meal.recordedAt))}
+              {t("common.dateAtTime", {
+                date: formatLocalDateLabel(new Date(meal.recordedAt)),
+                time: formatTime(new Date(meal.recordedAt)),
+              })}
             </p>
           </div>
         </div>
@@ -167,29 +171,31 @@ export function MealDetailPage() {
       <Card>
         <div className="space-y-4">
           <div>
-            <h2 className="text-sm font-semibold text-white">Nutrition</h2>
+            <h2 className="text-sm font-semibold text-white">
+              {t("meals.nutrition")}
+            </h2>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div>
                 <span className="mb-1 block text-sm text-mk-muted">
-                  Calories
+                  {t("common.calories")}
                 </span>
                 <p className="text-sm text-zinc-100">{meal.calories}</p>
               </div>
               <div>
                 <span className="mb-1 block text-sm text-mk-muted">
-                  Protein (g)
+                  {t("common.proteinG")}
                 </span>
                 <p className="text-sm text-zinc-100">{meal.protein}</p>
               </div>
               <div>
                 <span className="mb-1 block text-sm text-mk-muted">
-                  Fats (g)
+                  {t("common.fatsG")}
                 </span>
                 <p className="text-sm text-zinc-100">{meal.fats}</p>
               </div>
               <div>
                 <span className="mb-1 block text-sm text-mk-muted">
-                  Carbs (g)
+                  {t("common.carbsG")}
                 </span>
                 <p className="text-sm text-zinc-100">{meal.carbs}</p>
               </div>
@@ -213,7 +219,7 @@ export function MealDetailPage() {
                 className="flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Pencil className="size-4" />
-                Edit meal
+                {t("meals.editMeal")}
               </button>
 
               <button
@@ -222,7 +228,7 @@ export function MealDetailPage() {
                 aria-busy={deletePending}
                 className="relative flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => {
-                  if (!window.confirm("Delete this meal?")) return;
+                  if (!window.confirm(t("meals.deleteConfirm"))) return;
                   void (async () => {
                     setDeletePending(true);
                     try {
@@ -239,7 +245,7 @@ export function MealDetailPage() {
                   spinner={<ButtonSpinner className="text-red-200" />}
                 >
                   <Trash2 className="size-4" />
-                  Delete meal
+                  {t("meals.deleteMeal")}
                 </ButtonPendingContents>
               </button>
             </div>
@@ -248,7 +254,7 @@ export function MealDetailPage() {
       </Card>
 
       <Card>
-        <h2 className="text-sm font-semibold text-white">Use again</h2>
+        <h2 className="text-sm font-semibold text-white">{t("meals.useAgain")}</h2>
         <div className="mt-4 space-y-3">
           <button
             type="button"
@@ -270,13 +276,13 @@ export function MealDetailPage() {
                       ? { photoFileId: meal.photoFileId }
                       : undefined,
                   );
-                  toast.success("Meal logged again");
+                  toast.success(t("errors.mealLoggedAgain"));
                   await navigate({ to: paths.history });
                 } catch (err) {
                   toast.error(
                     err instanceof Error
                       ? err.message
-                      : "Could not add this meal again.",
+                      : t("errors.couldNotAddMealAgain"),
                   );
                 } finally {
                   setDuplicatePending(false);
@@ -290,7 +296,7 @@ export function MealDetailPage() {
               spinner={<ButtonSpinner className="text-emerald-200" />}
             >
               <CopyPlus className="size-4" />
-              Add this meal again
+              {t("meals.addMealAgain")}
             </ButtonPendingContents>
           </button>
           <button
@@ -304,9 +310,9 @@ export function MealDetailPage() {
             }
             title={
               isSavedMealsLoading
-                ? "Loading saved meals…"
+                ? t("meals.loadingSavedMealsTitle")
                 : alreadySavedTemplate
-                  ? "A saved meal with the same name and macros is already on your list."
+                  ? t("meals.duplicateSavedTooltip")
                   : undefined
             }
             aria-busy={saveToSavedPending}
@@ -315,12 +321,12 @@ export function MealDetailPage() {
                 setSaveToSavedPending(true);
                 try {
                   await addSavedMealFromMeal(meal);
-                  toast.success("Added to saved meals");
+                  toast.success(t("errors.addedToSavedMeals"));
                 } catch (err) {
                   toast.error(
                     err instanceof Error
                       ? err.message
-                      : "Could not add to saved meals.",
+                      : t("errors.couldNotAddToSavedMeals"),
                   );
                 } finally {
                   setSaveToSavedPending(false);
@@ -340,12 +346,12 @@ export function MealDetailPage() {
               {alreadySavedTemplate ? (
                 <>
                   <Check className="size-4 shrink-0 text-zinc-400" />
-                  Already saved
+                  {t("meals.alreadySaved")}
                 </>
               ) : (
                 <>
                   <Bookmark className="size-4 shrink-0" />
-                  Add to saved meals
+                  {t("meals.addToSavedMeals")}
                 </>
               )}
             </ButtonPendingContents>

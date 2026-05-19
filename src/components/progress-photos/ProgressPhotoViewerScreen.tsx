@@ -7,6 +7,9 @@ import type { ProgressPhotoItem } from "@/types/progress-photos";
 import { ChevronLeft, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import i18n from "@/i18n";
+import { intlLocaleTag, type AppLocale } from "@/i18n/config";
+import { useTranslation } from "react-i18next";
 
 export function ProgressPhotoViewerScreen({
   photos,
@@ -21,6 +24,7 @@ export function ProgressPhotoViewerScreen({
   onIndexChange: (next: number) => void;
   onDelete: (id: string) => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
 
   const record = photos[index] ?? null;
@@ -61,7 +65,7 @@ export function ProgressPhotoViewerScreen({
     if (!record || busy) return;
     if (
       !confirm(
-        "Delete this progress photo from this device? This cannot be undone.",
+        t("progress.deleteProgressPhotoConfirm"),
       )
     )
       return;
@@ -77,7 +81,7 @@ export function ProgressPhotoViewerScreen({
 
   if (photos.length === 0 || !record) return null;
 
-  const dateLabel = new Date(record.capturedAt).toLocaleString(undefined, {
+  const dateLabel = new Date(record.capturedAt).toLocaleString(intlLocaleTag(i18n.language as AppLocale) ?? undefined, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -93,13 +97,13 @@ export function ProgressPhotoViewerScreen({
           type="button"
           onClick={onDismiss}
           className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-zinc-700 text-zinc-300 hover:bg-zinc-900"
-          aria-label="Back"
+          aria-label={t("common.back")}
         >
           <ChevronLeft className="size-6" />
         </button>
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-sm font-semibold text-white">
-            Progress photo
+            {t("progress.progressPhoto")}
           </h2>
           <p className="truncate text-sm text-zinc-500">{dateLabel}</p>
         </div>
@@ -109,7 +113,7 @@ export function ProgressPhotoViewerScreen({
           aria-busy={busy}
           onClick={onConfirmDelete}
           className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-red-900/80 text-red-400 hover:bg-red-950/40 disabled:opacity-50"
-          aria-label="Delete photo"
+          aria-label={t("progress.deletePhoto")}
         >
           <ButtonPendingContents
             pending={busy}
@@ -124,12 +128,12 @@ export function ProgressPhotoViewerScreen({
         {!url ? (
           <div className="flex flex-col items-center gap-3 text-zinc-500">
             <ButtonSpinner />
-            <p className="text-sm">Loading image…</p>
+            <p className="text-sm">{t("common.loadingImage")}</p>
           </div>
         ) : (
           <img
             src={url}
-            alt={`Progress photo from ${dateLabel}`}
+            alt={`{t("progress.progressPhoto")} from ${dateLabel}`}
             className="max-h-full max-w-full object-contain"
           />
         )}
@@ -140,7 +144,7 @@ export function ProgressPhotoViewerScreen({
               type="button"
               onClick={goPrev}
               className="absolute left-2 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-700 bg-black/50 text-white backdrop-blur hover:bg-black/70 md:left-6"
-              aria-label="Previous photo"
+              aria-label={t("common.previousPhoto")}
             >
               <ChevronLeft className="size-7" />
             </button>
@@ -148,7 +152,7 @@ export function ProgressPhotoViewerScreen({
               type="button"
               onClick={goNext}
               className="absolute right-2 top-1/2 inline-flex size-11 -translate-y-1/2 rotate-180 items-center justify-center rounded-full border border-zinc-700 bg-black/50 text-white backdrop-blur hover:bg-black/70 md:right-6"
-              aria-label="Next photo"
+              aria-label={t("common.nextPhoto")}
             >
               <ChevronLeft className="size-7" />
             </button>

@@ -10,8 +10,10 @@ import { useMealScanFlow } from "@/hooks/use-meal-scan-flow";
 import { paths } from "@/lib/routes";
 import { Camera, ImagePlus, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export function DescribeMealPage() {
+  const { t } = useTranslation();
   const { analyzing, runDescribeMeal } = useMealScanFlow();
   const [description, setDescription] = useState("");
   const [photoChoice, setPhotoChoice] = useState<{
@@ -56,15 +58,10 @@ export function DescribeMealPage() {
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
-        title="Describe your meal"
+        title={t("addMeal.describeTitle")}
         backTo={paths.add.root}
-        backAriaLabel="Back to add meal"
-        subtitle={
-          <>
-            Write what you had in plain language. Add a photo for a better
-            estimate.
-          </>
-        }
+        backAriaLabel={t("addMeal.backToAddMeal")}
+        subtitle={t("addMeal.describeSubtitle")}
       />
 
       <Card>
@@ -77,14 +74,14 @@ export function DescribeMealPage() {
         >
           <label className="block">
             <span className="mb-1 block text-sm text-mk-muted">
-              Description
+              {t("addMeal.description")}
             </span>
             <textarea
               name="description"
               rows={5}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Big salad with grilled chicken, feta, and vinaigrette."
+              placeholder={t("addMeal.descriptionPlaceholder")}
               autoComplete="off"
               disabled={analyzing}
               className="max-h-[min(16rem,calc(100vh-22rem))] min-h-[7.5rem] w-full resize-y mk-text-input"
@@ -94,8 +91,10 @@ export function DescribeMealPage() {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="block text-sm text-mk-muted">
-                Photo{" "}
-                <span className="font-normal text-zinc-500">(optional)</span>
+                {t("common.photo")}{" "}
+                <span className="font-normal text-zinc-500">
+                  {t("common.optional")}
+                </span>
               </span>
               {photoChoice ? (
                 <button
@@ -105,7 +104,7 @@ export function DescribeMealPage() {
                   className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-white disabled:opacity-50"
                 >
                   <X className="size-3.5 shrink-0" aria-hidden />
-                  Clear photo
+                  {t("common.clearPhoto")}
                 </button>
               ) : null}
             </div>
@@ -131,12 +130,12 @@ export function DescribeMealPage() {
                 {photoChoice ? (
                   <img
                     src={photoChoice.previewUrl}
-                    alt="Meal photo preview"
+                    alt={t("common.mealPhotoPreview")}
                     className="size-full object-cover"
                   />
                 ) : (
                   <MealPhotoThumb
-                    alt="No meal photo yet"
+                    alt={t("common.noMealPhotoYet")}
                     className="size-full shrink-0 overflow-hidden rounded-xl border-0 bg-zinc-800/80"
                   />
                 )}
@@ -149,7 +148,7 @@ export function DescribeMealPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                 >
                   <Camera className="size-4 text-emerald-400 md:size-5" />
-                  Take a photo
+                  {t("common.takePhoto")}
                 </button>
                 <button
                   type="button"
@@ -158,7 +157,7 @@ export function DescribeMealPage() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-900 disabled:opacity-60 md:w-auto md:min-w-[10rem]"
                 >
                   <ImagePlus className="size-4 text-orange-500 md:size-5" />
-                  Choose from gallery
+                  {t("common.chooseFromGallery")}
                 </button>
               </div>
             </div>
@@ -174,7 +173,7 @@ export function DescribeMealPage() {
               pending={analyzing}
               spinner={<ButtonSpinner />}
             >
-              Estimate
+              {t("addMeal.estimate")}
             </ButtonPendingContents>
           </button>
         </form>
