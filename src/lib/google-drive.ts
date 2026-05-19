@@ -43,12 +43,9 @@ const UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3/files";
 
 const GOOGLE_FOLDER_MIME = "application/vnd.google-apps.folder";
 const MEALS_SHARD_RE = /^meals-(\d{4}-\d{2})\.json$/;
-const LEGACY_MEAL_PHOTO_RE = /^meal-.+\.(jpg|jpeg|png|webp|gif)$/i;
-const LEGACY_PROGRESS_PHOTO_RE = /^progress-photo-.+\.jpg$/i;
 
 /** Per-session cache of App Data subfolder ids (cleared on sign-out). */
 const appDataSubfolderIdCache = new Map<string, string>();
-let legacyFlatPhotoMigration: Promise<void> | null = null;
 
 export function monthKeyFromRecordedAt(recordedAtIso: string): string {
   const d = new Date(recordedAtIso);
@@ -138,7 +135,6 @@ function escapeDriveQueryString(value: string): string {
 /** Clears cached App Data subfolder ids (call on Google sign-out). */
 export function clearDriveAppDataFolderCache(): void {
   appDataSubfolderIdCache.clear();
-  legacyFlatPhotoMigration = null;
 }
 
 async function findAppDataSubfolderId(
@@ -189,24 +185,6 @@ async function ensureAppDataSubfolder(
   return id;
 }
 
-async function moveAppDataFileToParent(
-  token: string,
-  fileId: string,
-  removeParentId: string,
-  addParentId: string,
-): Promise<void> {
-  const params = new URLSearchParams({
-    addParents: addParentId,
-    removeParents: removeParentId,
-  });
-  const url = `${DRIVE_FILES}/${encodeURIComponent(fileId)}?${params.toString()}`;
-  const res = await fetch(url, {
-    method: "PATCH",
-    headers: authHeaders(token),
-  });
-  if (!res.ok) throw new Error(`Drive move failed: ${res.status}`);
-}
-
 async function listDirectAppDataChildren(
   token: string,
   parentId: string,
@@ -238,41 +216,6 @@ async function listDirectAppDataChildren(
   } while (pageToken);
 
   return out;
-}
-
-/** Ensures photo subfolders exist and moves legacy flat `meal-*` / `progress-photo-*` files into them. */
-async function ensurePhotoSubfoldersReady(token: string): Promise<void> {
-  await Promise.all([
-    ensureAppDataSubfolder(token, MEAL_PHOTOS_FOLDER_NAME),
-    ensureAppDataSubfolder(token, PROGRESS_PHOTOS_IMAGES_FOLDER_NAME),
-  ]);
-  if (!legacyFlatPhotoMigration) {
-    legacyFlatPhotoMigration = migrateLegacyFlatPhotosToSubfolders(token).catch((err) => {
-      legacyFlatPhotoMigration = null;
-      throw err;
-    });
-  }
-  await legacyFlatPhotoMigration;
-}
-
-async function migrateLegacyFlatPhotosToSubfolders(token: string): Promise<void> {
-  const mealFolderId = appDataSubfolderIdCache.get(MEAL_PHOTOS_FOLDER_NAME);
-  const progressFolderId = appDataSubfolderIdCache.get(PROGRESS_PHOTOS_IMAGES_FOLDER_NAME);
-  if (!mealFolderId || !progressFolderId) return;
-
-  const rootFiles = await listDirectAppDataChildren(token, "appDataFolder");
-  for (const f of rootFiles) {
-    if (isGoogleFolderMime(f.mimeType)) continue;
-    try {
-      if (LEGACY_MEAL_PHOTO_RE.test(f.name)) {
-        await moveAppDataFileToParent(token, f.id, "appDataFolder", mealFolderId);
-      } else if (LEGACY_PROGRESS_PHOTO_RE.test(f.name)) {
-        await moveAppDataFileToParent(token, f.id, "appDataFolder", progressFolderId);
-      }
-    } catch {
-      /* best-effort — ids in manifests still resolve */
-    }
-  }
 }
 
 async function uploadMultipartImageToAppDataParent(
@@ -540,7 +483,6 @@ export async function listAllAppDataFiles(
   token: string,
   signal?: AbortSignal,
 ): Promise<AppDataDriveFileListItem[]> {
-  await ensurePhotoSubfoldersReady(token);
   const out = await listAppDataTree(token, "appDataFolder", "", signal);
   out.sort((a, b) => {
     const ta = a.modifiedTime ? Date.parse(a.modifiedTime) : 0;
@@ -1114,9 +1056,7 @@ export async function uploadMealPhotoToAppData(
   base64: string,
   mimeType: string,
 ): Promise<string> {
-  await ensurePhotoSubfoldersReady(token);
-  const parentId = appDataSubfolderIdCache.get(MEAL_PHOTOS_FOLDER_NAME);
-  if (!parentId) throw new Error("Drive meal photos folder missing");
+  const parentId = await ensureAppDataSubfolder(token, MEAL_PHOTOS_FOLDER_NAME);
   const ext = extensionForMime(mimeType || "image/jpeg");
   const fileName = `meal-${mealId}.${ext}`;
   const bytes = base64ToUint8Array(base64);
@@ -1269,9 +1209,7 @@ export async function uploadProgressPhotoImageToAppData(
   photoId: string,
   blob: Blob,
 ): Promise<string> {
-  await ensurePhotoSubfoldersReady(token);
-  const parentId = appDataSubfolderIdCache.get(PROGRESS_PHOTOS_IMAGES_FOLDER_NAME);
-  if (!parentId) throw new Error("Drive progress photos folder missing");
+  const parentId = await ensureAppDataSubfolder(token, PROGRESS_PHOTOS_IMAGES_FOLDER_NAME);
   const bytes = new Uint8Array(await blob.arrayBuffer());
   const fileName = `progress-photo-${photoId}.jpg`;
   return uploadMultipartImageToAppDataParent(
