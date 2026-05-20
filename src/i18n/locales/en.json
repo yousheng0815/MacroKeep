@@ -143,7 +143,20 @@
     "deletePlaceholder": "DELETE",
     "deleteAllDataInDrive": "Delete all Drive data",
     "advancedTapHint_one": "{{count}} more tap to show advanced Drive options.",
-    "advancedTapHint_other": "{{count}} more taps to show advanced Drive options."
+    "advancedTapHint_other": "{{count}} more taps to show advanced Drive options.",
+    "feedback": {
+      "title": "Feedback & support",
+      "blurb": "Report bugs, suggest features, or send general feedback by email.",
+      "reportBug": "Report a bug",
+      "requestFeature": "Request a feature",
+      "sendFeedback": "Send feedback",
+      "bugSubject": "MacroKeep bug report",
+      "featureSubject": "MacroKeep feature request",
+      "otherSubject": "MacroKeep feedback",
+      "bugBody": "What happened?\n\nSteps to reproduce:\n1.\n2.\n\nExpected:\n\nActual:",
+      "featureBody": "What would you like MacroKeep to do?\n\nWhy would this help you?",
+      "otherBody": "Your message:"
+    }
   },
   "install": {
     "title": "Install MacroKeep",

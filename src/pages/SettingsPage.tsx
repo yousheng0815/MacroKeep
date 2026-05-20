@@ -9,6 +9,7 @@ import {
   UnitsPreferenceSegment,
 } from "@/components/profile/body-measurement-fields";
 import { InstallAppCard } from "@/components/settings/InstallAppCard";
+import { FeedbackCard } from "@/components/settings/FeedbackCard";
 import { LanguageCard } from "@/components/settings/LanguageCard";
 import { useGoogleSession } from "@/contexts/google-session";
 import { useRecords } from "@/hooks/use-records";
@@ -731,6 +732,8 @@ export function SettingsPage() {
         formsDisabled={isSaving}
         savePending={targetsSavePending}
       />
+
+      <FeedbackCard />
     </div>
   );
 }

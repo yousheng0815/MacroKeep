@@ -143,7 +143,20 @@
     "deletePlaceholder": "DELETE",
     "deleteAllDataInDrive": "刪除 Drive 中的所有資料",
     "advancedTapHint_one": "再點 {{count}} 下即可顯示進階 Drive 選項。",
-    "advancedTapHint_other": "再點 {{count}} 下即可顯示進階 Drive 選項。"
+    "advancedTapHint_other": "再點 {{count}} 下即可顯示進階 Drive 選項。",
+    "feedback": {
+      "title": "意見回饋與支援",
+      "blurb": "透過電子郵件回報錯誤、提出功能建議或一般意見。",
+      "reportBug": "錯誤回報",
+      "requestFeature": "功能建議",
+      "sendFeedback": "一般意見",
+      "bugSubject": "MacroKeep 錯誤回報",
+      "featureSubject": "MacroKeep 功能建議",
+      "otherSubject": "MacroKeep 意見回饋",
+      "bugBody": "發生了什麼事？\n\n重現步驟：\n1.\n2.\n\n預期結果：\n\n實際結果：",
+      "featureBody": "你希望 MacroKeep 能做什麼？\n\n這對你有什麼幫助？",
+      "otherBody": "你的訊息："
+    }
   },
   "install": {
     "title": "安裝 MacroKeep",
