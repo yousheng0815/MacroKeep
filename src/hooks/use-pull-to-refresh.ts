@@ -5,6 +5,9 @@ const PULL_THRESHOLD_PX = 72;
 const MAX_PULL_PX = 112;
 const PULL_DAMPING = 0.45;
 
+/** Apply to a subtree so PTR ignores touches that start inside it (e.g. drag handles). */
+export const BLOCK_PULL_TO_REFRESH_ATTR = "data-block-pull";
+
 function isDocumentAtTop(): boolean {
   return window.scrollY <= 0;
 }
@@ -14,6 +17,7 @@ function touchTargetBlocksPull(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
   let el: Element | null = target;
   while (el && el !== document.documentElement) {
+    if (el.hasAttribute(BLOCK_PULL_TO_REFRESH_ATTR)) return true;
     const { overflowY } = getComputedStyle(el);
     if (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") {
       if (el.scrollTop > 0) return true;
@@ -24,7 +28,16 @@ function touchTargetBlocksPull(target: EventTarget | null): boolean {
   return false;
 }
 
-export function usePullToRefresh(onRefresh: () => void | Promise<unknown>) {
+type UsePullToRefreshOptions = {
+  /** When false, listeners are detached and any in-progress pull is cancelled. */
+  active?: boolean;
+};
+
+export function usePullToRefresh(
+  onRefresh: () => void | Promise<unknown>,
+  options?: UsePullToRefreshOptions,
+) {
+  const active = options?.active ?? true;
   const [pullPx, setPullPx] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const enabledRef = useRef(false);
@@ -38,10 +51,12 @@ export function usePullToRefresh(onRefresh: () => void | Promise<unknown>) {
   refreshingRef.current = refreshing;
   pullRef.current = pullPx;
 
-  const enabled =
+  const deviceEligible =
     typeof window !== "undefined" &&
     isInstalledPwa() &&
     window.matchMedia("(pointer: coarse)").matches;
+
+  const enabled = deviceEligible && active;
 
   enabledRef.current = enabled;
 
@@ -123,6 +138,10 @@ export function usePullToRefresh(onRefresh: () => void | Promise<unknown>) {
       document.removeEventListener("touchcancel", finish);
     };
   }, [enabled, resetPull]);
+
+  useEffect(() => {
+    if (!active) resetPull();
+  }, [active, resetPull]);
 
   return { enabled, pullPx, refreshing, thresholdPx: PULL_THRESHOLD_PX };
 }

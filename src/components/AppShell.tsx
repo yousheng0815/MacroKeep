@@ -5,6 +5,7 @@ import { MobileBottomNav } from "@/components/nav/MobileBottomNav";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { useRecords } from "@/hooks/use-records";
+import { pathnameAllowsPullToRefresh } from "@/lib/routes";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 import { useCallback, type ReactNode } from "react";
@@ -15,11 +16,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { records, refetch } = useRecords();
   const onPullRefresh = useCallback(() => refetch(), [refetch]);
-  const { enabled: pullToRefresh, pullPx, refreshing, thresholdPx } =
-    usePullToRefresh(onPullRefresh);
   /** First-run setup only: hide shell nav so users focus on completing the flow. */
   const inFirstRunTutorial =
     pathname === "/tutorial" && !records.onboardingCompleted;
+  const pullToRefreshActive =
+    pathnameAllowsPullToRefresh(pathname) && !inFirstRunTutorial;
+  const { enabled: pullToRefresh, pullPx, refreshing, thresholdPx } =
+    usePullToRefresh(onPullRefresh, { active: pullToRefreshActive });
   const settingsActive = pathname.startsWith("/settings");
 
   return (
@@ -29,7 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div
           className={`relative flex min-h-dvh min-w-0 flex-1 flex-col ${!inFirstRunTutorial ? "lg:pl-60" : ""}`}
         >
-          {pullToRefresh && !inFirstRunTutorial ? (
+          {pullToRefresh ? (
             <PullToRefreshIndicator
               pullPx={pullPx}
               refreshing={refreshing}

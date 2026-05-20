@@ -34,3 +34,18 @@ export type NavTabPath = (typeof NAV_TAB_PATHS)[number];
 
 /** Shell nav highlight when viewing `/meals/:id`. */
 export type MealDetailNavFrom = NavTabPath;
+
+/** Pull-to-refresh only refetches Drive records; skip forms, add flow, and viewers. */
+export function pathnameAllowsPullToRefresh(pathname: string): boolean {
+  if (pathname === paths.tutorial) return false;
+  if (
+    pathname === paths.add.root ||
+    pathname.startsWith(`${paths.add.root}/`)
+  ) {
+    return false;
+  }
+  if (pathname.startsWith(paths.settings)) return false;
+  if (pathname.startsWith(paths.progress.slideshow)) return false;
+  if (pathname.endsWith("/edit")) return false;
+  return true;
+}

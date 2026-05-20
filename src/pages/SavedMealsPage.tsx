@@ -2,6 +2,7 @@ import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { PageHeader } from "@/components/PageHeader";
+import { BLOCK_PULL_TO_REFRESH_ATTR } from "@/hooks/use-pull-to-refresh";
 import { useRecords } from "@/hooks/use-records";
 import { toast } from "@/lib/app-toast";
 import { paths } from "@/lib/routes";
@@ -404,26 +405,28 @@ export function SavedMealsPage() {
             {t("meals.noSavedMealsBrowse")}
           </p>
         ) : listMode === "reorder" && draft ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={onDragEnd}
-          >
-            <SortableContext
-              items={draft.map((d) => d.id)}
-              strategy={verticalListSortingStrategy}
+          <div {...{ [BLOCK_PULL_TO_REFRESH_ATTR]: "" }}>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onDragEnd}
             >
-              <ul className="divide-y divide-zinc-800">
-                {draft.map((item) => (
-                  <SortableReorderRow
-                    key={item.id}
-                    item={item}
-                    committing={committing}
-                  />
-                ))}
-              </ul>
-            </SortableContext>
-          </DndContext>
+              <SortableContext
+                items={draft.map((d) => d.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="divide-y divide-zinc-800">
+                  {draft.map((item) => (
+                    <SortableReorderRow
+                      key={item.id}
+                      item={item}
+                      committing={committing}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
+          </div>
         ) : listMode === "manage" && draft ? (
           <div className="space-y-4">
             {draft.length === 0 ? (
