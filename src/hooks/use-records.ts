@@ -635,6 +635,8 @@ export function useRecords() {
         preparedPhoto?: PreparedMealPhoto;
         /** Existing App Data photo id (e.g. copied from a logged meal). */
         photoFileId?: string;
+        /** When set, skips a Drive read (caller already pulled `saved-meals.json`). */
+        knownSavedMeals?: SavedMealRecord[];
       },
     ): Promise<string> => {
       if (!canSyncToDriveAppData()) {
@@ -647,22 +649,30 @@ export function useRecords() {
       if (!foodName) throw new Error(i18n.t("common.enterFoodName"));
 
       const newId = options?.id ?? crypto.randomUUID?.() ?? String(Date.now());
-      let photoFileId = options?.photoFileId;
 
-      if (options?.preparedPhoto || options?.photo) {
+      const resolvePhotoFileId = async (): Promise<string | undefined> => {
+        if (options?.photoFileId) return options.photoFileId;
+        if (!options?.preparedPhoto && !options?.photo) return undefined;
         const prepared = options.preparedPhoto
           ? options.preparedPhoto
           : await prepareMealPhotoForUpload(
               options.photo!.base64,
               options.photo!.mimeType,
             );
-        photoFileId = await uploadMealPhotoToAppData(
+        return uploadMealPhotoToAppData(
           token,
           newId,
           prepared.base64,
           prepared.mimeType,
         );
-      }
+      };
+
+      const [photoFileId, prev] = await Promise.all([
+        resolvePhotoFileId(),
+        options?.knownSavedMeals
+          ? Promise.resolve(options.knownSavedMeals)
+          : pullSavedMealsFromDrive(token),
+      ]);
 
       const row: SavedMealRecord = {
         id: newId,
@@ -673,8 +683,6 @@ export function useRecords() {
         carbs: snapshot.carbs,
         ...(photoFileId ? { photoFileId } : {}),
       };
-
-      const prev = await pullSavedMealsFromDrive(token);
       if (savedMealDuplicatesExisting(row, prev)) {
         throw new Error(i18n.t("errors.duplicateSavedMeal"));
       }
@@ -694,15 +702,19 @@ export function useRecords() {
       }
       const token = await ensureGoogleAccessToken();
       if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
-      const prev = await pullSavedMealsFromDrive(token);
+      const newId = crypto.randomUUID?.() ?? String(Date.now());
+
+      const [prev, photoFileId] = await Promise.all([
+        pullSavedMealsFromDrive(token),
+        meal.photoFileId
+          ? copyAppDataPhotoForSavedMeal(token, meal.photoFileId, newId)
+          : Promise.resolve(undefined),
+      ]);
+
       if (isMealAlreadySavedAsTemplate(meal, prev)) {
         throw new Error(i18n.t("errors.alreadyInSavedMeals"));
       }
-      const newId = crypto.randomUUID?.() ?? String(Date.now());
-      let photoFileId = meal.photoFileId;
-      if (photoFileId) {
-        photoFileId = await copyAppDataPhotoForSavedMeal(token, photoFileId, newId);
-      }
+
       await addSavedMeal(
         {
           food_name: meal.food_name,
@@ -711,7 +723,7 @@ export function useRecords() {
           fats: meal.fats,
           carbs: meal.carbs,
         },
-        { id: newId, photoFileId },
+        { id: newId, photoFileId, knownSavedMeals: prev },
       );
     },
     [addSavedMeal],
