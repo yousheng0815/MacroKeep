@@ -8,7 +8,6 @@ export type FeedbackKind = "bug" | "feature" | "other";
 function feedbackDiagnostics(locale: string): string {
   const lines = [
     "---",
-    "Diagnostics (auto-filled, do not edit):",
     `Version: ${packageJson.version}`,
     `Locale: ${locale}`,
     `PWA: ${isInstalledPwa() ? "yes" : "no"}`,
@@ -24,9 +23,6 @@ export function buildFeedbackMailtoUrl(
   locale: string,
 ): string {
   const body = `${bodyPrompt}\n\n${feedbackDiagnostics(locale)}`;
-  const params = new URLSearchParams({
-    subject,
-    body,
-  });
-  return `mailto:${FEEDBACK_EMAIL}?${params.toString()}`;
+  // encodeURIComponent (not URLSearchParams) so spaces are %20, not +.
+  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

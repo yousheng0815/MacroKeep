@@ -154,7 +154,7 @@
       "featureSubject": "MacroKeep feature request",
       "otherSubject": "MacroKeep feedback",
       "bugBody": "What happened?\n\nSteps to reproduce:\n1.\n2.\n\nExpected:\n\nActual:",
-      "featureBody": "What would you like MacroKeep to do?\n\nWhy would this help you?",
+      "featureBody": "What would you like MacroKeep to add?\n\nHow would this help you?",
       "otherBody": "Your message:"
     }
   },
