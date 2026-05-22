@@ -6,9 +6,18 @@ import { VitePWA } from "vite-plugin-pwa";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
+function siteOriginFromEnv(env: Record<string, string>): string {
+  const raw = env.MK_SITE_ORIGIN?.trim() || env.VITE_SITE_ORIGIN?.trim() || "";
+  return raw.replace(/\/$/, "");
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const apiProxyTarget = env.VITE_DEV_API_PROXY_TARGET?.trim();
+  const siteOrigin = siteOriginFromEnv(env);
+  const ogImage = siteOrigin
+    ? `${siteOrigin}/pwa/icon-512.png`
+    : "/pwa/icon-512.png";
 
   if (mode === "development" && apiProxyTarget) {
     console.info(
@@ -19,6 +28,20 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      {
+        name: "macrokeep-html-meta",
+        transformIndexHtml(html) {
+          const ogUrlTag = siteOrigin
+            ? `<meta property="og:url" content="${siteOrigin}/" />\n    `
+            : "";
+          return html
+            .replaceAll("%OG_IMAGE%", ogImage)
+            .replace(
+              "<!-- og:url injected at build when MK_SITE_ORIGIN is set -->\n    ",
+              ogUrlTag,
+            );
+        },
+      },
       VitePWA({
         disable: mode === "development",
         injectRegister: false,
