@@ -9,6 +9,8 @@ import { SavedMealNewPage } from "@/pages/SavedMealNewPage";
 import { SavedMealsPage } from "@/pages/SavedMealsPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { LoginPage } from "@/pages/LoginPage";
+import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { TermsOfServicePage } from "@/pages/TermsOfServicePage";
 import { MealDetailPage } from "@/pages/MealDetailPage";
 import { MealEditPage } from "@/pages/MealEditPage";
 import { ProgressPage } from "@/pages/ProgressPage";
@@ -39,6 +41,18 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: paths.login,
   component: LoginPage,
+});
+
+const privacyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: paths.privacy,
+  component: PrivacyPolicyPage,
+});
+
+const termsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: paths.terms,
+  component: TermsOfServicePage,
 });
 
 const appLayoutRoute = createRoute({
@@ -151,6 +165,8 @@ const tutorialRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
+  privacyRoute,
+  termsRoute,
   appLayoutRoute.addChildren([
     dashboardRoute,
     historyRoute,

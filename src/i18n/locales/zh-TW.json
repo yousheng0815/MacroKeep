@@ -108,6 +108,12 @@
     "couldntLoadDiaryDefault": "無法從 Google Drive 載入你的飲食紀錄。",
     "tryAgain": "再試一次"
   },
+  "legal": {
+    "privacyPolicy": "隱私權政策",
+    "termsOfService": "服務條款",
+    "backToApp": "返回登入",
+    "footerNavAria": "法律文件"
+  },
   "settings": {
     "pageTitle": "設定",
     "pageSubtitle": "帳號、AI 金鑰與每日營養目標。",

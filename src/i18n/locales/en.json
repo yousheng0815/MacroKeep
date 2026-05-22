@@ -108,6 +108,12 @@
     "couldntLoadDiaryDefault": "We couldn't load your food log from Google Drive.",
     "tryAgain": "Try again"
   },
+  "legal": {
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "backToApp": "Back to sign in",
+    "footerNavAria": "Legal"
+  },
   "settings": {
     "pageTitle": "Settings",
     "pageSubtitle": "Account, AI key, and daily macro targets.",

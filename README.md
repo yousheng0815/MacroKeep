@@ -23,3 +23,5 @@ OAuth redirect URI for local dev: `http://localhost:8788/api/auth/google/callbac
 3. Or deploy from CLI: `npm run deploy` (requires `wrangler login`).
 
 Add the production callback URL to your Google OAuth client: `{MK_SITE_ORIGIN}/api/auth/google/callback`.
+
+Public legal pages (for Google OAuth consent screen): `{MK_SITE_ORIGIN}/privacy` and `{MK_SITE_ORIGIN}/terms`.

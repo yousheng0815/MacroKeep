@@ -1,3 +1,4 @@
+import { LegalFooter } from "@/components/legal/LegalFooter";
 import { Logo } from "@/components/Logo";
 import type { ReactNode } from "react";
 
@@ -28,6 +29,7 @@ export function GoogleAuthPageLayout({
           </div>
         </div>
         <div className="flex flex-col items-center gap-3">{children}</div>
+        <LegalFooter className="mt-10 flex justify-center" />
       </div>
     </div>
   );
