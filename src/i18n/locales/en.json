@@ -184,7 +184,9 @@
     "macrosToday": "Today's macros",
     "geminiKeyCardTitle": "Gemini API key",
     "geminiKeyCardBlurb": "Required for photo meal scanning. Add it in Settings—it's saved with your Drive food log.",
+    "geminiKeyCardBlurbConnected": "Used for photo meal scanning. Saved with your Drive food log.",
     "addApiKeyInSettings": "Add your API key in Settings",
+    "manageApiKeyInSettings": "Manage API key in Settings",
     "todaysMeals": "Today's meals",
     "noMealsToday": "No meals logged yet today.",
     "quickScanAria": "Quick-scan a meal photo"

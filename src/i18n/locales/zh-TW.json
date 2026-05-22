@@ -184,7 +184,9 @@
     "macrosToday": "本日三大營養素",
     "geminiKeyCardTitle": "Gemini API 金鑰",
     "geminiKeyCardBlurb": "拍照估算餐點需要此金鑰。請到設定新增，會與 Drive 上的飲食紀錄一併儲存。",
+    "geminiKeyCardBlurbConnected": "用於拍照估算餐點，並與 Drive 上的飲食紀錄一併儲存。",
     "addApiKeyInSettings": "到設定新增 API 金鑰",
+    "manageApiKeyInSettings": "在設定中管理 API 金鑰",
     "todaysMeals": "今日餐點",
     "noMealsToday": "今天還沒記錄任何餐點。",
     "quickScanAria": "快速掃描餐點照片"

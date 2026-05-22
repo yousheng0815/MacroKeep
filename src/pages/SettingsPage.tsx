@@ -3,7 +3,6 @@ import {
   ButtonSpinner,
 } from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
-import { LegalFooter } from "@/components/legal/LegalFooter";
 import { PageHeader } from "@/components/PageHeader";
 import {
   HeightWeightFields,
@@ -735,8 +734,6 @@ export function SettingsPage() {
       />
 
       <FeedbackCard />
-
-      <LegalFooter className="pt-2" />
     </div>
   );
 }

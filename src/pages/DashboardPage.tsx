@@ -211,15 +211,10 @@ export function DashboardPage() {
 
           <Card className="hidden lg:block">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-semibold text-white">
-                  {t("dashboard.geminiKeyCardTitle")}
-                </h2>
-                <p className="mt-1 text-sm text-mk-muted">
-                  {t("dashboard.geminiKeyCardBlurb")}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
+              <h2 className="min-w-0 text-sm font-semibold text-white">
+                {t("dashboard.geminiKeyCardTitle")}
+              </h2>
+              <div className="flex shrink-0 items-center gap-2 whitespace-nowrap text-sm">
                 {connected ? (
                   <>
                     <CheckCircle2 className="size-4 text-emerald-400" />
@@ -230,14 +225,19 @@ export function DashboardPage() {
                 )}
               </div>
             </div>
-            {!connected && (
-              <Link
-                to={paths.settings}
-                className="mt-4 inline-block text-sm text-blue-400 underline underline-offset-4 hover:text-blue-300"
-              >
-                {t("dashboard.addApiKeyInSettings")}
-              </Link>
-            )}
+            <p className="mt-1 text-sm text-mk-muted">
+              {connected
+                ? t("dashboard.geminiKeyCardBlurbConnected")
+                : t("dashboard.geminiKeyCardBlurb")}
+            </p>
+            <Link
+              to={paths.settings}
+              className="mt-4 inline-block text-sm text-blue-400 underline underline-offset-4 hover:text-blue-300"
+            >
+              {connected
+                ? t("dashboard.manageApiKeyInSettings")
+                : t("dashboard.addApiKeyInSettings")}
+            </Link>
           </Card>
         </div>
 
