@@ -22,14 +22,13 @@ export const messagesEn: MarketingMessages = {
   home: {
     eyebrow: "Calorie & macro tracking",
     headline: "Track your macros for free",
-    lead: "Log what you eat, see how you're doing against your targets, and estimate nutrition from a photo.",
+    lead: "Log what you eat, see your progress, and estimate macros with AI, powered by your own Google Drive and your own API key.",
     ctaPrimary: "Open MacroKeep",
     ctaSecondary: "How it works",
   },
   screenshots: {
     heading: "See the app",
-    lead:
-      "A quick look at the app. Simple logging, clear daily totals, and photo meal estimates.",
+    lead: "A quick look at the app. Simple logging, clear daily totals, and photo meal estimates.",
     stripLabel: "App screenshots",
     items: [
       {
@@ -83,7 +82,8 @@ export const messagesEn: MarketingMessages = {
       },
       {
         title: "History & progress",
-        description: "Browse past days, charts, saved meals, and progress photos.",
+        description:
+          "Browse past days, charts, saved meals, and progress photos.",
       },
     ],
   },
@@ -106,7 +106,7 @@ export const messagesEn: MarketingMessages = {
       {
         question: "Is MacroKeep free?",
         answer:
-          "Yes. The app is completely free. AI meal estimates use a Gemini API key from Google AI Studio; for personal use, that's free too. You'd only pay Google if you turn on billing for that key's project.",
+          "Yes, 100%. The app itself has no subscriptions and no ads. For the AI photo/text features, the app connects to your own free Gemini API key from Google AI Studio. It takes less than a minute to set up, costs nothing for personal use, and ensures you retain full control over your AI usage.",
       },
       {
         question: "Why a Gemini API key?",
@@ -115,8 +115,7 @@ export const messagesEn: MarketingMessages = {
       },
       {
         question: "Where is my data?",
-        answer:
-          "In a hidden Drive app folder tied to your Google account. MacroKeep can't access your other Drive files.",
+        answer: `Your logs live in a secure, hidden Google Drive app folder tied to your personal Google account, separate from your main My Drive. MacroKeep has zero database servers, meaning we never see, store, or sell your personal data.`,
       },
       {
         question: "Questions or feedback?",
