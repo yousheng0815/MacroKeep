@@ -118,7 +118,7 @@
     "pageTitle": "Settings",
     "pageSubtitle": "Account, AI key, and daily macro targets.",
     "geminiApiKey": "Gemini API key",
-    "geminiBlurb": "Add an API key to estimate macros from photos or meal descriptions. It's stored with your MacroKeep data on Google Drive.",
+    "geminiBlurb": "Add an API key to estimate macros from photos or meal descriptions. It's stored with your MacroKeep data on Google Drive. Google offers a free tier with rate limits; you only pay if you enable billing on that key's project in Google AI Studio.",
     "howToGetKey": "How to get a key",
     "howToStep1": "Open <1>Google AI Studio → API keys</1> and sign in with Google.",
     "howToStep2": "Click <1>Create API key</1>. Choose an existing Cloud project or let Google create one.",

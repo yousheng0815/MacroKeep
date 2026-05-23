@@ -34,7 +34,7 @@ export const privacyPolicyEn: LegalDocument = {
     {
       title: "Optional Gemini API key",
       paragraphs: [
-        "If you choose to add a Google Gemini API key, it is saved with your other MacroKeep data in your Drive app data folder. Photo and text meal analysis requests are sent directly from your browser to Google’s Generative Language API using your key. MacroKeep does not store your Gemini key on our servers. Your use of Gemini is also subject to Google’s terms and policies for that service.",
+        "If you choose to add a Google Gemini API key, it is saved with your other MacroKeep data in your Drive app data folder. Photo and text meal analysis requests are sent directly from your browser to Google’s Generative Language API using your key. MacroKeep does not store your Gemini key on our servers. Google’s Gemini API includes a free tier with rate limits; paid charges apply only if you enable billing on the key’s Google Cloud project. Your use of Gemini is also subject to Google’s terms and policies for that service.",
       ],
     },
     {

@@ -37,14 +37,9 @@ const ogImage = new URL("/screenshots/today.png", Astro.site).href;
     <title>{fullTitle}</title>
   </head>
   <body>
-    <header
-      style="border-bottom: 1px solid #27272a; padding: 1rem 0; position: sticky; top: 0; background: rgba(9, 9, 11, 0.92); backdrop-filter: blur(8px); z-index: 10;"
-    >
-      <div
-        class="container"
-        style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;"
-      >
-        <a href="/" style="display: flex; align-items: center; text-decoration: none">
+    <header class="site-header">
+      <div class="container">
+        <a href="/" class="site-header__logo">
           <img src="/wordmark.png" alt="MacroKeep" width="140" height="32" />
         </a>
         <a class="btn btn-primary" href={APP_URL}>Open app</a>

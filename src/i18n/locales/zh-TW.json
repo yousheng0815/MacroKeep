@@ -118,7 +118,7 @@
     "pageTitle": "設定",
     "pageSubtitle": "帳號、AI 金鑰與每日營養目標。",
     "geminiApiKey": "Gemini API 金鑰",
-    "geminiBlurb": "新增 API 金鑰後以從照片或描述估算三大營養素。金鑰將儲存在你的 Google Drive。",
+    "geminiBlurb": "新增 API 金鑰後以從照片或描述估算三大營養素。金鑰將儲存在你的 Google Drive。Google 提供有速率限制的免費方案；僅當你在 Google AI Studio 為該金鑰的專案啟用計費時才需付費。",
     "howToGetKey": "如何取得金鑰",
     "howToStep1": "開啟 <1>Google AI Studio → API Keys</1>，並使用 Google 帳號登入。",
     "howToStep2": "點選 <1>Create API key</1>，選擇現有專案，或依提示讓 Google 建立新專案。",

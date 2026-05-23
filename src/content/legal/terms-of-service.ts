@@ -3,10 +3,10 @@ import type { LegalDocument } from "./types";
 /** English terms of service — public URL for OAuth consent screen. */
 export const termsOfServiceEn: LegalDocument = {
   title: "Terms of Service",
-  effectiveDate: "May 19, 2026",
+  effectiveDate: "May 23, 2026",
   intro: [
     'These Terms of Service ("Terms") govern your use of MacroKeep ("we," "us," or "the app"), a web application for tracking nutrition and related wellness data. By accessing or using MacroKeep, you agree to these Terms and to our Privacy Policy.',
-    'If you do not agree, do not use MacroKeep.',
+    "If you do not agree, do not use MacroKeep.",
   ],
   sections: [
     {
@@ -30,7 +30,7 @@ export const termsOfServiceEn: LegalDocument = {
     {
       title: "Optional AI features",
       paragraphs: [
-        "Meal photo and description analysis uses a Gemini API key you supply (bring your own key). AI outputs are estimates only—not medical, dietary, or professional advice. You are responsible for verifying nutrition information and for how you use AI results. We do not guarantee accuracy or availability of AI features.",
+        "Meal photo and description analysis uses a Gemini API key you supply (bring your own key). Google’s Gemini API includes a free tier with rate limits; you are responsible for any charges if you enable billing on the key’s Google Cloud project. AI outputs are estimates only—not medical, dietary, or professional advice. You are responsible for verifying nutrition information and for how you use AI results. We do not guarantee accuracy or availability of AI features.",
       ],
     },
     {
