@@ -9,6 +9,7 @@ interface Props {
 
 const { title, description } = Astro.props;
 const fullTitle = title === "MacroKeep" ? title : `${title} · MacroKeep`;
+const ogImage = new URL("/screenshots/today.png", Astro.site).href;
 ---
 
 <!doctype html>
@@ -18,6 +19,14 @@ const fullTitle = title === "MacroKeep" ? title : `${title} · MacroKeep`;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#09090B" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

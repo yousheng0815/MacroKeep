@@ -1,0 +1,108 @@
+---
+/** Marketing screenshots live in repo `public/screenshots/` (shared via Astro publicDir). */
+const shots = [
+  {
+    id: "tutorial",
+    src: "/screenshots/setup-targets.png",
+    alt: "Tutorial — set your targets with profile and macro suggestions",
+    label: "Tutorial",
+  },
+  {
+    id: "today",
+    src: "/screenshots/today.png",
+    alt: "Today screen with calorie ring, macro bars, and meals",
+    label: "Today",
+  },
+  {
+    id: "history",
+    src: "/screenshots/history.png",
+    alt: "History grouped by day with meal thumbnails",
+    label: "History",
+  },
+  {
+    id: "detail",
+    src: "/screenshots/meal-details.png",
+    alt: "Meal details with photo and macro breakdown",
+    label: "Detail",
+  },
+  {
+    id: "log-meal",
+    src: "/screenshots/log-meal.png",
+    alt: "Log meal with photo, describe, and manual options",
+    label: "Log meal",
+  },
+];
+---
+
+<section class="screenshots-section" aria-labelledby="screenshots-heading">
+  <div class="container">
+    <h2 id="screenshots-heading" class="screenshots-heading">See the app</h2>
+    <p class="screenshots-lead muted">
+      A straightforward macro diary—no clutter, no MacroKeep subscription for AI scans.
+    </p>
+
+    <div class="screenshots-scroll-wrap">
+      <ul id="screenshots-strip" class="screenshots-strip" aria-label="App screenshots">
+        {
+          shots.map((shot) => (
+            <li
+              class={`screenshot-slide${shot.id === "today" ? " screenshot-slide--today" : ""}`}
+              id={shot.id === "today" ? "screenshot-today" : undefined}
+              data-screenshot={shot.id}
+            >
+              <figure class="screenshot-card">
+                <div class="screenshot-frame">
+                  <img
+                    src={shot.src}
+                    alt={shot.alt}
+                    width={390}
+                    height={844}
+                    loading={shot.id === "today" ? "eager" : "lazy"}
+                    fetchpriority={shot.id === "today" ? "high" : "auto"}
+                    decoding="async"
+                  />
+                </div>
+                <figcaption class="screenshot-label">{shot.label}</figcaption>
+              </figure>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="screenshots-hint muted">Swipe to browse</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  const MOBILE_MQ = "(max-width: 899px)";
+
+  function centerTodayInStrip() {
+    if (!window.matchMedia(MOBILE_MQ).matches) return;
+
+    const strip = document.getElementById("screenshots-strip");
+    const today = document.getElementById("screenshot-today");
+    if (!strip || !today) return;
+
+    const target =
+      today.offsetLeft - (strip.clientWidth - today.offsetWidth) / 2;
+    strip.scrollLeft = Math.max(0, target);
+  }
+
+  function scheduleCenterToday() {
+    requestAnimationFrame(() => {
+      centerTodayInStrip();
+      requestAnimationFrame(centerTodayInStrip);
+    });
+  }
+
+  scheduleCenterToday();
+  window.addEventListener("load", scheduleCenterToday, { once: true });
+
+  document
+    .getElementById("screenshots-strip")
+    ?.querySelectorAll("img")
+    .forEach((img) => {
+      if (img.complete) return;
+      img.addEventListener("load", scheduleCenterToday, { once: true });
+    });
+</script>

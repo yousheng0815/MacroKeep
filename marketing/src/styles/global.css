@@ -101,3 +101,140 @@ img {
 .prose-legal li + li {
   margin-top: 0.5rem;
 }
+
+/* App screenshots — one horizontal row (scroll on small screens) */
+.screenshots-section {
+  padding: 2rem 0 2.5rem;
+  border-top: 1px solid #27272a;
+}
+
+.screenshots-section .container {
+  max-width: 64rem;
+}
+
+.screenshots-heading {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.screenshots-lead {
+  margin: 0.75rem auto 0;
+  max-width: 36ch;
+  text-align: center;
+  font-size: 0.9375rem;
+}
+
+.screenshots-scroll-wrap {
+  margin-top: 1.75rem;
+  position: relative;
+}
+
+.screenshots-strip {
+  list-style: none;
+  margin: 0;
+  /* Side padding lets the first/last slides scroll to true center (Today on load). */
+  --screenshot-slide-width: clamp(11rem, 52vw, 14rem);
+  padding: 0.25rem max(1.5rem, calc(50% - var(--screenshot-slide-width) / 2)) 0.5rem;
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.screenshots-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.screenshot-slide {
+  flex: 0 0 auto;
+  width: var(--screenshot-slide-width);
+  scroll-snap-align: center;
+}
+
+.screenshot-slide--today .screenshot-frame {
+  box-shadow:
+    0 0 0 1px rgba(52, 211, 153, 0.2) inset,
+    0 16px 32px -10px rgba(0, 0, 0, 0.55);
+}
+
+.screenshot-card {
+  margin: 0;
+  text-align: center;
+}
+
+.screenshot-frame {
+  border-radius: 1.35rem;
+  border: 1px solid #27272a;
+  background: #18181b;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 16px 32px -10px rgba(0, 0, 0, 0.55);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.screenshot-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+.screenshot-label {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #a1a1aa;
+  line-height: 1.2;
+}
+
+.screenshots-hint {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+@media (min-width: 900px) {
+  .screenshots-scroll-wrap {
+    margin-top: 2rem;
+  }
+
+  .screenshots-strip {
+    --screenshot-slide-width: 11.75rem;
+    flex-wrap: nowrap;
+    justify-content: center;
+    overflow-x: visible;
+    padding-inline: 0;
+    gap: 0.875rem;
+    scroll-snap-type: none;
+  }
+
+  .screenshot-slide {
+    width: var(--screenshot-slide-width);
+  }
+
+  .screenshot-slide--today .screenshot-frame {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+      0 16px 32px -10px rgba(0, 0, 0, 0.55);
+  }
+
+  .screenshots-hint {
+    display: none;
+  }
+
+  .screenshot-slide:hover .screenshot-frame,
+  .screenshot-slide:focus-within .screenshot-frame {
+    transform: translateY(-4px);
+    box-shadow:
+      0 0 0 1px rgba(52, 211, 153, 0.15) inset,
+      0 20px 40px -12px rgba(0, 0, 0, 0.6);
+  }
+}

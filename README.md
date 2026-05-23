@@ -24,8 +24,6 @@ OAuth redirect URI for local dev: `http://localhost:8788/api/auth/google/callbac
 
 Add the production callback URL to your Google OAuth client: `{MK_SITE_ORIGIN}/api/auth/google/callback`.
 
-Public legal pages (for Google OAuth consent screen): `{MK_SITE_ORIGIN}/privacy` and `{MK_SITE_ORIGIN}/terms`.
-
 `MK_SITE_ORIGIN` at **build** time also sets Open Graph / Twitter Card URLs in `index.html` (absolute `og:image`, `og:url`). Local builds without it use root-relative image paths.
 
 ## Marketing site (`macrokeep.com`)

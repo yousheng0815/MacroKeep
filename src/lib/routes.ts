@@ -1,8 +1,6 @@
 /** Canonical app paths — use for links, redirects, and nav highlighting. */
 export const paths = {
   login: "/login",
-  privacy: "/privacy",
-  terms: "/terms",
   home: "/",
   history: "/history",
   mealDetail: "/meals/$mealId",
@@ -40,7 +38,6 @@ export type MealDetailNavFrom = NavTabPath;
 /** Pull-to-refresh only refetches Drive records; skip forms, add flow, and viewers. */
 export function pathnameAllowsPullToRefresh(pathname: string): boolean {
   if (pathname === paths.tutorial) return false;
-  if (pathname === paths.privacy || pathname === paths.terms) return false;
   if (
     pathname === paths.add.root ||
     pathname.startsWith(`${paths.add.root}/`)
