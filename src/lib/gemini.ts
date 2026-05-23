@@ -234,7 +234,7 @@ function parseAiMealJson(text: string): AiMealEstimate {
   const cleaned = stripCodeFence(text);
   if (!cleaned) {
     throw new Error(
-      "Gemini returned no text — often caused by maxOutputTokens being too small for this model.",
+      "Gemini returned no text. This is often caused by maxOutputTokens being too small for this model.",
     );
   }
   let parsed: Partial<AiMealEstimate>;

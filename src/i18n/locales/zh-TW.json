@@ -92,7 +92,7 @@
   },
   "auth": {
     "welcomeTitle": "歡迎",
-    "welcomeBlurb": "使用 Google 登入，飲食紀錄會同步到 Drive。AI 估算三大營養素需使用你自己的 Gemini API 金鑰，無需 MacroKeep 訂閱。",
+    "welcomeBlurb": "MacroKeep 完全免費。使用 Google 登入以同步飲食紀錄。AI 估算可至 Google 申請免費的 Gemini API 金鑰，並在設定中新增。",
     "signInAgainTitle": "請重新登入",
     "sessionExpiredLead": "登入可能已過期，請用 Google 再登入一次以繼續使用。",
     "reconnectingAs": "正在以 {{email}} 重新登入",
@@ -285,7 +285,7 @@
     "bodyProgressPhotos": "進度照片",
     "bodyProgressBlurb": "拍照記錄身體變化。",
     "couldntLoadPhotos": "無法載入進度照片，請稍後再試。",
-    "noPhotosYet": "還沒有照片—來拍第一張打卡照吧。",
+    "noPhotosYet": "還沒有照片。來拍第一張打卡照吧。",
     "progressPhotoN": "進度照片 {{n}}",
     "addPhoto": "新增照片",
     "playBack": "幻燈片播放",

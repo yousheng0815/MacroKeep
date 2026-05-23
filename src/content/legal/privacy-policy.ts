@@ -12,7 +12,7 @@ export const privacyPolicyEn: LegalDocument = {
     {
       title: "Summary",
       paragraphs: [
-        "Your food log, settings, progress photos, and optional Gemini API key are stored in your own Google Drive application data folder—not on MacroKeep servers. We use Google Sign-In only to identify your account and access that folder. Our hosting may process OAuth tokens transiently to complete sign-in and refresh access; we do not operate a user database that stores your meal data.",
+        "Your food log, settings, progress photos, and optional Gemini API key are stored in your own Google Drive application data folder, not on MacroKeep servers. We use Google Sign-In only to identify your account and access that folder. Our hosting may process OAuth tokens transiently to complete sign-in and refresh access; we do not operate a user database that stores your meal data.",
       ],
     },
     {
