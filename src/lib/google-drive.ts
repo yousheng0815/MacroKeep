@@ -113,10 +113,36 @@ function base64ToUint8Array(base64: string): Uint8Array {
   return bytes;
 }
 
-function authHeaders(token: string): HeadersInit {
-  return {
-    Authorization: `Bearer ${token}`,
+
+async function recoverAccessTokenAfterDrive401(): Promise<string | null> {
+  const { recoverGoogleAccessTokenAfterDrive401 } = await import("@/lib/gapi");
+  return recoverGoogleAccessTokenAfterDrive401();
+}
+
+/** Drive fetch with one refresh-and-retry on 401 (revoked/expired access token). */
+async function driveAuthedFetch(
+  token: string,
+  url: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const request = (accessToken: string) => {
+    const headers = new Headers(init.headers);
+    headers.set("Authorization", `Bearer ${accessToken}`);
+    return fetch(url, { ...init, headers });
   };
+
+  let res = await request(token);
+  if (res.status !== 401) return res;
+
+  const refreshed = await recoverAccessTokenAfterDrive401();
+  if (!refreshed) return res;
+
+  res = await request(refreshed);
+  if (res.status === 401) {
+    const { invalidateGoogleAccessToken } = await import("@/lib/gapi");
+    invalidateGoogleAccessToken();
+  }
+  return res;
 }
 
 function isGoogleFolderMime(mimeType: string | undefined): boolean {
@@ -145,7 +171,7 @@ async function findAppDataSubfolderId(
     `name='${escapeDriveQueryString(folderName)}' and mimeType='${GOOGLE_FOLDER_MIME}' and 'appDataFolder' in parents and trashed=false`,
   );
   const url = `${DRIVE_FILES}?spaces=appDataFolder&q=${q}&fields=files(id,name)`;
-  const res = await fetch(url, { headers: authHeaders(token) });
+  const res = await driveAuthedFetch(token, url);
   if (!res.ok) throw new Error(`Drive list folder failed: ${res.status}`);
   const data = (await res.json()) as { files?: { id: string }[] };
   return data.files?.[0]?.id ?? null;
@@ -155,10 +181,9 @@ async function createAppDataSubfolder(
   token: string,
   folderName: string,
 ): Promise<string> {
-  const res = await fetch(DRIVE_FILES, {
+  const res = await driveAuthedFetch(token, DRIVE_FILES, {
     method: "POST",
     headers: {
-      ...authHeaders(token),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -203,7 +228,7 @@ async function listDirectAppDataChildren(
     if (pageToken) params.set("pageToken", pageToken);
 
     const url = `${DRIVE_FILES}?${params.toString()}`;
-    const res = await fetch(url, { headers: authHeaders(token), signal });
+    const res = await driveAuthedFetch(token, url, { signal });
     if (!res.ok) throw new Error(`Drive list app data children failed: ${res.status}`);
     const data = (await res.json()) as {
       nextPageToken?: string;
@@ -256,10 +281,9 @@ async function uploadMultipartImageToAppDataParent(
   }
 
   const url = `${UPLOAD_BASE}?uploadType=multipart`;
-  const res = await fetch(url, {
+  const res = await driveAuthedFetch(token, url, {
     method: "POST",
     headers: {
-      ...authHeaders(token),
       "Content-Type": `multipart/related; boundary=${boundary}`,
     },
     body,
@@ -515,7 +539,7 @@ export async function downloadAppDataFileText(
   signal?: AbortSignal,
 ): Promise<string> {
   const url = `${DRIVE_FILES}/${encodeURIComponent(fileId)}?alt=media`;
-  const res = await fetch(url, { headers: authHeaders(token), signal });
+  const res = await driveAuthedFetch(token, url, { signal });
   if (!res.ok) throw new Error(`Drive download failed: ${res.status}`);
   return res.text();
 }
@@ -566,7 +590,7 @@ function bufferLooksLikeImageMagic(buf: ArrayBuffer): boolean {
 }
 
 /** Drive v3 often returns 403 for `?access_token=`; prefer Bearer + redirect follow (Location is signed). */
-function downloadDriveMediaWithXhr(
+function downloadDriveMediaWithXhrOnce(
   token: string,
   fileId: string,
   signal?: AbortSignal,
@@ -612,6 +636,21 @@ function downloadDriveMediaWithXhr(
   });
 }
 
+async function downloadDriveMediaWithXhr(
+  token: string,
+  fileId: string,
+  signal?: AbortSignal,
+): Promise<{ buf: ArrayBuffer; contentType: string | null }> {
+  try {
+    return await downloadDriveMediaWithXhrOnce(token, fileId, signal);
+  } catch (e) {
+    if (!(e instanceof Error) || !e.message.includes("401")) throw e;
+    const refreshed = await recoverAccessTokenAfterDrive401();
+    if (!refreshed) throw e;
+    return downloadDriveMediaWithXhrOnce(refreshed, fileId, signal);
+  }
+}
+
 /**
  * Downloads raw bytes from `appDataFolder` (`alt=media`).
  * Caller should ensure `fileId` belongs to the user's app data folder.
@@ -626,9 +665,8 @@ export async function downloadAppDataFileBlob(
 ): Promise<Blob> {
   const url = `${DRIVE_FILES}/${encodeURIComponent(fileId)}?alt=media`;
 
-  const res = await fetch(url, {
+  const res = await driveAuthedFetch(token, url, {
     method: "GET",
-    headers: authHeaders(token),
     credentials: "omit",
     redirect: "follow",
     signal,
@@ -666,7 +704,7 @@ async function findAppDataJsonFileIdByName(
 ): Promise<string | null> {
   const q = encodeURIComponent(`name='${fileName}' and trashed=false`);
   const url = `${DRIVE_FILES}?spaces=appDataFolder&q=${q}&fields=files(id,name)`;
-  const res = await fetch(url, { headers: authHeaders(token) });
+  const res = await driveAuthedFetch(token, url);
   if (!res.ok) throw new Error(`Drive list failed: ${res.status}`);
   const data = (await res.json()) as { files?: { id: string }[] };
   return data.files?.[0]?.id ?? null;
@@ -677,7 +715,7 @@ async function downloadCoreRecords(
   fileId: string,
 ): Promise<RecordsCoreDocument> {
   const url = `${DRIVE_FILES}/${encodeURIComponent(fileId)}?alt=media`;
-  const res = await fetch(url, { headers: authHeaders(token) });
+  const res = await driveAuthedFetch(token, url);
   if (!res.ok) throw new Error(`Drive download failed: ${res.status}`);
   const text = await res.text();
   try {
@@ -712,10 +750,9 @@ async function createMultipartJsonAppData(
     close;
 
   const url = `${UPLOAD_BASE}?uploadType=multipart`;
-  const res = await fetch(url, {
+  const res = await driveAuthedFetch(token, url, {
     method: "POST",
     headers: {
-      ...authHeaders(token),
       "Content-Type": `multipart/related; boundary=${boundary}`,
     },
     body: multipartBody,
@@ -733,10 +770,9 @@ async function updateJsonMedia(
   signal?: AbortSignal,
 ): Promise<void> {
   const url = `${UPLOAD_BASE}/${encodeURIComponent(fileId)}?uploadType=media`;
-  const res = await fetch(url, {
+  const res = await driveAuthedFetch(token, url, {
     method: "PATCH",
     headers: {
-      ...authHeaders(token),
       "Content-Type": "application/json; charset=UTF-8",
     },
     body,
@@ -779,7 +815,7 @@ async function findMealsShardFileId(
   const name = mealsShardFileName(monthKey);
   const q = encodeURIComponent(`name='${name}' and trashed=false`);
   const url = `${DRIVE_FILES}?spaces=appDataFolder&q=${q}&fields=files(id,name)`;
-  const res = await fetch(url, { headers: authHeaders(token) });
+  const res = await driveAuthedFetch(token, url);
   if (!res.ok) throw new Error(`Drive list shard failed: ${res.status}`);
   const data = (await res.json()) as { files?: { id: string }[] };
   return data.files?.[0]?.id ?? null;
@@ -801,7 +837,7 @@ export async function listMealShardFiles(
     `name contains 'meals-' and name contains '.json' and trashed=false`,
   );
   const url = `${DRIVE_FILES}?spaces=appDataFolder&q=${q}&fields=files(id,name)`;
-  const res = await fetch(url, { headers: authHeaders(token), signal });
+  const res = await driveAuthedFetch(token, url, { signal });
   if (!res.ok) throw new Error(`Drive list meal shards failed: ${res.status}`);
   const data = (await res.json()) as { files?: { id: string; name: string }[] };
   const out: { id: string; monthKey: string }[] = [];
@@ -819,7 +855,7 @@ export async function pullMealsShardRecords(
   signal?: AbortSignal,
 ): Promise<MealRecord[]> {
   const url = `${DRIVE_FILES}/${encodeURIComponent(fileId)}?alt=media`;
-  const res = await fetch(url, { headers: authHeaders(token), signal });
+  const res = await driveAuthedFetch(token, url, { signal });
   if (!res.ok) throw new Error(`Drive shard download failed: ${res.status}`);
   const text = await res.text();
   try {
@@ -1326,10 +1362,7 @@ export async function deleteProgressPhotoFromDrive(
 
 export async function deleteDriveFile(token: string, fileId: string): Promise<void> {
   const url = `${DRIVE_FILES}/${encodeURIComponent(fileId)}`;
-  const res = await fetch(url, {
-    method: "DELETE",
-    headers: authHeaders(token),
-  });
+  const res = await driveAuthedFetch(token, url, { method: "DELETE" });
   if (!res.ok && res.status !== 404) {
     throw new Error(`Drive delete failed: ${res.status}`);
   }

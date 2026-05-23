@@ -143,6 +143,24 @@ export function hasValidGoogleAccessToken(): boolean {
   return !!accessToken && Date.now() < accessValidUntilMs;
 }
 
+/** Clears the in-memory access token (keeps refresh token + identity for reconnect UX). */
+export function invalidateGoogleAccessToken(): void {
+  if (!accessToken && accessValidUntilMs <= 0) return;
+  accessToken = null;
+  accessValidUntilMs = 0;
+  persistOAuthSnapshot();
+  notifyOAuthChanged();
+}
+
+/**
+ * After Drive returns 401, discard the stale access token and mint a new one.
+ * Returns null when refresh fails (e.g. user removed MacroKeep from Linked apps).
+ */
+export async function recoverGoogleAccessTokenAfterDrive401(): Promise<string | null> {
+  invalidateGoogleAccessToken();
+  return ensureGoogleAccessToken();
+}
+
 function hasPersistedRefreshToken(): boolean {
   return !!(cachedRefreshToken ?? loadPersistedOAuth()?.refreshToken);
 }
