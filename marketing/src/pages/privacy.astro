@@ -1,20 +1,25 @@
 ---
 import LegalDocument from "../components/LegalDocument.astro";
-import { privacyPolicyEn } from "@legal/privacy-policy";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { getMessages } from "../i18n";
+import { privacyPolicyEn } from "@legal/privacy-policy";
+
+const messages = getMessages("en");
 ---
 
 <BaseLayout
-  title="Privacy Policy"
-  description="How MacroKeep accesses, uses, and stores your information."
+  title={messages.legal.privacyTitle}
+  description={messages.meta.privacyDescription}
+  locale="en"
+  messages={messages}
 >
   <main class="container" style="padding-block: 2.5rem 4rem">
     <p style="margin: 0 0 1rem; font-size: 0.875rem">
-      <a href="/" class="muted" style="text-decoration: none">← Home</a>
+      <a href="/" class="muted" style="text-decoration: none">{messages.legal.homeLink}</a>
     </p>
-    <h1 style="margin: 0; font-size: 1.75rem; font-weight: 700">Privacy Policy</h1>
+    <h1 style="margin: 0; font-size: 1.75rem; font-weight: 700">{messages.legal.privacyTitle}</h1>
     <div style="margin-top: 1.5rem">
-      <LegalDocument doc={privacyPolicyEn} />
+      <LegalDocument doc={privacyPolicyEn} effectiveDateLabel={messages.legal.effectiveDateLabel} />
     </div>
   </main>
 </BaseLayout>

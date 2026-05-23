@@ -1,0 +1,29 @@
+---
+import LegalDocument from "../../components/LegalDocument.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getMessages } from "../../i18n";
+import { termsOfServiceZhTw } from "@legal/terms-of-service-zh-TW";
+
+const messages = getMessages("zh-TW");
+---
+
+<BaseLayout
+  title={messages.legal.termsTitle}
+  description={messages.meta.termsDescription}
+  locale="zh-TW"
+  messages={messages}
+  pathname="/zh-TW/terms"
+>
+  <main class="container" style="padding-block: 2.5rem 4rem">
+    <p style="margin: 0 0 1rem; font-size: 0.875rem">
+      <a href="/zh-TW" class="muted" style="text-decoration: none">{messages.legal.homeLink}</a>
+    </p>
+    <h1 style="margin: 0; font-size: 1.75rem; font-weight: 700">{messages.legal.termsTitle}</h1>
+    <div style="margin-top: 1.5rem">
+      <LegalDocument
+        doc={termsOfServiceZhTw}
+        effectiveDateLabel={messages.legal.effectiveDateLabel}
+      />
+    </div>
+  </main>
+</BaseLayout>

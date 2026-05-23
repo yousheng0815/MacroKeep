@@ -1,20 +1,25 @@
 ---
 import LegalDocument from "../components/LegalDocument.astro";
-import { termsOfServiceEn } from "@legal/terms-of-service";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { getMessages } from "../i18n";
+import { termsOfServiceEn } from "@legal/terms-of-service";
+
+const messages = getMessages("en");
 ---
 
 <BaseLayout
-  title="Terms of Service"
-  description="Terms governing your use of MacroKeep."
+  title={messages.legal.termsTitle}
+  description={messages.meta.termsDescription}
+  locale="en"
+  messages={messages}
 >
   <main class="container" style="padding-block: 2.5rem 4rem">
     <p style="margin: 0 0 1rem; font-size: 0.875rem">
-      <a href="/" class="muted" style="text-decoration: none">← Home</a>
+      <a href="/" class="muted" style="text-decoration: none">{messages.legal.homeLink}</a>
     </p>
-    <h1 style="margin: 0; font-size: 1.75rem; font-weight: 700">Terms of Service</h1>
+    <h1 style="margin: 0; font-size: 1.75rem; font-weight: 700">{messages.legal.termsTitle}</h1>
     <div style="margin-top: 1.5rem">
-      <LegalDocument doc={termsOfServiceEn} />
+      <LegalDocument doc={termsOfServiceEn} effectiveDateLabel={messages.legal.effectiveDateLabel} />
     </div>
   </main>
 </BaseLayout>

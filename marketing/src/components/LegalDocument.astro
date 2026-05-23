@@ -3,14 +3,15 @@ import type { LegalDocument } from "@legal/types";
 
 interface Props {
   doc: LegalDocument;
+  effectiveDateLabel?: string;
 }
 
-const { doc } = Astro.props;
+const { doc, effectiveDateLabel = "Effective date:" } = Astro.props;
 ---
 
 <article class="prose-legal">
   <p class="muted" style="font-size: 0.875rem; margin: 0">
-    Effective date: {doc.effectiveDate}
+    {effectiveDateLabel} {doc.effectiveDate}
   </p>
   {
     doc.intro.map((p) => (

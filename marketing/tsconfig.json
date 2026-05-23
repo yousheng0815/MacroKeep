@@ -3,7 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@legal/*": ["../src/content/legal/*"]
+      "@legal/*": ["../src/content/legal/*"],
+      "@app-i18n/*": ["../src/i18n/*"]
     }
   },
   "include": ["src/**/*"]

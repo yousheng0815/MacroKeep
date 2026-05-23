@@ -13,6 +13,7 @@ export default defineConfig({
     resolve: {
       alias: {
         "@legal": path.join(repoRoot, "src/content/legal"),
+        "@app-i18n": path.join(repoRoot, "src/i18n"),
       },
     },
   },

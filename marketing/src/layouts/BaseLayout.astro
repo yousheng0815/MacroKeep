@@ -1,19 +1,33 @@
 ---
 import "../styles/global.css";
+import LanguageSwitcher from "../components/LanguageSwitcher.astro";
+import LocaleAutoRedirect from "../components/LocaleAutoRedirect.astro";
+import type { MarketingLocale } from "../i18n/config";
+import { documentLangAttr, localizedPath } from "../i18n/config";
+import type { MarketingMessages } from "../i18n/types";
 import { APP_URL } from "../site";
 
 interface Props {
   title: string;
   description: string;
+  locale: MarketingLocale;
+  messages: MarketingMessages;
+  pathname?: string;
 }
 
-const { title, description } = Astro.props;
-const fullTitle = title === "MacroKeep" ? title : `${title} · MacroKeep`;
+const { title, description, locale, messages, pathname = Astro.url.pathname } =
+  Astro.props;
+const fullTitle = title === messages.siteTitle ? title : `${title} · MacroKeep`;
 const ogImage = new URL("/screenshots/today.png", Astro.site).href;
+const homePath = localizedPath(locale, "/");
+const privacyPath = localizedPath(locale, "/privacy");
+const termsPath = localizedPath(locale, "/terms");
+const enPath = localizedPath("en", pathname);
+const zhTwPath = localizedPath("zh-TW", pathname);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={documentLangAttr(locale)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,6 +41,9 @@ const ogImage = new URL("/screenshots/today.png", Astro.site).href;
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
+    <link rel="alternate" hreflang="en" href={new URL(enPath, Astro.site).href} />
+    <link rel="alternate" hreflang="zh-Hant" href={new URL(zhTwPath, Astro.site).href} />
+    <link rel="alternate" hreflang="x-default" href={new URL(enPath, Astro.site).href} />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -35,26 +52,35 @@ const ogImage = new URL("/screenshots/today.png", Astro.site).href;
       rel="stylesheet"
     />
     <title>{fullTitle}</title>
+    <LocaleAutoRedirect />
   </head>
   <body>
     <header class="site-header">
-      <div class="container">
-        <a href="/" class="site-header__logo">
+      <div class="container site-header__inner">
+        <a href={homePath} class="site-header__logo">
           <img src="/wordmark.png" alt="MacroKeep" width="140" height="32" />
         </a>
-        <a class="btn btn-primary" href={APP_URL}>Open app</a>
+        <a class="btn btn-primary site-header__cta" href={APP_URL}>{messages.nav.openApp}</a>
       </div>
     </header>
     <slot />
-    <footer style="border-top: 1px solid #27272a; margin-top: 4rem; padding: 2.5rem 0">
-      <div class="container" style="display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: center; justify-content: space-between;">
-        <p class="muted" style="margin: 0; font-size: 0.875rem">
-          © {new Date().getFullYear()} MacroKeep
-        </p>
-        <nav style="display: flex; flex-wrap: wrap; gap: 1.25rem; font-size: 0.875rem">
-          <a href="/privacy">Privacy</a>
-          <a href="/terms">Terms</a>
-          <a href={APP_URL}>Open app</a>
+    <footer class="site-footer">
+      <div class="container site-footer__inner">
+        <div class="site-footer__top">
+          <p class="site-footer__copy muted">
+            © {new Date().getFullYear()} MacroKeep
+          </p>
+          <LanguageSwitcher
+            locale={locale}
+            messages={messages}
+            pathname={pathname}
+            class="lang-switcher--footer"
+          />
+        </div>
+        <nav class="site-footer__links" aria-label="Footer">
+          <a href={privacyPath}>{messages.footer.privacy}</a>
+          <a href={termsPath}>{messages.footer.terms}</a>
+          <a href={APP_URL}>{messages.nav.openApp}</a>
         </nav>
       </div>
     </footer>

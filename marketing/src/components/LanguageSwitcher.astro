@@ -1,0 +1,58 @@
+---
+import type { MarketingLocale } from "../i18n/config";
+import { localizedPath } from "../i18n/config";
+import type { MarketingMessages } from "../i18n/types";
+
+interface Props {
+  locale: MarketingLocale;
+  messages: MarketingMessages;
+  pathname: string;
+  class?: string;
+}
+
+const { locale, messages, pathname, class: className } = Astro.props;
+const enPath = localizedPath("en", pathname);
+const zhTwPath = localizedPath("zh-TW", pathname);
+---
+
+<nav class:list={["lang-switcher", className]} aria-label={messages.langSwitcher.label}>
+  <a
+    href={enPath}
+    class:list={["lang-switcher__link", { "lang-switcher__link--active": locale === "en" }]}
+    data-marketing-locale="en"
+    hreflang="en"
+    lang="en"
+    aria-current={locale === "en" ? "page" : undefined}
+  >
+    {messages.langSwitcher.en}
+  </a>
+  <a
+    href={zhTwPath}
+    class:list={[
+      "lang-switcher__link",
+      { "lang-switcher__link--active": locale === "zh-TW" },
+    ]}
+    data-marketing-locale="zh-TW"
+    hreflang="zh-Hant"
+    lang="zh-Hant"
+    aria-current={locale === "zh-TW" ? "page" : undefined}
+  >
+    {messages.langSwitcher.zhTW}
+  </a>
+</nav>
+
+<script>
+  import { persistLocale } from "@app-i18n/config";
+  import type { AppLocale } from "@app-i18n/config";
+
+  document
+    .querySelectorAll<HTMLAnchorElement>("[data-marketing-locale]")
+    .forEach((link) => {
+      link.addEventListener("click", () => {
+        const value = link.dataset.marketingLocale;
+        if (value === "en" || value === "zh-TW") {
+          persistLocale(value as AppLocale);
+        }
+      });
+    });
+</script>

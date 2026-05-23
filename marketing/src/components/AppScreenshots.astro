@@ -1,51 +1,27 @@
 ---
-/** Marketing screenshots live in repo `public/screenshots/` (shared via Astro publicDir). */
-const shots = [
-  {
-    id: "setup",
-    src: "/screenshots/setup-targets.png",
-    alt: "Set your targets: profile and suggested macros",
-    label: "Setup",
-  },
-  {
-    id: "today",
-    src: "/screenshots/today.png",
-    alt: "Today screen with calorie ring, macro bars, and meals",
-    label: "Today",
-  },
-  {
-    id: "history",
-    src: "/screenshots/history.png",
-    alt: "History grouped by day with meal thumbnails",
-    label: "History",
-  },
-  {
-    id: "detail",
-    src: "/screenshots/meal-details.png",
-    alt: "Meal details with photo and macro breakdown",
-    label: "Meal details",
-  },
-  {
-    id: "log-meal",
-    src: "/screenshots/log-meal.png",
-    alt: "Log meal with photo, describe, and manual options",
-    label: "Log meal",
-  },
-];
+import type { MarketingMessages } from "../i18n/types";
+
+interface Props {
+  messages: MarketingMessages;
+}
+
+const { messages } = Astro.props;
+const { items } = messages.screenshots;
 ---
 
 <section class="screenshots-section" aria-labelledby="screenshots-heading">
   <div class="container">
-    <h2 id="screenshots-heading" class="screenshots-heading">See the app</h2>
-    <p class="screenshots-lead muted">
-      A quick look at the app. Simple logging, clear daily totals, and photo meal
-      estimates.
-    </p>
+    <h2 id="screenshots-heading" class="screenshots-heading">{messages.screenshots.heading}</h2>
+    <p class="screenshots-lead muted">{messages.screenshots.lead}</p>
 
     <div class="screenshots-scroll-wrap">
-      <ul id="screenshots-strip" class="screenshots-strip" aria-label="App screenshots">
+      <ul
+        id="screenshots-strip"
+        class="screenshots-strip"
+        aria-label={messages.screenshots.stripLabel}
+      >
         {
-          shots.map((shot) => (
+          items.map((shot) => (
             <li
               class={`screenshot-slide${shot.id === "today" ? " screenshot-slide--today" : ""}`}
               id={shot.id === "today" ? "screenshot-today" : undefined}

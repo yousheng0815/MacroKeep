@@ -1,0 +1,123 @@
+---
+import AppScreenshots from "./AppScreenshots.astro";
+import type { MarketingMessages } from "../i18n/types";
+import { APP_URL, FEEDBACK_EMAIL } from "../site";
+
+interface Props {
+  messages: MarketingMessages;
+}
+
+const { messages } = Astro.props;
+---
+
+<main>
+  <section style="padding: 4rem 0 3rem">
+    <div class="container" style="text-align: center">
+      <p
+        class="muted"
+        style="font-size: 0.875rem; font-weight: 500; margin: 0 0 1rem; letter-spacing: 0.02em"
+      >
+        {messages.home.eyebrow}
+      </p>
+      <h1
+        style="margin: 0 auto; max-width: 20ch; font-size: clamp(2rem, 5vw, 2.75rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em"
+      >
+        {messages.home.headline}
+      </h1>
+      <p
+        style="margin: 1.25rem auto 0; max-width: 44ch; font-size: 1.0625rem; color: #a1a1aa"
+      >
+        {messages.home.lead}
+      </p>
+      <div
+        style="margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center"
+      >
+        <a class="btn btn-primary" href={APP_URL}>{messages.home.ctaPrimary}</a>
+        <a class="btn btn-ghost" href="#how-it-works">{messages.home.ctaSecondary}</a>
+      </div>
+    </div>
+  </section>
+
+  <AppScreenshots messages={messages} />
+
+  <section style="padding: 2rem 0 3rem; border-top: 1px solid #27272a">
+    <div class="container" style="max-width: 40rem">
+      <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600">{messages.why.heading}</h2>
+      <p style="margin: 1rem 0 0; color: #d4d4d8; font-size: 1rem">{messages.why.body}</p>
+    </div>
+  </section>
+
+  <section style="padding: 2rem 0 3rem">
+    <div class="container">
+      <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; text-align: center">
+        {messages.features.heading}
+      </h2>
+      <ul
+        style="margin: 2rem 0 0; padding: 0; list-style: none; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr))"
+      >
+        {
+          messages.features.items.map((item) => (
+            <li
+              style="background: #18181b; border: 1px solid #27272a; border-radius: 0.75rem; padding: 1.25rem"
+            >
+              <strong style="display: block; color: #fff; margin-bottom: 0.35rem">
+                {item.title}
+              </strong>
+              <span class="muted" style="font-size: 0.9375rem">{item.description}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section id="how-it-works" style="padding: 2rem 0 3rem; border-top: 1px solid #27272a">
+    <div class="container" style="max-width: 40rem">
+      <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600">{messages.howItWorks.heading}</h2>
+      <ol
+        style="margin: 1.25rem 0 0; padding-left: 1.25rem; color: #d4d4d8; display: flex; flex-direction: column; gap: 0.75rem"
+      >
+        {
+          messages.howItWorks.steps.map((step) => (
+            <li>
+              {typeof step === "string" ? (
+                step
+              ) : (
+                <>
+                  {step.before}
+                  <strong style="color: #fafafa">{step.highlight}</strong>
+                  {step.after}
+                </>
+              )}
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section style="padding: 2rem 0 4rem; border-top: 1px solid #27272a">
+    <div class="container" style="max-width: 40rem">
+      <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600">{messages.faq.heading}</h2>
+      <dl style="margin: 1.5rem 0 0; display: flex; flex-direction: column; gap: 1.25rem">
+        {
+          messages.faq.items.map((item) => (
+            <div>
+              <dt style="font-weight: 600; color: #fafafa">{item.question}</dt>
+              <dd class="muted" style="margin: 0.35rem 0 0; font-size: 0.9375rem">
+                {item.answer ? (
+                  item.answer
+                ) : (
+                  <a href={`mailto:${FEEDBACK_EMAIL}`}>{FEEDBACK_EMAIL}</a>
+                )}
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+      <p style="margin: 2.5rem 0 0; text-align: center">
+        <a class="btn btn-primary" href={APP_URL}>{messages.faq.ctaPrimary}</a>
+      </p>
+    </div>
+  </section>
+</main>

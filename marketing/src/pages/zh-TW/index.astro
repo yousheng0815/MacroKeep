@@ -1,0 +1,17 @@
+---
+import HomePage from "../../components/HomePage.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getMessages } from "../../i18n";
+
+const messages = getMessages("zh-TW");
+---
+
+<BaseLayout
+  title={messages.siteTitle}
+  description={messages.meta.homeDescription}
+  locale="zh-TW"
+  messages={messages}
+  pathname="/zh-TW"
+>
+  <HomePage messages={messages} />
+</BaseLayout>
