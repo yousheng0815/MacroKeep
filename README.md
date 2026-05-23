@@ -6,7 +6,7 @@ Privacy-first AI calorie tracking — your data stays in Google Drive.
 
 ```bash
 npm install
-cp .dev.vars.example .dev.vars   # add Google OAuth client id/secret
+cp .dev.vars.example .dev.vars   # add Google OAuth client id / secret
 npm run dev
 ```
 
