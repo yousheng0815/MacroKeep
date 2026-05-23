@@ -1,0 +1,17 @@
+---
+import LegalDocument from "../components/LegalDocument.astro";
+import { termsOfServiceEn } from "@legal/terms-of-service";
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Terms of Service"
+  description="Terms governing your use of MacroKeep."
+>
+  <main class="container" style="padding: 2.5rem 0 4rem">
+    <h1 style="margin: 0; font-size: 1.75rem; font-weight: 700">Terms of Service</h1>
+    <div style="margin-top: 1.5rem">
+      <LegalDocument doc={termsOfServiceEn} />
+    </div>
+  </main>
+</BaseLayout>

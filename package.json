@@ -11,7 +11,9 @@
     "preview:pages": "npm run build && wrangler pages dev dist",
     "preview": "vite preview",
     "lint": "eslint .",
-    "generate:pwa": "node scripts/generate-pwa-assets.mjs"
+    "generate:pwa": "node scripts/generate-pwa-assets.mjs",
+    "dev:marketing": "npm run dev --prefix marketing",
+    "build:marketing": "npm run build --prefix marketing"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

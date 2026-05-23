@@ -92,7 +92,7 @@
   },
   "auth": {
     "welcomeTitle": "Welcome",
-    "welcomeBlurb": "Sign in with Google to use MacroKeep. Your food log stays in sync with your Google account.",
+    "welcomeBlurb": "Sign in with Google to sync your food log in Drive. AI meal estimates use your own Gemini API key—no MacroKeep subscription.",
     "signInAgainTitle": "Sign in again",
     "sessionExpiredLead": "Your session may have expired. Sign in with Google to continue.",
     "reconnectingAs": "Signing back in as {{email}}",

@@ -5,7 +5,7 @@ export const privacyPolicyEn: LegalDocument = {
   title: "Privacy Policy",
   effectiveDate: "May 19, 2026",
   intro: [
-    'MacroKeep ("we," "us," or "the app") is a privacy-first calorie and macro tracking web application operated at macrokeep.com (and related domains). This Privacy Policy explains how we access, use, store, and share information when you use MacroKeep.',
+    'MacroKeep ("we," "us," or "the app") is a web application for calorie and macro tracking. The marketing site is at macrokeep.com; the app is at app.macrokeep.com (and related domains). This Privacy Policy explains how we access, use, store, and share information when you use MacroKeep.',
     "By using MacroKeep, you agree to this Privacy Policy. If you do not agree, do not use the app.",
   ],
   sections: [

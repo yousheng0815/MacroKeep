@@ -56,7 +56,7 @@ export default defineConfig(({ mode }) => {
           name: "MacroKeep",
           short_name: "MacroKeep",
           description:
-            "Privacy-first AI calorie tracking — your data stays in Google Drive.",
+            "Simple, free macro tracking with AI meal estimates. Your food log stays in Google Drive.",
           theme_color: "#09090B",
           background_color: "#09090B",
           display: "standalone",

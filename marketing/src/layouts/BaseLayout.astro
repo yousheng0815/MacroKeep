@@ -1,0 +1,58 @@
+---
+import "../styles/global.css";
+import { APP_URL } from "../site";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const fullTitle = title === "MacroKeep" ? title : `${title} · MacroKeep`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#09090B" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>{fullTitle}</title>
+  </head>
+  <body>
+    <header
+      style="border-bottom: 1px solid #27272a; padding: 1rem 0; position: sticky; top: 0; background: rgba(9, 9, 11, 0.92); backdrop-filter: blur(8px); z-index: 10;"
+    >
+      <div
+        class="container"
+        style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;"
+      >
+        <a href="/" style="display: flex; align-items: center; text-decoration: none">
+          <img src="/wordmark.png" alt="MacroKeep" width="140" height="32" />
+        </a>
+        <a class="btn btn-primary" href={APP_URL}>Open app</a>
+      </div>
+    </header>
+    <slot />
+    <footer style="border-top: 1px solid #27272a; margin-top: 4rem; padding: 2.5rem 0">
+      <div class="container" style="display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: center; justify-content: space-between;">
+        <p class="muted" style="margin: 0; font-size: 0.875rem">
+          © {new Date().getFullYear()} MacroKeep
+        </p>
+        <nav style="display: flex; flex-wrap: wrap; gap: 1.25rem; font-size: 0.875rem">
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href={APP_URL}>Open app</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

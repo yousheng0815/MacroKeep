@@ -1,0 +1,161 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { APP_URL, FEEDBACK_EMAIL } from "../site";
+
+const description =
+  "Simple, free macro tracking with AI meal estimates. Your food log stays in Google Drive—not on MacroKeep servers.";
+---
+
+<BaseLayout title="MacroKeep" description={description}>
+  <main>
+    <section style="padding: 4rem 0 3rem">
+      <div class="container" style="text-align: center">
+        <p
+          class="muted"
+          style="font-size: 0.875rem; font-weight: 500; margin: 0 0 1rem; letter-spacing: 0.02em"
+        >
+          Calorie &amp; macro tracking
+        </p>
+        <h1
+          style="margin: 0 auto; max-width: 20ch; font-size: clamp(2rem, 5vw, 2.75rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em"
+        >
+          Simple tracking without the subscription tax
+        </h1>
+        <p
+          style="margin: 1.25rem auto 0; max-width: 42ch; font-size: 1.0625rem; color: #a1a1aa"
+        >
+          Log meals, hit your macro targets, and estimate nutrition from photos—free
+          to use. AI scanning uses your own Gemini API key so MacroKeep doesn&apos;t
+          charge a monthly fee for it.
+        </p>
+        <div
+          style="margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center"
+        >
+          <a class="btn btn-primary" href={APP_URL}>Open MacroKeep</a>
+          <a class="btn btn-ghost" href="#how-it-works">How it works</a>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0 3rem; border-top: 1px solid #27272a">
+      <div class="container" style="max-width: 40rem">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600">Why I built it</h2>
+        <p style="margin: 1rem 0 0; color: #d4d4d8; font-size: 1rem">
+          I was tired of calorie apps that lock AI photo estimates behind a monthly
+          subscription or clutter the experience. I wanted something straightforward
+          and free, so I built MacroKeep for myself—and kept it simple enough to share.
+        </p>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0 3rem">
+      <div class="container">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; text-align: center">
+          What you can do
+        </h2>
+        <ul
+          style="margin: 2rem 0 0; padding: 0; list-style: none; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr))"
+        >
+          <li
+            style="background: #18181b; border: 1px solid #27272a; border-radius: 0.75rem; padding: 1.25rem"
+          >
+            <strong style="display: block; color: #fff; margin-bottom: 0.35rem"
+              >Daily macro diary</strong
+            >
+            <span class="muted" style="font-size: 0.9375rem"
+              >Log meals and see today&apos;s protein, carbs, and fat against your
+              targets.</span
+            >
+          </li>
+          <li
+            style="background: #18181b; border: 1px solid #27272a; border-radius: 0.75rem; padding: 1.25rem"
+          >
+            <strong style="display: block; color: #fff; margin-bottom: 0.35rem"
+              >AI from photos or text</strong
+            >
+            <span class="muted" style="font-size: 0.9375rem"
+              >Optional Gemini key in your settings—requests go to Google, not a
+              MacroKeep paywall.</span
+            >
+          </li>
+          <li
+            style="background: #18181b; border: 1px solid #27272a; border-radius: 0.75rem; padding: 1.25rem"
+          >
+            <strong style="display: block; color: #fff; margin-bottom: 0.35rem"
+              >Manual logging</strong
+            >
+            <span class="muted" style="font-size: 0.9375rem"
+              >Enter macros yourself anytime—no AI required.</span
+            >
+          </li>
+          <li
+            style="background: #18181b; border: 1px solid #27272a; border-radius: 0.75rem; padding: 1.25rem"
+          >
+            <strong style="display: block; color: #fff; margin-bottom: 0.35rem"
+              >History &amp; progress</strong
+            >
+            <span class="muted" style="font-size: 0.9375rem"
+              >Past days, charts, saved meals, and progress photos.</span
+            >
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="how-it-works" style="padding: 2rem 0 3rem; border-top: 1px solid #27272a">
+      <div class="container" style="max-width: 40rem">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600">How it works</h2>
+        <ol
+          style="margin: 1.25rem 0 0; padding-left: 1.25rem; color: #d4d4d8; display: flex; flex-direction: column; gap: 0.75rem"
+        >
+          <li>Sign in with Google.</li>
+          <li>
+            Your food log lives in a <strong style="color: #fafafa">private Google Drive
+            app folder</strong>—not on MacroKeep servers, and not mixed into My Drive.
+          </li>
+          <li>
+            Use the web app on phone or desktop, or add it to your home screen as a PWA.
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section style="padding: 2rem 0 4rem; border-top: 1px solid #27272a">
+      <div class="container" style="max-width: 40rem">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600">FAQ</h2>
+        <dl style="margin: 1.5rem 0 0; display: flex; flex-direction: column; gap: 1.25rem">
+          <div>
+            <dt style="font-weight: 600; color: #fafafa">Is MacroKeep free?</dt>
+            <dd class="muted" style="margin: 0.35rem 0 0; font-size: 0.9375rem">
+              The app is free to use. If you turn on AI meal estimates, you add your own
+              Google Gemini API key and pay Google for that usage—not MacroKeep.
+            </dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; color: #fafafa">Why a Gemini API key?</dt>
+            <dd class="muted" style="margin: 0.35rem 0 0; font-size: 0.9375rem">
+              So photo and description scanning doesn&apos;t require a MacroKeep
+              subscription. Your key is stored with your other MacroKeep data in Drive.
+            </dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; color: #fafafa">Where is my data?</dt>
+            <dd class="muted" style="margin: 0.35rem 0 0; font-size: 0.9375rem">
+              In your Google account&apos;s Drive application data folder. MacroKeep only
+              accesses that hidden app folder—not your other Drive files.
+            </dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; color: #fafafa">Questions or feedback?</dt>
+            <dd class="muted" style="margin: 0.35rem 0 0; font-size: 0.9375rem">
+              <a href={`mailto:${FEEDBACK_EMAIL}`}>{FEEDBACK_EMAIL}</a>
+            </dd>
+          </div>
+        </dl>
+        <p style="margin: 2.5rem 0 0; text-align: center">
+          <a class="btn btn-primary" href={APP_URL}>Open MacroKeep</a>
+        </p>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

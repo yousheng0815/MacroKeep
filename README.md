@@ -1,6 +1,6 @@
 # MacroKeep
 
-Privacy-first AI calorie tracking — your data stays in Google Drive.
+Simple, free macro tracking with AI meal estimates — your food log stays in Google Drive.
 
 ## Development
 
@@ -27,3 +27,16 @@ Add the production callback URL to your Google OAuth client: `{MK_SITE_ORIGIN}/a
 Public legal pages (for Google OAuth consent screen): `{MK_SITE_ORIGIN}/privacy` and `{MK_SITE_ORIGIN}/terms`.
 
 `MK_SITE_ORIGIN` at **build** time also sets Open Graph / Twitter Card URLs in `index.html` (absolute `og:image`, `og:url`). Local builds without it use root-relative image paths.
+
+## Marketing site (`macrokeep.com`)
+
+Static site in `marketing/` (Astro). Reuses legal copy from `src/content/legal/`.
+
+```bash
+cd marketing && npm install && npm run dev    # http://localhost:4321
+cd marketing && npm run build                 # output: marketing/dist
+```
+
+Deploy as a **separate** Cloudflare Pages project with custom domain `macrokeep.com` (root directory `marketing`, build command `npm run build`, output `dist`). Keep the app on `app.macrokeep.com` with `MK_SITE_ORIGIN=https://app.macrokeep.com`.
+
+OAuth consent screen links: `https://macrokeep.com`, `/privacy`, `/terms`.

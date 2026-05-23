@@ -1,0 +1,37 @@
+---
+import type { LegalDocument } from "@legal/types";
+
+interface Props {
+  doc: LegalDocument;
+}
+
+const { doc } = Astro.props;
+---
+
+<article class="prose-legal">
+  <p class="muted" style="font-size: 0.875rem; margin: 0">
+    Effective date: {doc.effectiveDate}
+  </p>
+  {
+    doc.intro.map((p) => (
+      <p style="margin-top: 1rem">{p}</p>
+    ))
+  }
+  {
+    doc.sections.map((section) => (
+      <section>
+        <h2>{section.title}</h2>
+        {section.paragraphs.map((p) => (
+          <p style="margin-top: 0.75rem">{p}</p>
+        ))}
+        {section.bullets && section.bullets.length > 0 && (
+          <ul>
+            {section.bullets.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        )}
+      </section>
+    ))
+  }
+</article>

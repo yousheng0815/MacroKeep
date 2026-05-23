@@ -92,7 +92,7 @@
   },
   "auth": {
     "welcomeTitle": "歡迎",
-    "welcomeBlurb": "使用 Google 登入並開始使用 MacroKeep。你的飲食紀錄會同步到你的 Google 帳號。",
+    "welcomeBlurb": "使用 Google 登入，飲食紀錄會同步到 Drive。AI 估算三大營養素需使用你自己的 Gemini API 金鑰，無需 MacroKeep 訂閱。",
     "signInAgainTitle": "請重新登入",
     "sessionExpiredLead": "登入可能已過期，請用 Google 再登入一次以繼續使用。",
     "reconnectingAs": "正在以 {{email}} 重新登入",

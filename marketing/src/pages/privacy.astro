@@ -1,0 +1,17 @@
+---
+import LegalDocument from "../components/LegalDocument.astro";
+import { privacyPolicyEn } from "@legal/privacy-policy";
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Privacy Policy"
+  description="How MacroKeep accesses, uses, and stores your information."
+>
+  <main class="container" style="padding: 2.5rem 0 4rem">
+    <h1 style="margin: 0; font-size: 1.75rem; font-weight: 700">Privacy Policy</h1>
+    <div style="margin-top: 1.5rem">
+      <LegalDocument doc={privacyPolicyEn} />
+    </div>
+  </main>
+</BaseLayout>
