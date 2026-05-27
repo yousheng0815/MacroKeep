@@ -8,12 +8,14 @@ import { useGoogleSession } from "@/contexts/google-session";
 import { useBlobObjectUrl } from "@/hooks/use-blob-object-url";
 import { ensureGoogleAccessToken, getGoogleUserId } from "@/lib/gapi";
 import {
+  clearMealsShardFileIdCache,
   downloadAppDataFileBlob,
   downloadAppDataFileText,
   isAppDataDriveFolder,
   isImagePreviewAppDataFile,
   isJsonAppDataFile,
   listAllAppDataFiles,
+  reconcileMealsShardFileIdCacheFromAppDataListing,
   updateAppDataFileText,
   type AppDataDriveFileListItem,
 } from "@/lib/google-drive";
@@ -227,6 +229,11 @@ export function DriveFilesPage() {
   });
 
   const files = q.data ?? [];
+
+  useEffect(() => {
+    if (q.data) reconcileMealsShardFileIdCacheFromAppDataListing(q.data);
+  }, [q.data]);
+
   const browseRows = useMemo(
     () => listDriveBrowseRows(files, browsePath),
     [files, browsePath],
@@ -284,6 +291,7 @@ export function DriveFilesPage() {
       setJsonParseError(null);
       setJsonEditing(false);
       setJsonDraft(savedText);
+      clearMealsShardFileIdCache();
       void qc.invalidateQueries({ queryKey: ["drive-app-files", userId] });
       if (viewerFile) {
         void qc.invalidateQueries({

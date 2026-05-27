@@ -47,6 +47,52 @@ const MEALS_SHARD_RE = /^meals-(\d{4}-\d{2})\.json$/;
 /** Per-session cache of App Data subfolder ids (cleared on sign-out). */
 const appDataSubfolderIdCache = new Map<string, string>();
 
+/** Per-session `meals-YYYY-MM.json` Drive file ids (positive only; cleared on sign-out). */
+const mealsShardFileIdCache = new Map<string, string>();
+
+function getCachedMealsShardFileId(monthKey: string): string | undefined {
+  return mealsShardFileIdCache.get(monthKey);
+}
+
+function setCachedMealsShardFileId(monthKey: string, fileId: string): void {
+  mealsShardFileIdCache.set(monthKey, fileId);
+}
+
+function invalidateCachedMealsShardFileId(monthKey: string): void {
+  mealsShardFileIdCache.delete(monthKey);
+}
+
+/** Syncs the session cache with a Drive listing (drops ids for deleted months). */
+function reconcileMealsShardFileIdCache(
+  shards: readonly { id: string; monthKey: string }[],
+): void {
+  const present = new Set(shards.map((s) => s.monthKey));
+  for (const key of [...mealsShardFileIdCache.keys()]) {
+    if (!present.has(key)) invalidateCachedMealsShardFileId(key);
+  }
+  for (const s of shards) setCachedMealsShardFileId(s.monthKey, s.id);
+}
+
+/** Reconcile meal-shard ids from a flat/recursive App Data file listing (e.g. Drive browser). */
+export function reconcileMealsShardFileIdCacheFromAppDataListing(
+  files: readonly { id: string; name: string }[],
+): void {
+  const shards: { id: string; monthKey: string }[] = [];
+  for (const f of files) {
+    const baseName = f.name.includes("/")
+      ? f.name.slice(f.name.lastIndexOf("/") + 1)
+      : f.name;
+    const m = MEALS_SHARD_RE.exec(baseName);
+    if (m) shards.push({ id: f.id, monthKey: m[1] });
+  }
+  reconcileMealsShardFileIdCache(shards);
+}
+
+/** Clears meal-shard file-id cache (e.g. after manual Drive edits). */
+export function clearMealsShardFileIdCache(): void {
+  mealsShardFileIdCache.clear();
+}
+
 export function monthKeyFromRecordedAt(recordedAtIso: string): string {
   const d = new Date(recordedAtIso);
   if (Number.isNaN(d.getTime())) {
@@ -158,9 +204,10 @@ function escapeDriveQueryString(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 }
 
-/** Clears cached App Data subfolder ids (call on Google sign-out). */
+/** Clears cached App Data folder and meal-shard file ids (call on Google sign-out). */
 export function clearDriveAppDataFolderCache(): void {
   appDataSubfolderIdCache.clear();
+  clearMealsShardFileIdCache();
 }
 
 async function findAppDataSubfolderId(
@@ -769,6 +816,17 @@ async function updateJsonMedia(
   body: string,
   signal?: AbortSignal,
 ): Promise<void> {
+  const ok = await patchJsonMedia(token, fileId, body, signal);
+  if (!ok) throw new Error("Drive update failed: 404");
+}
+
+/** `true` on success, `false` when the file id is gone (404). */
+async function patchJsonMedia(
+  token: string,
+  fileId: string,
+  body: string,
+  signal?: AbortSignal,
+): Promise<boolean> {
   const url = `${UPLOAD_BASE}/${encodeURIComponent(fileId)}?uploadType=media`;
   const res = await driveAuthedFetch(token, url, {
     method: "PATCH",
@@ -778,7 +836,9 @@ async function updateJsonMedia(
     body,
     signal,
   });
+  if (res.status === 404) return false;
   if (!res.ok) throw new Error(`Drive update failed: ${res.status}`);
+  return true;
 }
 
 /**
@@ -808,17 +868,31 @@ export async function upsertCoreRecordsToDrive(
   await createMultipartJsonAppData(token, CORE_DRIVE_FILE, payload);
 }
 
-async function findMealsShardFileId(
+async function listMealsShardFileIdFromDrive(
   token: string,
   monthKey: string,
+  signal?: AbortSignal,
 ): Promise<string | null> {
   const name = mealsShardFileName(monthKey);
   const q = encodeURIComponent(`name='${name}' and trashed=false`);
   const url = `${DRIVE_FILES}?spaces=appDataFolder&q=${q}&fields=files(id,name)`;
-  const res = await driveAuthedFetch(token, url);
+  const res = await driveAuthedFetch(token, url, { signal });
   if (!res.ok) throw new Error(`Drive list shard failed: ${res.status}`);
   const data = (await res.json()) as { files?: { id: string }[] };
-  return data.files?.[0]?.id ?? null;
+  const id = data.files?.[0]?.id ?? null;
+  if (id) setCachedMealsShardFileId(monthKey, id);
+  else invalidateCachedMealsShardFileId(monthKey);
+  return id;
+}
+
+async function findMealsShardFileId(
+  token: string,
+  monthKey: string,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  const cached = getCachedMealsShardFileId(monthKey);
+  if (cached !== undefined) return cached;
+  return listMealsShardFileIdFromDrive(token, monthKey, signal);
 }
 
 /** `files.list` for `meals-YYYY-MM.json` — overlaps safely with multipart photo upload when prefetched before shard write. */
@@ -845,6 +919,7 @@ export async function listMealShardFiles(
     const m = MEALS_SHARD_RE.exec(f.name);
     if (m) out.push({ id: f.id, monthKey: m[1] });
   }
+  reconcileMealsShardFileIdCache(out);
   return out;
 }
 
@@ -940,8 +1015,12 @@ export function groupMealsByMonthKey(meals: MealRecord[]): Map<string, MealRecor
 
 async function deleteMealsShardIfExists(token: string, monthKey: string): Promise<void> {
   const id = await findMealsShardFileId(token, monthKey);
-  if (!id) return;
+  if (!id) {
+    invalidateCachedMealsShardFileId(monthKey);
+    return;
+  }
   await deleteDriveFile(token, id);
+  invalidateCachedMealsShardFileId(monthKey);
 }
 
 async function upsertMealsShardToDrive(
@@ -952,16 +1031,39 @@ async function upsertMealsShardToDrive(
 ): Promise<void> {
   const fileName = mealsShardFileName(monthKey);
   const payload = JSON.stringify({ meals });
-  const existing =
-    prefetchedFileId !== undefined
-      ? prefetchedFileId
-      : await findMealsShardFileId(token, monthKey);
-  if (existing) await updateJsonMedia(token, existing, payload);
-  else await createMultipartJsonAppData(token, fileName, payload);
+  if (prefetchedFileId) {
+    setCachedMealsShardFileId(monthKey, prefetchedFileId);
+  } else if (prefetchedFileId === null) {
+    invalidateCachedMealsShardFileId(monthKey);
+  }
+
+  let existing: string | null;
+  if (prefetchedFileId !== undefined) {
+    existing = prefetchedFileId;
+  } else {
+    const cached = getCachedMealsShardFileId(monthKey);
+    existing =
+      cached !== undefined ? cached : await listMealsShardFileIdFromDrive(token, monthKey);
+  }
+
+  if (existing) {
+    const patched = await patchJsonMedia(token, existing, payload);
+    if (patched) return;
+    invalidateCachedMealsShardFileId(monthKey);
+    existing = await listMealsShardFileIdFromDrive(token, monthKey);
+    if (existing) {
+      await updateJsonMedia(token, existing, payload);
+      setCachedMealsShardFileId(monthKey, existing);
+      return;
+    }
+  }
+
+  const createdId = await createMultipartJsonAppData(token, fileName, payload);
+  setCachedMealsShardFileId(monthKey, createdId);
 }
 
 /**
- * Upserts or deletes shard files only for `affectedMonthKeys` (fresh `files.list` per month
+ * Upserts or deletes shard files only for `affectedMonthKeys` (uses the session shard-id cache
  * unless an id was prefetched via `shardFileIdsPrefetched`).
  */
 export async function syncMealShardsForMonths(
@@ -978,6 +1080,7 @@ export async function syncMealShardsForMonths(
     if (monthMeals.length === 0) {
       if (prefetched !== undefined) {
         if (prefetched) await deleteDriveFile(token, prefetched);
+        invalidateCachedMealsShardFileId(mk);
       } else {
         await deleteMealsShardIfExists(token, mk);
       }
