@@ -277,7 +277,6 @@ export function MealDetailPage() {
                       : undefined,
                   );
                   toast.success(t("errors.mealLoggedAgain"));
-                  await navigate({ to: paths.history });
                 } catch (err) {
                   toast.error(
                     err instanceof Error

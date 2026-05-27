@@ -24,7 +24,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   useCallback,
@@ -206,7 +206,6 @@ function SortableReorderRow({ item, committing }: SortableReorderRowProps) {
 
 export function SavedMealsPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const {
     savedMeals,
     addMeal,
@@ -305,7 +304,6 @@ export function SavedMealsPage() {
         item.photoFileId ? { photoFileId: item.photoFileId } : undefined,
       );
       toast.success(t("errors.mealAdded"));
-      await navigate({ to: paths.history });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("errors.couldNotAddMeal"));
     } finally {

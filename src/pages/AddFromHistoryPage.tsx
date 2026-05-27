@@ -6,7 +6,6 @@ import { useMealMonthsViewportFill } from "@/hooks/use-meal-months-viewport-fill
 import { useRecords } from "@/hooks/use-records";
 import { paths } from "@/lib/routes";
 import type { MealRecord } from "@/types/records";
-import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -48,7 +47,6 @@ function getHistoryTemplates(meals: MealRecord[]): HistoryTemplate[] {
 
 export function AddFromHistoryPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const {
     records,
     userId,
@@ -136,7 +134,6 @@ export function AddFromHistoryPage() {
           : undefined,
       );
       toast.success(t("errors.mealAdded"));
-      await navigate({ to: paths.history });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("errors.couldNotAddMeal"));
     } finally {
