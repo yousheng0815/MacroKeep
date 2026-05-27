@@ -8,17 +8,22 @@ import { useTranslation } from "react-i18next";
 
 export function MealPhotoViewerScreen({
   photoFileId,
+  src: srcOverride,
   alt,
   cachePolicy,
   onDismiss,
 }: {
-  photoFileId: string;
+  photoFileId?: string;
+  /** When set, shows this URL instead of loading from Drive. */
+  src?: string;
   alt: string;
   cachePolicy?: MealPhotoCachePolicy;
   onDismiss: () => void;
 }) {
   const { t } = useTranslation();
-  const src = useDrivePhotoUrl(photoFileId, cachePolicy);
+  const driveSrc = useDrivePhotoUrl(photoFileId, cachePolicy);
+  const src = srcOverride ?? driveSrc;
+  const loading = !src;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -58,7 +63,7 @@ export function MealPhotoViewerScreen({
       </header>
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center p-4 pb-[env(safe-area-inset-bottom)]">
-        {!src ? (
+        {loading ? (
           <div className="flex flex-col items-center gap-3 text-zinc-500">
             <ButtonSpinner />
             <p className="text-sm">{t("common.loadingImage")}</p>

@@ -2,6 +2,7 @@ import { ButtonSpinner } from "@/components/ButtonSpinner";
 import { PageHeader } from "@/components/PageHeader";
 import { ProgressPhotoSlideshowViewer } from "@/components/progress-photos/ProgressPhotoSlideshowViewer";
 import { useProgressPhotos } from "@/hooks/use-progress-photos";
+import { paths } from "@/lib/routes";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,7 +21,7 @@ export function ProgressPhotoSlideshowPage() {
   }, [error]);
 
   const goBack = () => {
-    void navigate({ to: "/progress" });
+    void navigate({ to: paths.progress.root });
   };
 
   if (loading) {
@@ -28,7 +29,7 @@ export function ProgressPhotoSlideshowPage() {
       <div className="flex min-w-0 flex-col gap-4">
         <PageHeader
           title={t("progress.slideshowTitle")}
-          backTo="/progress"
+          backTo={paths.progress.root}
           backAriaLabel={t("progress.backToProgress")}
         />
         <div className="flex flex-col items-center justify-center gap-3 py-10 text-zinc-400">
@@ -44,7 +45,7 @@ export function ProgressPhotoSlideshowPage() {
       <div className="flex min-w-0 flex-col gap-4">
         <PageHeader
           title={t("progress.slideshowTitle")}
-          backTo="/progress"
+          backTo={paths.progress.root}
           backAriaLabel={t("progress.backToProgress")}
         />
         <div className="space-y-4 py-8 text-center">
@@ -68,7 +69,7 @@ export function ProgressPhotoSlideshowPage() {
       <div className="flex min-w-0 flex-col gap-4">
         <PageHeader
           title={t("progress.slideshowTitle")}
-          backTo="/progress"
+          backTo={paths.progress.root}
           backAriaLabel={t("progress.backToProgress")}
         />
         <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
@@ -92,7 +93,7 @@ export function ProgressPhotoSlideshowPage() {
       <div className="flex min-w-0 flex-col gap-4">
         <PageHeader
           title={t("progress.slideshowTitle")}
-          backTo="/progress"
+          backTo={paths.progress.root}
           backAriaLabel={t("progress.backToProgress")}
         />
         <div className="flex flex-col items-center justify-center gap-3 py-10 text-zinc-400">

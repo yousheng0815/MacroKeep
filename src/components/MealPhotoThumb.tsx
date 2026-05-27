@@ -2,12 +2,17 @@ import { MealPhotoViewerScreen } from "@/components/MealPhotoViewerScreen";
 import { useDrivePhotoUrl } from "@/hooks/use-drive-photo-url";
 import { useHistoryOverlay } from "@/hooks/use-history-overlay";
 import type { MealPhotoCachePolicy } from "@/lib/meal-photo-cache";
+import type { MealPhotoViewerState } from "@/lib/routes";
+import { paths } from "@/lib/routes";
+import { useRouter, useRouterState } from "@tanstack/react-router";
 import { ImagePlus } from "lucide-react";
-import { useCallback, useState, type MouseEvent } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 type MealPhotoThumbProps = {
   photoFileId?: string;
+  /** Local object URL (add/edit flows before Drive upload). Full-screen overlay, same URL. */
+  previewSrc?: string;
   alt: string;
   /** Wrapper box (layout + clipping); inner `<img>` uses `size-full object-cover`. */
   className?: string;
@@ -16,32 +21,48 @@ type MealPhotoThumbProps = {
    * `log` + `recordedAt`: persist logged meals from today/yesterday (local).
    */
   cachePolicy?: MealPhotoCachePolicy;
-  /** When true (default), tap opens a full-screen viewer. Set false on edit forms if needed. */
+  /** When true, tap opens the full-screen viewer. Off for list rows. */
   enlargeOnClick?: boolean;
 };
 
 export function MealPhotoThumb({
   photoFileId,
+  previewSrc,
   alt,
   className = "size-10 shrink-0 overflow-hidden rounded-full border border-zinc-700 bg-zinc-800",
   cachePolicy,
-  enlargeOnClick = true,
+  enlargeOnClick = false,
 }: MealPhotoThumbProps) {
   const { t } = useTranslation();
-  const src = useDrivePhotoUrl(photoFileId, cachePolicy);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const closeViewer = useCallback(() => setViewerOpen(false), []);
-  const dismissViewer = useHistoryOverlay(viewerOpen, closeViewer);
+  const router = useRouter();
+  const returnTo = useRouterState({ select: (s) => s.location.pathname });
+  const driveSrc = useDrivePhotoUrl(photoFileId, cachePolicy);
+  const src = previewSrc ?? driveSrc;
 
-  const canEnlarge = enlargeOnClick && !!photoFileId && !!src;
+  const [localViewerOpen, setLocalViewerOpen] = useState(false);
+  const closeLocalViewer = useCallback(() => setLocalViewerOpen(false), []);
+  const dismissLocalViewer = useHistoryOverlay(localViewerOpen, closeLocalViewer);
 
-  const openViewer = (e: MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setViewerOpen(true);
-  };
+  const canEnlargeDrive = enlargeOnClick && !!photoFileId && !!driveSrc && !previewSrc;
+  const canEnlargeLocal = enlargeOnClick && !!previewSrc;
 
-  if (!photoFileId) {
+  const openDriveViewer = useCallback(() => {
+    if (!photoFileId) return;
+    const mealPhoto: MealPhotoViewerState = {
+      alt,
+      cachePolicy,
+      returnTo,
+    };
+    void router.navigate({
+      to: paths.mealPhoto,
+      params: { photoFileId },
+      state: { mealPhoto },
+    });
+  }, [alt, cachePolicy, photoFileId, returnTo, router]);
+
+  const enlargeClassName = `block cursor-zoom-in transition hover:ring-2 hover:ring-emerald-400/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 ${className}`;
+
+  if (!photoFileId && !previewSrc) {
     return (
       <div
         className={`flex items-center justify-center ${className}`}
@@ -71,29 +92,40 @@ export function MealPhotoThumb({
     />
   );
 
-  return (
-    <>
-      {canEnlarge ? (
+  if (canEnlargeLocal) {
+    return (
+      <>
         <button
           type="button"
-          onClick={openViewer}
-          className={`block cursor-zoom-in transition hover:ring-2 hover:ring-emerald-400/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400 ${className}`}
+          onClick={() => setLocalViewerOpen(true)}
+          className={enlargeClassName}
           aria-label={t("common.viewMealPhoto")}
         >
           {image}
         </button>
-      ) : (
-        <div className={className}>{image}</div>
-      )}
+        {localViewerOpen ? (
+          <MealPhotoViewerScreen
+            src={previewSrc}
+            alt={alt}
+            onDismiss={dismissLocalViewer}
+          />
+        ) : null}
+      </>
+    );
+  }
 
-      {viewerOpen && photoFileId ? (
-        <MealPhotoViewerScreen
-          photoFileId={photoFileId}
-          alt={alt}
-          cachePolicy={cachePolicy}
-          onDismiss={dismissViewer}
-        />
-      ) : null}
-    </>
-  );
+  if (canEnlargeDrive) {
+    return (
+      <button
+        type="button"
+        onClick={openDriveViewer}
+        className={enlargeClassName}
+        aria-label={t("common.viewMealPhoto")}
+      >
+        {image}
+      </button>
+    );
+  }
+
+  return <div className={className}>{image}</div>;
 }

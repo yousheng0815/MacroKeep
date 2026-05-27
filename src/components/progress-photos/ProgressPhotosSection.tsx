@@ -7,8 +7,13 @@ import {
   useProgressPhotos,
   useProgressPhotosBatchSize,
 } from "@/hooks/use-progress-photos";
+import { paths } from "@/lib/routes";
+import {
+  progressPhotoCaptureRoute,
+  progressPhotoRoute,
+} from "@/router";
 import type { ProgressPhotoItem } from "@/types/progress-photos";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useMatch, useNavigate, useRouter } from "@tanstack/react-router";
 import { Camera, ChevronLeft, Play } from "lucide-react";
 import {
   useCallback,
@@ -22,13 +27,6 @@ import {
 import { toast } from "@/lib/app-toast";
 import { useTranslation } from "react-i18next";
 
-function overlayFromSearch(search: Record<string, unknown>) {
-  return {
-    capture: search.capture === "1",
-    view: typeof search.view === "string" ? search.view : undefined,
-  };
-}
-
 function ProgressPhotoThumb({
   photo,
   alt,
@@ -40,8 +38,8 @@ function ProgressPhotoThumb({
 
   return (
     <Link
-      to="/progress"
-      search={{ view: photo.id }}
+      to={paths.progress.photo}
+      params={{ photoId: photo.id }}
       className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-zinc-700 transition hover:border-emerald-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
     >
       {url ? (
@@ -99,15 +97,24 @@ export function ProgressPhotosSection({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const searchRecord = useRouterState({ select: (s) => s.location.search });
-  const { capture, view } = useMemo(
-    () => overlayFromSearch(searchRecord),
-    [searchRecord],
-  );
+  const router = useRouter();
+  const capture = !!useMatch({
+    from: progressPhotoCaptureRoute.id,
+    shouldThrow: false,
+  });
+  const photoMatch = useMatch({
+    from: progressPhotoRoute.id,
+    shouldThrow: false,
+  });
+  const view = photoMatch?.params.photoId;
 
   const dismissOverlay = useCallback(() => {
-    window.history.back();
-  }, []);
+    if (router.history.canGoBack()) {
+      router.history.back();
+      return;
+    }
+    void navigate({ to: paths.progress.root });
+  }, [navigate, router.history]);
 
   const batchSize = useProgressPhotosBatchSize();
   const [stripVisibleCount, setStripVisibleCount] = useState(batchSize);
@@ -240,8 +247,7 @@ export function ProgressPhotosSection({
       await remove(id);
       if (remaining.length === 0) {
         void navigate({
-          to: "/progress",
-          search: {},
+          to: paths.progress.root,
           replace: true,
         });
         return;
@@ -251,8 +257,8 @@ export function ProgressPhotosSection({
           ? remaining[remaining.length - 1].id
           : remaining[idx].id;
       void navigate({
-        to: "/progress",
-        search: { view: nextId },
+        to: paths.progress.photo,
+        params: { photoId: nextId },
         replace: true,
       });
     },
@@ -323,8 +329,7 @@ export function ProgressPhotosSection({
 
         <div className="btn-pair-row mt-4 border-t border-mk-border pt-4">
           <Link
-            to="/progress"
-            search={{ capture: "1" }}
+            to={paths.progress.capture}
             className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-black hover:bg-emerald-400"
           >
             <Camera className="size-5" />
@@ -340,7 +345,7 @@ export function ProgressPhotosSection({
             </span>
           ) : (
             <Link
-              to="/progress/photos/slideshow"
+              to={paths.progress.slideshow}
               className="flex items-center justify-center gap-2 rounded-xl border border-mk-border px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-900"
             >
               <Play className="size-5 text-emerald-400" />
@@ -404,8 +409,8 @@ export function ProgressPhotosSection({
             const id = photos[next]?.id;
             if (id) {
               void navigate({
-                to: "/progress",
-                search: { view: id },
+                to: paths.progress.photo,
+                params: { photoId: id },
                 replace: true,
               });
             }

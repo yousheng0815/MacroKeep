@@ -202,7 +202,6 @@ export function HistoryPage() {
                       <MealPhotoThumb
                         photoFileId={m.photoFileId}
                         alt={m.food_name}
-                        enlargeOnClick={false}
                         cachePolicy={{
                           tier: "log",
                           recordedAt: m.recordedAt,

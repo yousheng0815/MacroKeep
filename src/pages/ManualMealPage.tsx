@@ -182,10 +182,11 @@ export function ManualMealPage() {
             <div className="mk-photo-field-panel">
               <div className="size-20 shrink-0 overflow-hidden rounded-xl border border-zinc-700 md:size-32">
                 {photoChoice ? (
-                  <img
-                    src={photoChoice.previewUrl}
+                  <MealPhotoThumb
+                    previewSrc={photoChoice.previewUrl}
                     alt={t("common.mealPhotoPreview")}
-                    className="size-full object-cover"
+                    enlargeOnClick
+                    className="size-full shrink-0 overflow-hidden rounded-xl border-0 bg-zinc-800/80"
                   />
                 ) : (
                   <MealPhotoThumb

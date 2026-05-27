@@ -148,6 +148,7 @@ export function MealDetailPage() {
           <MealPhotoThumb
             photoFileId={meal.photoFileId}
             alt={meal.food_name}
+            enlargeOnClick
             cachePolicy={{
               tier: "log",
               recordedAt: meal.recordedAt,

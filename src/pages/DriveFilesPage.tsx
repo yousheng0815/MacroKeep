@@ -21,7 +21,9 @@ import {
 } from "@/lib/google-drive";
 import i18n from "@/i18n";
 import { intlLocaleTag, type AppLocale } from "@/i18n/config";
+import { paths } from "@/lib/routes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { ChevronRight, FileJson, Folder, ImageIcon, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -157,25 +159,45 @@ function fileKindIcon(f: AppDataDriveFileListItem) {
 
 export function DriveFilesPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { fileId } = useParams({ strict: false });
+  const { path: browsePath = "" } = useSearch({ strict: false });
   const { sessionReady } = useGoogleSession();
   const userId = getGoogleUserId() ?? "";
   const qc = useQueryClient();
   const [retryBusy, setRetryBusy] = useState(false);
-  const [viewerFile, setViewerFile] = useState<AppDataDriveFileListItem | null>(
-    null,
-  );
   const [jsonEditing, setJsonEditing] = useState(false);
   const [jsonDraft, setJsonDraft] = useState("");
   const [jsonParseError, setJsonParseError] = useState<string | null>(null);
-  /** Slash-separated path under App Data (`""` = root). */
-  const [browsePath, setBrowsePath] = useState("");
 
   const closeViewer = useCallback(() => {
-    setViewerFile(null);
     setJsonEditing(false);
     setJsonDraft("");
     setJsonParseError(null);
-  }, []);
+    void navigate({
+      to: paths.drive.root,
+      search: browsePath ? { path: browsePath } : {},
+    });
+  }, [browsePath, navigate]);
+
+  const q = useQuery({
+    queryKey: ["drive-app-files", userId],
+    enabled: !!userId && sessionReady,
+    /** Power-user file browser: refetch on each visit (edits may happen outside the app). */
+    staleTime: 0,
+    queryFn: async ({ signal }) => {
+      const token = await ensureGoogleAccessToken();
+      if (!token) throw new Error(t("errors.missingGoogleAccessToken"));
+      return listAllAppDataFiles(token, signal);
+    },
+  });
+
+  const files = q.data ?? [];
+
+  const viewerFile = useMemo(() => {
+    if (!fileId) return null;
+    return files.find((f) => f.id === fileId) ?? null;
+  }, [fileId, files]);
 
   const viewerJsonOversized = useMemo(() => {
     if (!viewerFile || !isJsonAppDataFile(viewerFile)) return false;
@@ -216,23 +238,42 @@ export function DriveFilesPage() {
     },
   });
 
-  const q = useQuery({
-    queryKey: ["drive-app-files", userId],
-    enabled: !!userId && sessionReady,
-    /** Power-user file browser: refetch on each visit (edits may happen outside the app). */
-    staleTime: 0,
-    queryFn: async ({ signal }) => {
-      const token = await ensureGoogleAccessToken();
-      if (!token) throw new Error(t("errors.missingGoogleAccessToken"));
-      return listAllAppDataFiles(token, signal);
-    },
-  });
-
-  const files = q.data ?? [];
-
   useEffect(() => {
     if (q.data) reconcileMealsShardFileIdCacheFromAppDataListing(q.data);
   }, [q.data]);
+
+  /** Unknown or non-previewable file id in the URL — return to the folder listing. */
+  useEffect(() => {
+    if (!fileId || q.isLoading || !q.data) return;
+    if (!viewerFile) {
+      void navigate({
+        to: paths.drive.root,
+        search: browsePath ? { path: browsePath } : {},
+        replace: true,
+      });
+      return;
+    }
+    const previewable =
+      isJsonAppDataFile(viewerFile) || isImagePreviewAppDataFile(viewerFile);
+    if (!previewable) {
+      void navigate({
+        to: paths.drive.root,
+        search: browsePath ? { path: browsePath } : {},
+        replace: true,
+      });
+    }
+  }, [fileId, viewerFile, q.isLoading, q.data, navigate, browsePath]);
+
+  const openPreviewFile = useCallback(
+    (file: AppDataDriveFileListItem) => {
+      void navigate({
+        to: paths.drive.file,
+        params: { fileId: file.id },
+        search: browsePath ? { path: browsePath } : {},
+      });
+    },
+    [browsePath, navigate],
+  );
 
   const browseRows = useMemo(
     () => listDriveBrowseRows(files, browsePath),
@@ -331,22 +372,25 @@ export function DriveFilesPage() {
 
   const openFolder = useCallback(
     (folderLabel: string) => {
-      closeViewer();
-      setBrowsePath((prev) => (prev ? `${prev}/${folderLabel}` : folderLabel));
+      const next = browsePath ? `${browsePath}/${folderLabel}` : folderLabel;
+      void navigate({ to: paths.drive.root, search: { path: next } });
     },
-    [closeViewer],
+    [browsePath, navigate],
   );
 
   const navigateToBreadcrumb = useCallback(
     (index: number) => {
-      closeViewer();
       if (index < 0) {
-        setBrowsePath("");
+        void navigate({ to: paths.drive.root });
         return;
       }
-      setBrowsePath(breadcrumbSegments.slice(0, index + 1).join("/"));
+      const next = breadcrumbSegments.slice(0, index + 1).join("/");
+      void navigate({
+        to: paths.drive.root,
+        search: next ? { path: next } : {},
+      });
     },
-    [breadcrumbSegments, closeViewer],
+    [breadcrumbSegments, navigate],
   );
 
   return (
@@ -528,7 +572,7 @@ export function DriveFilesPage() {
                             ) : jsonFile ? (
                               <button
                                 type="button"
-                                onClick={() => setViewerFile(f)}
+                                onClick={() => openPreviewFile(f)}
                                 className="w-full min-w-0 text-left font-mono text-sm text-emerald-300/95 break-all underline decoration-emerald-500/40 underline-offset-2 hover:text-emerald-200 hover:decoration-emerald-400/70"
                                 aria-label={t("drive.viewJsonAria", { fileName: label })}
                               >
@@ -537,7 +581,7 @@ export function DriveFilesPage() {
                             ) : imageFile ? (
                               <button
                                 type="button"
-                                onClick={() => setViewerFile(f)}
+                                onClick={() => openPreviewFile(f)}
                                 className="w-full min-w-0 text-left font-mono text-sm text-amber-300/95 break-all underline decoration-amber-500/40 underline-offset-2 hover:text-amber-200 hover:decoration-amber-400/70"
                                 aria-label={t("drive.previewImageAria", { fileName: label })}
                               >

@@ -11,6 +11,7 @@ import { HistoryPage } from "@/pages/HistoryPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MealDetailPage } from "@/pages/MealDetailPage";
 import { MealEditPage } from "@/pages/MealEditPage";
+import { MealPhotoViewerPage } from "@/pages/MealPhotoViewerPage";
 import { ProgressPage } from "@/pages/ProgressPage";
 import { ProgressPhotoSlideshowPage } from "@/pages/ProgressPhotoSlideshowPage";
 import { DescribeMealPage } from "@/pages/DescribeMealPage";
@@ -19,7 +20,7 @@ import { SettingsPage } from "@/pages/SettingsPage";
 import { TutorialPage } from "@/pages/TutorialPage";
 import { GoogleSessionProvider } from "@/contexts/google-session";
 import { paths } from "@/lib/routes";
-import type { MealDetailNavFrom } from "@/lib/routes";
+import type { DriveBrowseSearch, MealDetailNavFrom, MealPhotoViewerState } from "@/lib/routes";
 import {
   Outlet,
   createRootRoute,
@@ -131,9 +132,41 @@ const progressPhotoSlideshowRoute = createRoute({
   component: ProgressPhotoSlideshowPage,
 });
 
+export const progressPhotoCaptureRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.progress.capture,
+  component: ProgressPage,
+});
+
+export const progressPhotoRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.progress.photo,
+  component: ProgressPage,
+});
+
+export const mealPhotoRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.mealPhoto,
+  component: MealPhotoViewerPage,
+});
+
+function driveBrowseSearch(search: Record<string, unknown>): DriveBrowseSearch {
+  return {
+    path: typeof search.path === "string" ? search.path : undefined,
+  };
+}
+
 const driveRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
-  path: paths.drive,
+  path: paths.drive.root,
+  validateSearch: driveBrowseSearch,
+  component: DriveFilesPage,
+});
+
+const driveFileRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.drive.file,
+  validateSearch: driveBrowseSearch,
   component: DriveFilesPage,
 });
 
@@ -165,7 +198,11 @@ const routeTree = rootRoute.addChildren([
     manualMealRoute,
     progressRoute,
     progressPhotoSlideshowRoute,
+    progressPhotoCaptureRoute,
+    progressPhotoRoute,
+    mealPhotoRoute,
     driveRoute,
+    driveFileRoute,
     settingsRoute,
     tutorialRoute,
   ]),
@@ -184,5 +221,6 @@ declare module "@tanstack/react-router" {
   /** Location state for highlighting the shell nav on `/meals/:id`. */
   interface HistoryState {
     navFrom?: MealDetailNavFrom;
+    mealPhoto?: MealPhotoViewerState;
   }
 }

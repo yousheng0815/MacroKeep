@@ -1,3 +1,5 @@
+import type { MealPhotoCachePolicy } from "@/lib/meal-photo-cache";
+
 /** Canonical app paths — use for links, redirects, and nav highlighting. */
 export const paths = {
   login: "/login",
@@ -5,6 +7,7 @@ export const paths = {
   history: "/history",
   mealDetail: "/meals/$mealId",
   mealEdit: "/meals/$mealId/edit",
+  mealPhoto: "/photos/$photoFileId",
   add: {
     root: "/add",
     savedMeals: "/add/saved-meals",
@@ -16,9 +19,14 @@ export const paths = {
   },
   progress: {
     root: "/progress",
+    capture: "/progress/photos/new",
+    photo: "/progress/photos/$photoId",
     slideshow: "/progress/photos/slideshow",
   },
-  drive: "/drive",
+  drive: {
+    root: "/drive",
+    file: "/drive/files/$fileId",
+  },
   settings: "/settings",
   tutorial: "/tutorial",
 } as const;
@@ -35,6 +43,17 @@ export type NavTabPath = (typeof NAV_TAB_PATHS)[number];
 /** Shell nav highlight when viewing `/meals/:id`. */
 export type MealDetailNavFrom = NavTabPath;
 
+/** Location state when opening `/photos/:photoFileId`. */
+export type MealPhotoViewerState = {
+  alt: string;
+  cachePolicy?: MealPhotoCachePolicy;
+  returnTo: string;
+};
+
+export type DriveBrowseSearch = {
+  path?: string;
+};
+
 /** Pull-to-refresh only refetches Drive records; skip forms, add flow, and viewers. */
 export function pathnameAllowsPullToRefresh(pathname: string): boolean {
   if (pathname === paths.tutorial) return false;
@@ -46,6 +65,9 @@ export function pathnameAllowsPullToRefresh(pathname: string): boolean {
   }
   if (pathname.startsWith(paths.settings)) return false;
   if (pathname.startsWith(paths.progress.slideshow)) return false;
+  if (pathname.startsWith("/progress/photos/")) return false;
+  if (pathname.startsWith("/photos/")) return false;
+  if (pathname.startsWith("/drive/files/")) return false;
   if (pathname.endsWith("/edit")) return false;
   return true;
 }

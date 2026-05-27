@@ -312,15 +312,17 @@ export function MealEditPage() {
             <div className="mk-photo-field-panel">
               <div className="size-20 shrink-0 overflow-hidden rounded-xl border border-zinc-700 md:size-32">
                 {editPhoto.mode === "replacement" ? (
-                  <img
-                    src={editPhoto.previewUrl}
+                  <MealPhotoThumb
+                    previewSrc={editPhoto.previewUrl}
                     alt={t("common.newMealPhotoPreview")}
-                    className="size-full object-cover"
+                    enlargeOnClick
+                    className="size-full shrink-0 overflow-hidden rounded-xl border-0 bg-zinc-800"
                   />
                 ) : meal.photoFileId ? (
                   <MealPhotoThumb
                     photoFileId={meal.photoFileId}
                     alt={meal.food_name}
+                    enlargeOnClick
                     cachePolicy={{
                       tier: "log",
                       recordedAt: meal.recordedAt,
