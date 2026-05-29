@@ -42,6 +42,17 @@ export default defineConfig(({ mode }) => {
             );
         },
       },
+      {
+        name: "macrokeep-app-robots",
+        apply: "build",
+        generateBundle() {
+          this.emitFile({
+            type: "asset",
+            fileName: "robots.txt",
+            source: "User-agent: *\nDisallow: /\n",
+          });
+        },
+      },
       VitePWA({
         disable: mode === "development",
         injectRegister: false,

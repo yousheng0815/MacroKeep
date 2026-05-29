@@ -1,0 +1,31 @@
+---
+import LandingPageContent from "../../../components/LandingPageContent.astro";
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { localizedPath } from "../../../i18n/config";
+import { getMessages } from "../../../i18n";
+import { buildLandingStructuredData } from "../../../lib/structured-data";
+
+const messages = getMessages("zh-TW");
+const page = messages.landingPages.myfitnesspalAlternative;
+const pathname = localizedPath("zh-TW", page.path);
+---
+
+<BaseLayout
+  title={page.title}
+  description={page.description}
+  locale="zh-TW"
+  messages={messages}
+  pathname={pathname}
+  structuredData={buildLandingStructuredData(
+    page,
+    new URL(pathname, Astro.site).href,
+    messages.locale,
+    localizedPath(messages.locale, "/"),
+  )}
+>
+  <LandingPageContent
+    page={page}
+    messages={messages}
+    homePath={localizedPath("zh-TW", "/")}
+  />
+</BaseLayout>

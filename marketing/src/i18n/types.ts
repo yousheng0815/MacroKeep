@@ -21,14 +21,38 @@ export type HowItWorksStep =
   | string
   | { before: string; highlight: string; after: string };
 
+export type LandingPageSection = {
+  heading: string;
+  body: string;
+};
+
+export type LandingPageContent = {
+  path: string;
+  title: string;
+  description: string;
+  headline: string;
+  linkLabel: string;
+  lead: string;
+  sections: LandingPageSection[];
+  cta: string;
+};
+
 export type MarketingMessages = {
   locale: MarketingLocale;
   htmlLang: string;
   siteTitle: string;
   meta: {
+    homeTitle: string;
     homeDescription: string;
+    schemaAbstract: string;
     privacyDescription: string;
     termsDescription: string;
+  };
+  landingPages: {
+    aiMealEstimates: LandingPageContent;
+    googleDrive: LandingPageContent;
+    myfitnesspalAlternative: LandingPageContent;
+    howToTrackMacros: LandingPageContent;
   };
   nav: {
     openApp: string;
@@ -37,6 +61,7 @@ export type MarketingMessages = {
   footer: {
     privacy: string;
     terms: string;
+    guidesLabel: string;
   };
   home: {
     eyebrow: string;

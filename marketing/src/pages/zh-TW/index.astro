@@ -2,16 +2,21 @@
 import HomePage from "../../components/HomePage.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getMessages } from "../../i18n";
+import { buildHomeStructuredData } from "../../lib/structured-data";
 
 const messages = getMessages("zh-TW");
 ---
 
 <BaseLayout
-  title={messages.siteTitle}
+  title={messages.meta.homeTitle}
   description={messages.meta.homeDescription}
   locale="zh-TW"
   messages={messages}
   pathname="/zh-TW"
+  structuredData={buildHomeStructuredData(
+    messages,
+    new URL("/zh-TW", Astro.site).href,
+  )}
 >
   <HomePage messages={messages} />
 </BaseLayout>

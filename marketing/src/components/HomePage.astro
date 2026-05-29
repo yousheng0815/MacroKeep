@@ -1,6 +1,7 @@
 ---
 import AppScreenshots from "./AppScreenshots.astro";
 import type { MarketingMessages } from "../i18n/types";
+import { allLandingPages, localizedLandingPath } from "../i18n/landing-pages";
 import { APP_URL, FEEDBACK_EMAIL } from "../site";
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 }
 
 const { messages } = Astro.props;
+const guideLinks = allLandingPages(messages);
 ---
 
 <main>
@@ -93,6 +95,28 @@ const { messages } = Astro.props;
           ))
         }
       </ol>
+    </div>
+  </section>
+
+  <section style="padding: 2rem 0 3rem; border-top: 1px solid #27272a">
+    <div class="container" style="max-width: 40rem">
+      <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600">{messages.footer.guidesLabel}</h2>
+      <ul
+        style="margin: 1.25rem 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.75rem"
+      >
+        {
+          guideLinks.map((page) => (
+            <li>
+              <a
+                href={localizedLandingPath(messages.locale, page.path)}
+                style="color: #34d399; text-decoration: none; font-size: 0.9375rem"
+              >
+                {page.linkLabel}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
     </div>
   </section>
 

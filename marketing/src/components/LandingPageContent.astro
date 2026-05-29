@@ -1,0 +1,36 @@
+---
+import type { LandingPageContent, MarketingMessages } from "../i18n/types";
+import { localizedPath } from "../i18n/config";
+import { APP_URL } from "../site";
+
+interface Props {
+  page: LandingPageContent;
+  messages: MarketingMessages;
+  homePath: string;
+}
+
+const { page, messages, homePath } = Astro.props;
+---
+
+<main class="container" style="padding-block: 2.5rem 4rem">
+  <p style="margin: 0 0 1rem; font-size: 0.875rem">
+    <a href={homePath} class="muted" style="text-decoration: none">{messages.legal.homeLink}</a>
+  </p>
+  <h1 style="margin: 0; font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 700; line-height: 1.2">
+    {page.headline}
+  </h1>
+  <p style="margin: 1rem 0 0; max-width: 44rem; font-size: 1.0625rem; color: #a1a1aa">
+    {page.lead}
+  </p>
+  {
+    page.sections.map((section) => (
+      <section style="margin-top: 2.5rem; max-width: 40rem">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600">{section.heading}</h2>
+        <p style="margin: 0.75rem 0 0; color: #d4d4d8; font-size: 1rem">{section.body}</p>
+      </section>
+    ))
+  }
+  <p style="margin: 3rem 0 0">
+    <a class="btn btn-primary" href={APP_URL}>{page.cta}</a>
+  </p>
+</main>

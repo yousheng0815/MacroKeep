@@ -13,17 +13,24 @@ interface Props {
   locale: MarketingLocale;
   messages: MarketingMessages;
   pathname?: string;
+  structuredData?: Record<string, unknown>;
 }
 
-const { title, description, locale, messages, pathname = Astro.url.pathname } =
+const { title, description, locale, messages, pathname = Astro.url.pathname, structuredData } =
   Astro.props;
-const fullTitle = title === messages.siteTitle ? title : `${title} · MacroKeep`;
+const pageUrl = new URL(pathname, Astro.site).href;
+const fullTitle =
+  title.startsWith("MacroKeep") || title.endsWith("MacroKeep")
+    ? title
+    : `${title} · MacroKeep`;
 const ogImage = new URL("/screenshots/today.png", Astro.site).href;
 const homePath = localizedPath(locale, "/");
 const privacyPath = localizedPath(locale, "/privacy");
 const termsPath = localizedPath(locale, "/terms");
 const enPath = localizedPath("en", pathname);
 const zhTwPath = localizedPath("zh-TW", pathname);
+const ogLocale = locale === "zh-TW" ? "zh_TW" : "en_US";
+const ogLocaleAlternate = locale === "zh-TW" ? "en_US" : "zh_TW";
 ---
 
 <!doctype html>
@@ -33,7 +40,12 @@ const zhTwPath = localizedPath("zh-TW", pathname);
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#09090B" />
+    <link rel="canonical" href={pageUrl} />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MacroKeep" />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={ogLocaleAlternate} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={ogImage} />
@@ -52,6 +64,11 @@ const zhTwPath = localizedPath("zh-TW", pathname);
       rel="stylesheet"
     />
     <title>{fullTitle}</title>
+    {
+      structuredData ? (
+        <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+      ) : null
+    }
     <LocaleAutoRedirect />
   </head>
   <body>

@@ -2,15 +2,20 @@
 import HomePage from "../components/HomePage.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { getMessages } from "../i18n";
+import { buildHomeStructuredData } from "../lib/structured-data";
 
 const messages = getMessages("en");
 ---
 
 <BaseLayout
-  title={messages.siteTitle}
+  title={messages.meta.homeTitle}
   description={messages.meta.homeDescription}
   locale="en"
   messages={messages}
+  structuredData={buildHomeStructuredData(
+    messages,
+    new URL("/", Astro.site).href,
+  )}
 >
   <HomePage messages={messages} />
 </BaseLayout>
