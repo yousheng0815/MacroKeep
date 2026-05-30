@@ -355,7 +355,6 @@ export function MealDetailPage() {
               {t("meals.addMealAgain")}
             </ButtonPendingContents>
           </button>
-          {!isComboLog ? (
           <button
             type="button"
             disabled={
@@ -363,14 +362,17 @@ export function MealDetailPage() {
               saveToSavedPending ||
               duplicatePending ||
               isSavedMealsLoading ||
-              alreadySavedTemplate
+              alreadySavedTemplate ||
+              isComboLog
             }
             title={
               isSavedMealsLoading
                 ? t("meals.loadingSavedMealsTitle")
-                : alreadySavedTemplate
-                  ? t("meals.duplicateSavedTooltip")
-                  : undefined
+                : isComboLog
+                  ? t("meals.comboLogSavedTooltip")
+                  : alreadySavedTemplate
+                    ? t("meals.duplicateSavedTooltip")
+                    : undefined
             }
             aria-busy={saveToSavedPending}
             onClick={() => {
@@ -399,7 +401,7 @@ export function MealDetailPage() {
               })();
             }}
             className={
-              alreadySavedTemplate
+              alreadySavedTemplate || isComboLog
                 ? "relative flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-mk-border bg-zinc-900/35 px-4 py-3 text-sm font-semibold text-mk-muted opacity-90"
                 : "relative flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-amber-950/20 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-950/35 disabled:cursor-not-allowed disabled:opacity-60"
             }
@@ -411,7 +413,12 @@ export function MealDetailPage() {
               {alreadySavedTemplate ? (
                 <>
                   <Check className="size-4 shrink-0 text-zinc-400" />
-                  {t("meals.alreadySaved")}
+                  {t("meals.savedMeal")}
+                </>
+              ) : isComboLog ? (
+                <>
+                  <Check className="size-4 shrink-0 text-zinc-400" />
+                  {t("meals.savedCombo")}
                 </>
               ) : (
                 <>
@@ -421,7 +428,6 @@ export function MealDetailPage() {
               )}
             </ButtonPendingContents>
           </button>
-          ) : null}
         </div>
       </Card>
     </div>

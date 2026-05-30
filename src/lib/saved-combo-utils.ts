@@ -173,7 +173,10 @@ export function isComboLogMeal(
   savedQuickAdds: readonly SavedQuickAdd[],
 ): boolean {
   if (typeof meal.savedComboId === "string" && meal.savedComboId.length > 0) {
-    return true;
+    const linked = savedQuickAdds.some(
+      (item) => isSavedCombo(item) && item.id === meal.savedComboId,
+    );
+    if (linked) return true;
   }
   return savedQuickAdds.some((item) => {
     if (!isSavedCombo(item)) return false;
