@@ -223,7 +223,7 @@
     "noSavedMealsBrowse": "No saved meals yet. Manage saved meals to add one, or save a meal from its details screen.",
     "noSavedMealsManage": "No saved meals yet. Use the button below to create your first one.",
     "manageSavedMealsTitle": "Manage saved meals",
-    "manageSavedMealsSubtitle": "Add, edit, remove, or reorder your quick-add meals and combos.",
+    "manageSavedMealsSubtitle": "Add, edit, remove, or reorder your meals and combos.",
     "manageSavedMealsLink": "Manage",
     "addSavedMeal": "Add meal",
     "editAria": "Edit {{foodName}}",
