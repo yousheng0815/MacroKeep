@@ -11,8 +11,13 @@ export const paths = {
   add: {
     root: "/add",
     savedMeals: "/add/saved-meals",
+    savedMealsManage: "/add/saved-meals/manage",
     savedMealNew: "/add/saved-meals/new",
     savedMealEdit: "/add/saved-meals/$savedMealId/edit",
+    savedComboNew: "/add/saved-meals/combo/new",
+    savedComboEdit: "/add/saved-meals/combo/$comboId/edit",
+    comboAddSavedMeals: "/add/saved-meals/combo/items/saved",
+    comboAddInlineItem: "/add/saved-meals/combo/items/inline",
     history: "/add/history",
     describe: "/add/describe",
     manual: "/add/manual",

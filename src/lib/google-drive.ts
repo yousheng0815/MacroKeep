@@ -8,11 +8,14 @@ import {
   listProgressPhotosDesc,
 } from "@/lib/progress-photos-db";
 import type {
+  ComboItem,
   MealRecord,
   OnboardingDraft,
   RecordsCoreDocument,
   RecordsDocument,
+  SavedComboRecord,
   SavedMealRecord,
+  SavedQuickAdd,
   UserProfile,
 } from "@/types/records";
 import { isAppLocale } from "@/i18n/config";
@@ -141,6 +144,11 @@ function normalizeMeal(row: Partial<MealRecord> | null | undefined): MealRecord 
     recordedAt,
   };
   if (photoFileId) meal.photoFileId = photoFileId;
+  const savedComboId =
+    typeof row.savedComboId === "string" && row.savedComboId.trim().length > 0
+      ? row.savedComboId.trim()
+      : undefined;
+  if (savedComboId) meal.savedComboId = savedComboId;
   return meal;
 }
 
@@ -1209,9 +1217,44 @@ export async function uploadMealPhotoToAppData(
   );
 }
 
+function normalizeComboItem(row: unknown): ComboItem | null {
+  if (!row || typeof row !== "object") return null;
+  const r = row as Record<string, unknown>;
+  if (r.source === "saved") {
+    const savedMealId =
+      typeof r.savedMealId === "string" ? r.savedMealId.trim() : "";
+    if (!savedMealId) return null;
+    return { source: "saved", savedMealId };
+  }
+  if (r.source === "inline") {
+    const rawName = typeof r.food_name === "string" ? r.food_name.trim() : "";
+    const food_name = rawName.length > 0 ? rawName : "Item";
+    const calories = Number(r.calories);
+    const protein = Number(r.protein);
+    const fats = Number(r.fats);
+    const carbs = Number(r.carbs);
+    const photoFileId =
+      typeof r.photoFileId === "string" && r.photoFileId.trim().length > 0
+        ? r.photoFileId.trim()
+        : undefined;
+    const out: ComboItem = {
+      source: "inline",
+      food_name,
+      calories: Number.isFinite(calories) ? calories : 0,
+      protein: Number.isFinite(protein) ? protein : 0,
+      fats: Number.isFinite(fats) ? fats : 0,
+      carbs: Number.isFinite(carbs) ? carbs : 0,
+    };
+    if (photoFileId) out.photoFileId = photoFileId;
+    return out;
+  }
+  return null;
+}
+
 export function normalizeSavedMeal(row: unknown): SavedMealRecord | null {
   if (!row || typeof row !== "object") return null;
   const r = row as Record<string, unknown>;
+  if (r.kind === "combo") return null;
   const id = typeof r.id === "string" ? r.id.trim() : "";
   if (!id) return null;
   const rawName = typeof r.food_name === "string" ? r.food_name.trim() : "";
@@ -1233,18 +1276,49 @@ export function normalizeSavedMeal(row: unknown): SavedMealRecord | null {
     carbs: Number.isFinite(carbs) ? carbs : 0,
   };
   if (photoFileId) out.photoFileId = photoFileId;
+  if (r.archived === true) out.archived = true;
   return out;
 }
 
-function parseSavedMealsFromJsonText(text: string): SavedMealRecord[] {
+export function normalizeSavedCombo(row: unknown): SavedComboRecord | null {
+  if (!row || typeof row !== "object") return null;
+  const r = row as Record<string, unknown>;
+  if (r.kind !== "combo") return null;
+  const id = typeof r.id === "string" ? r.id.trim() : "";
+  if (!id) return null;
+  const rawName = typeof r.name === "string" ? r.name.trim() : "";
+  const name = rawName.length > 0 ? rawName : "Combo";
+  const rawItems = r.items;
+  if (!Array.isArray(rawItems)) return null;
+  const items = rawItems
+    .map((item) => normalizeComboItem(item))
+    .filter(Boolean) as ComboItem[];
+  if (items.length === 0) return null;
+  const photoFileId =
+    typeof r.photoFileId === "string" && r.photoFileId.trim().length > 0
+      ? r.photoFileId.trim()
+      : undefined;
+  const out: SavedComboRecord = { id, kind: "combo", name, items };
+  if (photoFileId) out.photoFileId = photoFileId;
+  return out;
+}
+
+export function normalizeSavedQuickAdd(row: unknown): SavedQuickAdd | null {
+  if (!row || typeof row !== "object") return null;
+  const r = row as Record<string, unknown>;
+  if (r.kind === "combo") return normalizeSavedCombo(row);
+  return normalizeSavedMeal(row);
+}
+
+function parseSavedMealsFromJsonText(text: string): SavedQuickAdd[] {
   try {
     const parsed = JSON.parse(text) as unknown;
     if (!parsed || typeof parsed !== "object") return [];
     const arr = (parsed as { savedMeals?: unknown }).savedMeals;
     if (!Array.isArray(arr)) return [];
     return arr
-      .map((row) => normalizeSavedMeal(row))
-      .filter(Boolean) as SavedMealRecord[];
+      .map((row) => normalizeSavedQuickAdd(row))
+      .filter(Boolean) as SavedQuickAdd[];
   } catch {
     return [];
   }
@@ -1252,9 +1326,9 @@ function parseSavedMealsFromJsonText(text: string): SavedMealRecord[] {
 
 export async function upsertSavedMealsToDrive(
   token: string,
-  savedMeals: SavedMealRecord[],
+  savedMeals: SavedQuickAdd[],
 ): Promise<void> {
-  const body = JSON.stringify({ version: 1, savedMeals });
+  const body = JSON.stringify({ version: 2, savedMeals });
   const existingId = await findAppDataJsonFileIdByName(token, SAVED_MEALS_DRIVE_FILE);
   if (existingId) await updateJsonMedia(token, existingId, body);
   else await createMultipartJsonAppData(token, SAVED_MEALS_DRIVE_FILE, body);
@@ -1263,7 +1337,7 @@ export async function upsertSavedMealsToDrive(
 export async function pullSavedMealsFromDrive(
   token: string,
   signal?: AbortSignal,
-): Promise<SavedMealRecord[]> {
+): Promise<SavedQuickAdd[]> {
   const id = await findAppDataJsonFileIdByName(token, SAVED_MEALS_DRIVE_FILE);
   if (!id) return [];
   const text = await downloadAppDataFileText(token, id, signal);

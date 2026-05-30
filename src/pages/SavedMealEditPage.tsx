@@ -12,8 +12,12 @@ import { canSyncToDriveAppData, ensureGoogleAccessToken } from "@/lib/gapi";
 import { deleteDriveFile, uploadMealPhotoToAppData } from "@/lib/google-drive";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import { paths } from "@/lib/routes";
+import { comboEditorReturnTo } from "@/lib/combo-draft";
+import { countComboRefsForSavedMeal } from "@/lib/saved-combo-utils";
 import type { SavedMealRecord } from "@/types/records";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { isSavedMeal } from "@/types/records";
+import type { ComboItemFlowSearch } from "@/pages/ComboAddSavedMealsPage";
+import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Camera, ImagePlus, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,17 +33,22 @@ function parseNumber(value: string): number {
 
 type SavedMealEditFormProps = {
   saved: SavedMealRecord;
+  comboRefCount: number;
   updateSavedMeal: ReturnType<typeof useRecords>["updateSavedMeal"];
+  restoreSavedMeal: ReturnType<typeof useRecords>["restoreSavedMeal"];
   onDone: () => void;
 };
 
 function SavedMealEditForm({
   saved,
+  comboRefCount,
   updateSavedMeal,
+  restoreSavedMeal,
   onDone,
 }: SavedMealEditFormProps) {
   const { t } = useTranslation();
   const [savePending, setSavePending] = useState(false);
+  const [restorePending, setRestorePending] = useState(false);
   const [editPhoto, setEditPhoto] = useState<EditPhotoState>({
     mode: "unchanged",
   });
@@ -83,6 +92,39 @@ function SavedMealEditForm({
 
   return (
     <Card>
+      {saved.archived ? (
+        <div className="mb-4 space-y-3 rounded-xl border border-amber-500/30 bg-amber-950/20 px-4 py-3">
+          <p className="text-sm text-amber-100">
+            {t("meals.archivedSavedMealBanner", { count: comboRefCount })}
+          </p>
+          <button
+            type="button"
+            disabled={restorePending || savePending}
+            aria-busy={restorePending}
+            onClick={() => {
+              void (async () => {
+                setRestorePending(true);
+                try {
+                  await restoreSavedMeal(saved.id);
+                  toast.success(t("meals.restoredToSavedMeals"));
+                  onDone();
+                } catch (err) {
+                  toast.error(
+                    err instanceof Error
+                      ? err.message
+                      : t("errors.couldNotSaveChanges"),
+                  );
+                } finally {
+                  setRestorePending(false);
+                }
+              })();
+            }}
+            className="rounded-xl border border-amber-500/40 bg-amber-950/30 px-3 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-950/50 disabled:opacity-50"
+          >
+            {t("meals.addBackToSavedMeals")}
+          </button>
+        </div>
+      ) : null}
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -322,17 +364,35 @@ function SavedMealEditForm({
 export function SavedMealEditPage() {
   const { t } = useTranslation();
   const { savedMealId } = useParams({ strict: false });
+  const search = useSearch({ strict: false }) as ComboItemFlowSearch;
   const navigate = useNavigate();
   const {
-    savedMeals,
+    savedQuickAdds,
     isSavedMealsLoading,
     savedMealsError,
     updateSavedMeal,
+    restoreSavedMeal,
   } = useRecords();
 
+  const fromCombo = search.context === "new" || Boolean(search.comboId);
+  const returnTo = fromCombo
+    ? comboEditorReturnTo(search)
+    : paths.add.savedMealsManage;
+  const backAriaLabel = fromCombo
+    ? t("meals.backToComboEditor")
+    : t("meals.backToSavedMealsManage");
+
   const saved = useMemo(
-    () => savedMeals.find((s) => s.id === savedMealId),
-    [savedMeals, savedMealId],
+    () =>
+      savedQuickAdds.find(
+        (s) => isSavedMeal(s) && s.id === savedMealId,
+      ),
+    [savedQuickAdds, savedMealId],
+  );
+
+  const comboRefCount = useMemo(
+    () => (saved ? countComboRefsForSavedMeal(savedQuickAdds, saved.id) : 0),
+    [saved, savedQuickAdds],
   );
 
   useEffect(() => {
@@ -344,9 +404,9 @@ export function SavedMealEditPage() {
     );
   }, [savedMealsError]);
 
-  const goBackToList = useCallback(() => {
-    void navigate({ to: paths.add.savedMeals });
-  }, [navigate]);
+  const goBack = useCallback(() => {
+    void navigate({ to: returnTo });
+  }, [navigate, returnTo]);
 
   if (!savedMealId) {
     return (
@@ -354,11 +414,11 @@ export function SavedMealEditPage() {
         <div className="space-y-3 py-4 text-center">
           <p className="text-sm text-mk-muted">{t("meals.invalidLink")}</p>
           <Link
-            to={paths.add.savedMeals}
+            to={returnTo}
             className="btn-mobile-block-lg gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
-            {t("meals.backToSavedMeals")}
+            {backAriaLabel}
           </Link>
         </div>
       </Card>
@@ -379,7 +439,7 @@ export function SavedMealEditPage() {
     );
   }
 
-  if (!saved) {
+  if (!saved || !isSavedMeal(saved)) {
     return (
       <Card>
         <div className="space-y-3 py-4 text-center">
@@ -387,11 +447,11 @@ export function SavedMealEditPage() {
             {t("meals.savedMealNotFound")}
           </p>
           <Link
-            to={paths.add.savedMeals}
+            to={returnTo}
             className="btn-mobile-block-lg gap-2 rounded-xl border border-mk-border bg-mk-bg px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
           >
             <ArrowLeft className="size-4" />
-            {t("meals.backToSavedMeals")}
+            {backAriaLabel}
           </Link>
         </div>
       </Card>
@@ -402,16 +462,18 @@ export function SavedMealEditPage() {
     <div className="min-w-0 space-y-6">
       <PageHeader
         title={t("meals.editSavedMealTitle")}
-        onBack={goBackToList}
-        backAriaLabel={t("meals.backToSavedMeals")}
+        onBack={goBack}
+        backAriaLabel={backAriaLabel}
         subtitle={t("meals.editSavedMealSubtitle")}
       />
 
       <SavedMealEditForm
         key={saved.id}
         saved={saved}
+        comboRefCount={comboRefCount}
         updateSavedMeal={updateSavedMeal}
-        onDone={goBackToList}
+        restoreSavedMeal={restoreSavedMeal}
+        onDone={goBack}
       />
     </div>
   );

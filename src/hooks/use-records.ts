@@ -23,19 +23,31 @@ import { DRIVE_QUERY_STALE_TIME_MS } from "@/lib/drive-query-cache";
 import { removeMealPhotoFromCache } from "@/lib/meal-photo-cache-db";
 import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import {
+  countComboRefsForSavedMeal,
+  getVisibleSavedQuickAdds,
+  isComboLogMeal,
+  purgeOrphanedArchivedMeals,
+  savedQuickAddReferencesPhoto,
+} from "@/lib/saved-combo-utils";
+import { ArchivedSavedMealMatchError } from "@/lib/saved-quick-add-errors";
+import {
+  findArchivedSavedMealMatch,
   isMealAlreadySavedAsTemplate,
   savedMealDuplicatesExisting,
 } from "@/lib/saved-meals-snapshot-match";
 import type { PreparedMealPhoto } from "@/types/meal-scan";
 import type {
+  ComboItem,
   MealRecord,
   OnboardingDraft,
   RecordsCoreDocument,
   RecordsDocument,
+  SavedComboRecord,
   SavedMealRecord,
+  SavedQuickAdd,
   UserProfile,
 } from "@/types/records";
-import { emptyRecords } from "@/types/records";
+import { emptyRecords, isSavedCombo, isSavedMeal } from "@/types/records";
 import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import i18n from "@/i18n";
@@ -81,13 +93,11 @@ function mergeMealRecordsById(a: MealRecord[], b: MealRecord[]): MealRecord[] {
   return out;
 }
 
-function savedMealsReferencePhoto(
+function getSavedQuickAddsFromCache(
   qc: QueryClient,
   userId: string,
-  photoId: string,
-): boolean {
-  const saved = qc.getQueryData<SavedMealRecord[]>(["saved-meals", userId]);
-  return saved?.some((s) => s.photoFileId === photoId) ?? false;
+): SavedQuickAdd[] {
+  return qc.getQueryData<SavedQuickAdd[]>(["saved-meals", userId]) ?? [];
 }
 
 function pickInitialMealShards(
@@ -417,6 +427,7 @@ export function useRecords() {
             carbs: meal.carbs,
             recordedAt,
             photoFileId: options.photoFileId,
+            ...(meal.savedComboId ? { savedComboId: meal.savedComboId } : {}),
           };
 
           const nextWithPhoto: RecordsDocument = {
@@ -464,6 +475,7 @@ export function useRecords() {
             carbs: meal.carbs,
             recordedAt,
             photoFileId: uploadedPhotoId,
+            ...(meal.savedComboId ? { savedComboId: meal.savedComboId } : {}),
           };
 
           const nextWithPhoto: RecordsDocument = {
@@ -488,6 +500,7 @@ export function useRecords() {
           fats: meal.fats,
           carbs: meal.carbs,
           recordedAt,
+          ...(meal.savedComboId ? { savedComboId: meal.savedComboId } : {}),
         };
 
         const next: RecordsDocument = {
@@ -529,7 +542,10 @@ export function useRecords() {
             const uid = getGoogleUserId() ?? "";
             const photoStillReferenced =
               next.meals.some((m) => m.photoFileId === photoId) ||
-              savedMealsReferencePhoto(qc, uid, photoId);
+              savedQuickAddReferencesPhoto(
+                getSavedQuickAddsFromCache(qc, uid),
+                photoId,
+              );
             if (!photoStillReferenced) {
               await deleteDriveFile(token, photoId);
               void removeMealPhotoFromCache(photoId);
@@ -608,7 +624,10 @@ export function useRecords() {
           const uid = getGoogleUserId() ?? "";
           const still =
             next.meals.some((m) => m.photoFileId === oldPhotoId) ||
-            savedMealsReferencePhoto(qc, uid, oldPhotoId);
+            savedQuickAddReferencesPhoto(
+              getSavedQuickAddsFromCache(qc, uid),
+              oldPhotoId,
+            );
           if (!still) {
             try {
               await deleteDriveFile(token, oldPhotoId);
@@ -636,7 +655,7 @@ export function useRecords() {
         /** Existing App Data photo id (e.g. copied from a logged meal). */
         photoFileId?: string;
         /** When set, skips a Drive read (caller already pulled `saved-meals.json`). */
-        knownSavedMeals?: SavedMealRecord[];
+        knownSavedItems?: SavedQuickAdd[];
       },
     ): Promise<string> => {
       if (!canSyncToDriveAppData()) {
@@ -669,8 +688,8 @@ export function useRecords() {
 
       const [photoFileId, prev] = await Promise.all([
         resolvePhotoFileId(),
-        options?.knownSavedMeals
-          ? Promise.resolve(options.knownSavedMeals)
+        options?.knownSavedItems
+          ? Promise.resolve(options.knownSavedItems)
           : pullSavedMealsFromDrive(token),
       ]);
 
@@ -686,10 +705,19 @@ export function useRecords() {
       if (savedMealDuplicatesExisting(row, prev)) {
         throw new Error(i18n.t("errors.duplicateSavedMeal"));
       }
+      const archivedMatch = findArchivedSavedMealMatch(row, prev);
+      if (archivedMatch) {
+        throw new ArchivedSavedMealMatchError(
+          archivedMatch,
+          countComboRefsForSavedMeal(prev, archivedMatch.id),
+        );
+      }
 
-      const next = [row, ...prev];
+      const visible = getVisibleSavedQuickAdds(prev);
+      const archived = prev.filter((item) => isSavedMeal(item) && item.archived);
+      const next = [row, ...visible, ...archived];
       await upsertSavedMealsToDrive(token, next);
-      qc.setQueryData<SavedMealRecord[]>(["saved-meals", uid], next);
+      qc.setQueryData<SavedQuickAdd[]>(["saved-meals", uid], next);
       return newId;
     },
     [qc],
@@ -714,6 +742,9 @@ export function useRecords() {
       if (isMealAlreadySavedAsTemplate(meal, prev)) {
         throw new Error(i18n.t("errors.alreadyInSavedMeals"));
       }
+      if (isComboLogMeal(meal, prev)) {
+        throw new Error(i18n.t("errors.cannotSaveComboLogToSavedMeals"));
+      }
 
       await addSavedMeal(
         {
@@ -723,7 +754,7 @@ export function useRecords() {
           fats: meal.fats,
           carbs: meal.carbs,
         },
-        { id: newId, photoFileId, knownSavedMeals: prev },
+        { id: newId, photoFileId, knownSavedItems: prev },
       );
     },
     [addSavedMeal],
@@ -749,8 +780,10 @@ export function useRecords() {
       if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
       const uid = getGoogleUserId() ?? "";
       const prev = await pullSavedMealsFromDrive(token);
-      const prevRow = prev.find((s) => s.id === id);
-      if (!prevRow) throw new Error(i18n.t("errors.savedMealNotFound"));
+      const prevRow = prev.find((s) => isSavedMeal(s) && s.id === id);
+      if (!prevRow || !isSavedMeal(prevRow)) {
+        throw new Error(i18n.t("errors.savedMealNotFound"));
+      }
       const oldPhotoId = prevRow.photoFileId;
 
       const foodName = patch.food_name.trim();
@@ -779,7 +812,7 @@ export function useRecords() {
 
       const next = prev.map((s) => (s.id === id ? updated : s));
       await upsertSavedMealsToDrive(token, next);
-      qc.setQueryData<SavedMealRecord[]>(["saved-meals", uid], next);
+      qc.setQueryData<SavedQuickAdd[]>(["saved-meals", uid], next);
 
       const newPhotoId = updated.photoFileId;
       if (oldPhotoId !== newPhotoId && canSyncToDriveAppData()) {
@@ -788,7 +821,7 @@ export function useRecords() {
           const meals = getCurrentRecords().meals;
           const still =
             meals.some((m) => m.photoFileId === oldPhotoId) ||
-            next.some((s) => s.photoFileId === oldPhotoId);
+            savedQuickAddReferencesPhoto(next, oldPhotoId);
           if (!still) {
             try {
               await deleteDriveFile(t, oldPhotoId);
@@ -804,11 +837,11 @@ export function useRecords() {
   );
 
   /**
-   * Replaces the full saved-meals list on Drive (order + removals in one write).
-   * Rows are re-read from the server by id so client payloads stay in sync.
+   * Replaces the visible saved-meals/combos list on Drive (order + removals in one write).
+   * Meals linked by combos are archived instead of deleted.
    */
   const commitSavedMeals = useCallback(
-    async (nextFromClient: SavedMealRecord[]) => {
+    async (nextVisibleFromClient: SavedQuickAdd[]) => {
       if (!canSyncToDriveAppData()) {
         throw new Error(i18n.t("errors.notSignedInDrive"));
       }
@@ -817,38 +850,259 @@ export function useRecords() {
       const uid = getGoogleUserId() ?? "";
       const prev = await pullSavedMealsFromDrive(token);
       const prevById = new Map(prev.map((s) => [s.id, s]));
+      const prevVisible = getVisibleSavedQuickAdds(prev);
+      const prevVisibleIds = new Set(prevVisible.map((s) => s.id));
+
       const seen = new Set<string>();
-      const merged: SavedMealRecord[] = [];
-      for (const row of nextFromClient) {
+      for (const row of nextVisibleFromClient) {
         if (seen.has(row.id)) {
           throw new Error(i18n.t("errors.invalidOrder"));
         }
         seen.add(row.id);
-        const fresh = prevById.get(row.id);
-        if (!fresh) {
+        if (!prevVisibleIds.has(row.id)) {
           throw new Error(i18n.t("errors.savedMealsListChanged"));
         }
-        merged.push(fresh);
       }
-      const nextIds = new Set(merged.map((s) => s.id));
-      const removed = prev.filter((s) => !nextIds.has(s.id));
-      await upsertSavedMealsToDrive(token, merged);
-      qc.setQueryData<SavedMealRecord[]>(["saved-meals", uid], merged);
 
-      for (const r of removed) {
-        const photoId = r.photoFileId;
-        if (!photoId) continue;
-        try {
-          const meals = getCurrentRecords().meals;
-          const stillReferenced =
-            meals.some((m) => m.photoFileId === photoId) ||
-            merged.some((s) => s.photoFileId === photoId);
-          if (!stillReferenced) {
-            await deleteDriveFile(token, photoId);
-            void removeMealPhotoFromCache(photoId);
+      const nextVisibleIds = new Set(nextVisibleFromClient.map((s) => s.id));
+      const removedVisible = prevVisible.filter((s) => !nextVisibleIds.has(s.id));
+
+      let working = [...prev];
+
+      for (const removed of removedVisible) {
+        if (isSavedMeal(removed)) {
+          const refCount = countComboRefsForSavedMeal(working, removed.id);
+          if (refCount > 0) {
+            working = working.map((item) =>
+              isSavedMeal(item) && item.id === removed.id
+                ? { ...item, archived: true }
+                : item,
+            );
+          } else {
+            working = working.filter((item) => item.id !== removed.id);
           }
-        } catch {
-          /* best-effort */
+        } else {
+          working = working.filter((item) => item.id !== removed.id);
+        }
+      }
+
+      const workingById = new Map(working.map((s) => [s.id, s]));
+      const reorderedVisible: SavedQuickAdd[] = [];
+      for (const row of nextVisibleFromClient) {
+        const fresh = workingById.get(row.id) ?? prevById.get(row.id);
+        if (fresh) reorderedVisible.push(fresh);
+      }
+
+      const visibleIds = new Set(reorderedVisible.map((s) => s.id));
+      const trailingArchived = working.filter(
+        (item) =>
+          isSavedMeal(item) && !!item.archived && !visibleIds.has(item.id),
+      );
+
+      let merged = [...reorderedVisible, ...trailingArchived];
+      merged = purgeOrphanedArchivedMeals(merged);
+
+      const mergedIds = new Set(merged.map((s) => s.id));
+      const hardRemoved = prev.filter((s) => !mergedIds.has(s.id));
+
+      await upsertSavedMealsToDrive(token, merged);
+      qc.setQueryData<SavedQuickAdd[]>(["saved-meals", uid], merged);
+
+      for (const r of hardRemoved) {
+        const photoIds = new Set<string>();
+        if (isSavedMeal(r)) {
+          if (r.photoFileId) photoIds.add(r.photoFileId);
+        } else if (isSavedCombo(r)) {
+          if (r.photoFileId) photoIds.add(r.photoFileId);
+          for (const item of r.items) {
+            if (item.source === "inline" && item.photoFileId) {
+              photoIds.add(item.photoFileId);
+            }
+          }
+        }
+        for (const photoId of photoIds) {
+          try {
+            const meals = getCurrentRecords().meals;
+            const stillReferenced =
+              meals.some((m) => m.photoFileId === photoId) ||
+              savedQuickAddReferencesPhoto(merged, photoId);
+            if (!stillReferenced) {
+              await deleteDriveFile(token, photoId);
+              void removeMealPhotoFromCache(photoId);
+            }
+          } catch {
+            /* best-effort */
+          }
+        }
+      }
+    },
+    [qc, getCurrentRecords],
+  );
+
+  const restoreSavedMeal = useCallback(
+    async (id: string) => {
+      if (!canSyncToDriveAppData()) {
+        throw new Error(i18n.t("errors.notSignedInDrive"));
+      }
+      const token = await ensureGoogleAccessToken();
+      if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
+      const uid = getGoogleUserId() ?? "";
+      const prev = await pullSavedMealsFromDrive(token);
+      const row = prev.find((item) => isSavedMeal(item) && item.id === id);
+      if (!row || !isSavedMeal(row)) {
+        throw new Error(i18n.t("errors.savedMealNotFound"));
+      }
+      if (!row.archived) return;
+
+      const restored: SavedMealRecord = {
+        id: row.id,
+        food_name: row.food_name,
+        calories: row.calories,
+        protein: row.protein,
+        fats: row.fats,
+        carbs: row.carbs,
+        ...(row.photoFileId ? { photoFileId: row.photoFileId } : {}),
+      };
+      if (savedMealDuplicatesExisting(restored, prev, id)) {
+        throw new Error(i18n.t("errors.duplicateSavedMeal"));
+      }
+
+      const without = prev.filter((item) => item.id !== id);
+      const visible = getVisibleSavedQuickAdds(without);
+      const archived = without.filter(
+        (item) => isSavedMeal(item) && item.archived,
+      );
+      const next = [restored, ...visible, ...archived];
+      await upsertSavedMealsToDrive(token, next);
+      qc.setQueryData<SavedQuickAdd[]>(["saved-meals", uid], next);
+    },
+    [qc],
+  );
+
+  const addSavedCombo = useCallback(
+    async (
+      input: {
+        name: string;
+        items: ComboItem[];
+        photo?: { base64: string; mimeType: string };
+        preparedPhoto?: PreparedMealPhoto;
+        photoFileId?: string;
+      },
+    ): Promise<string> => {
+      if (!canSyncToDriveAppData()) {
+        throw new Error(i18n.t("errors.notSignedInDrive"));
+      }
+      const token = await ensureGoogleAccessToken();
+      if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
+      const uid = getGoogleUserId() ?? "";
+      const name = input.name.trim();
+      if (!name) throw new Error(i18n.t("meals.comboNameRequired"));
+      if (input.items.length === 0) {
+        throw new Error(i18n.t("meals.comboNeedsItems"));
+      }
+
+      const newId = crypto.randomUUID?.() ?? String(Date.now());
+
+      const resolvePhotoFileId = async (): Promise<string | undefined> => {
+        if (input.photoFileId) return input.photoFileId;
+        if (!input.preparedPhoto && !input.photo) return undefined;
+        const prepared = input.preparedPhoto
+          ? input.preparedPhoto
+          : await prepareMealPhotoForUpload(
+              input.photo!.base64,
+              input.photo!.mimeType,
+            );
+        return uploadMealPhotoToAppData(
+          token,
+          newId,
+          prepared.base64,
+          prepared.mimeType,
+        );
+      };
+
+      const [photoFileId, prev] = await Promise.all([
+        resolvePhotoFileId(),
+        pullSavedMealsFromDrive(token),
+      ]);
+
+      const combo: SavedComboRecord = {
+        id: newId,
+        kind: "combo",
+        name,
+        items: input.items,
+        ...(photoFileId ? { photoFileId } : {}),
+      };
+
+      const visible = getVisibleSavedQuickAdds(prev);
+      const archived = prev.filter((item) => isSavedMeal(item) && item.archived);
+      const next = [combo, ...visible, ...archived];
+      await upsertSavedMealsToDrive(token, next);
+      qc.setQueryData<SavedQuickAdd[]>(["saved-meals", uid], next);
+      return newId;
+    },
+    [qc],
+  );
+
+  const updateSavedCombo = useCallback(
+    async (
+      id: string,
+      patch: {
+        name: string;
+        items: ComboItem[];
+        photoFileId?: string | null;
+      },
+    ) => {
+      if (!canSyncToDriveAppData()) {
+        throw new Error(i18n.t("errors.notSignedInDrive"));
+      }
+      const token = await ensureGoogleAccessToken();
+      if (!token) throw new Error(i18n.t("errors.missingAccessToken"));
+      const uid = getGoogleUserId() ?? "";
+      const prev = await pullSavedMealsFromDrive(token);
+      const prevRow = prev.find((s) => s.id === id);
+      if (!prevRow || prevRow.kind !== "combo") {
+        throw new Error(i18n.t("errors.comboNotFound"));
+      }
+      const oldPhotoId = prevRow.photoFileId;
+
+      const name = patch.name.trim();
+      if (!name) throw new Error(i18n.t("meals.comboNameRequired"));
+      if (patch.items.length === 0) {
+        throw new Error(i18n.t("meals.comboNeedsItems"));
+      }
+
+      const updated: SavedComboRecord = {
+        ...prevRow,
+        name,
+        items: patch.items,
+      };
+
+      if ("photoFileId" in patch) {
+        if (patch.photoFileId === null || patch.photoFileId === "") {
+          delete updated.photoFileId;
+        } else if (typeof patch.photoFileId === "string") {
+          updated.photoFileId = patch.photoFileId;
+        }
+      }
+
+      let next = prev.map((s) => (s.id === id ? updated : s));
+      next = purgeOrphanedArchivedMeals(next);
+      await upsertSavedMealsToDrive(token, next);
+      qc.setQueryData<SavedQuickAdd[]>(["saved-meals", uid], next);
+
+      const newPhotoId = updated.photoFileId;
+      if (oldPhotoId !== newPhotoId && oldPhotoId) {
+        const meals = getCurrentRecords().meals;
+        const still =
+          meals.some((m) => m.photoFileId === oldPhotoId) ||
+          savedQuickAddReferencesPhoto(next, oldPhotoId);
+        if (!still) {
+          try {
+            await deleteDriveFile(token, oldPhotoId);
+            void removeMealPhotoFromCache(oldPhotoId);
+          } catch {
+            /* best-effort */
+          }
         }
       }
     },
@@ -1038,10 +1292,19 @@ export function useRecords() {
 
   const allMealShardsLoaded = mealsQuery.data?.allShardsLoaded ?? false;
 
+  const savedQuickAdds = savedMealsQuery.data ?? [];
+  const visibleSavedQuickAdds = useMemo(
+    () => getVisibleSavedQuickAdds(savedQuickAdds),
+    [savedQuickAdds],
+  );
+
   return {
     records,
     userId,
-    savedMeals: savedMealsQuery.data ?? [],
+    savedQuickAdds,
+    visibleSavedQuickAdds,
+    /** @deprecated Use `visibleSavedQuickAdds` — kept for gradual migration. */
+    savedMeals: visibleSavedQuickAdds,
     /** True once core Drive JSON (`core.json`) has been loaded or created for this account. */
     isRecordsReady: coreQuery.isSuccess,
     /** Meal shards still syncing from Drive — show placeholders for meal-derived UI. */
@@ -1074,7 +1337,10 @@ export function useRecords() {
     addMeal,
     addSavedMeal,
     addSavedMealFromMeal,
+    addSavedCombo,
     updateSavedMeal,
+    updateSavedCombo,
+    restoreSavedMeal,
     commitSavedMeals,
     deleteMeal,
     updateMeal,

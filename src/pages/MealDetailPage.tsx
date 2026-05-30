@@ -3,6 +3,7 @@ import {
   ButtonSpinner,
 } from "@/components/ButtonSpinner";
 import { Card } from "@/components/Card";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { MealPhotoThumb } from "@/components/MealPhotoThumb";
 import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
@@ -11,6 +12,8 @@ import { formatLocalDateLabel, formatTime } from "@/lib/date";
 import type { MealDetailNavFrom } from "@/lib/routes";
 import { paths } from "@/lib/routes";
 import { isMealAlreadySavedAsTemplate } from "@/lib/saved-meals-snapshot-match";
+import { isComboLogMeal } from "@/lib/saved-combo-utils";
+import { isArchivedSavedMealMatchError } from "@/lib/saved-quick-add-errors";
 import {
   Link,
   useNavigate,
@@ -48,7 +51,9 @@ export function MealDetailPage() {
     deleteMeal,
     ensureMealIdLoaded,
     addSavedMealFromMeal,
+    restoreSavedMeal,
     savedMeals,
+    savedQuickAdds,
     isSavedMealsLoading,
     savedMealsError,
     isMealsLoading,
@@ -96,11 +101,21 @@ export function MealDetailPage() {
   const [deletePending, setDeletePending] = useState(false);
   const [duplicatePending, setDuplicatePending] = useState(false);
   const [saveToSavedPending, setSaveToSavedPending] = useState(false);
+  const [restoreOffer, setRestoreOffer] = useState<{
+    mealId: string;
+    foodName: string;
+    comboRefCount: number;
+  } | null>(null);
 
   const alreadySavedTemplate = useMemo(() => {
     if (!meal || isSavedMealsLoading || savedMealsError) return false;
     return isMealAlreadySavedAsTemplate(meal, savedMeals);
   }, [meal, savedMeals, isSavedMealsLoading, savedMealsError]);
+
+  const isComboLog = useMemo(() => {
+    if (!meal || isSavedMealsLoading || savedMealsError) return false;
+    return isComboLogMeal(meal, savedQuickAdds);
+  }, [meal, savedQuickAdds, isSavedMealsLoading, savedMealsError]);
 
   const mealStillLoading =
     mealLookup === "pending" || isMealsLoading || isLoadingMoreMeals;
@@ -137,6 +152,44 @@ export function MealDetailPage() {
 
   return (
     <div className="min-w-0 space-y-6">
+      <ConfirmDialog
+        open={restoreOffer !== null}
+        title={t("meals.restoreSavedMealTitle")}
+        description={
+          restoreOffer ? (
+            <p>
+              {t("meals.restoreSavedMealBody", {
+                foodName: restoreOffer.foodName,
+                count: restoreOffer.comboRefCount,
+              })}
+            </p>
+          ) : null
+        }
+        confirmLabel={t("meals.restoreSavedMealAction")}
+        cancelLabel={t("common.cancel")}
+        pending={saveToSavedPending}
+        onConfirm={() => {
+          if (!restoreOffer) return;
+          void (async () => {
+            setSaveToSavedPending(true);
+            try {
+              await restoreSavedMeal(restoreOffer.mealId);
+              toast.success(t("meals.restoredToSavedMeals"));
+              setRestoreOffer(null);
+            } catch (err) {
+              toast.error(
+                err instanceof Error
+                  ? err.message
+                  : t("errors.couldNotAddToSavedMeals"),
+              );
+            } finally {
+              setSaveToSavedPending(false);
+            }
+          })();
+        }}
+        onCancel={() => setRestoreOffer(null)}
+      />
+
       <PageHeader
         title={t("meals.detailTitle")}
         onBack={handleBack}
@@ -272,6 +325,9 @@ export function MealDetailPage() {
                       protein: meal.protein,
                       fats: meal.fats,
                       carbs: meal.carbs,
+                      ...(meal.savedComboId
+                        ? { savedComboId: meal.savedComboId }
+                        : {}),
                     },
                     meal.photoFileId
                       ? { photoFileId: meal.photoFileId }
@@ -299,6 +355,7 @@ export function MealDetailPage() {
               {t("meals.addMealAgain")}
             </ButtonPendingContents>
           </button>
+          {!isComboLog ? (
           <button
             type="button"
             disabled={
@@ -323,6 +380,14 @@ export function MealDetailPage() {
                   await addSavedMealFromMeal(meal);
                   toast.success(t("errors.addedToSavedMeals"));
                 } catch (err) {
+                  if (isArchivedSavedMealMatchError(err)) {
+                    setRestoreOffer({
+                      mealId: err.meal.id,
+                      foodName: err.meal.food_name,
+                      comboRefCount: err.comboRefCount,
+                    });
+                    return;
+                  }
                   toast.error(
                     err instanceof Error
                       ? err.message
@@ -356,6 +421,7 @@ export function MealDetailPage() {
               )}
             </ButtonPendingContents>
           </button>
+          ) : null}
         </div>
       </Card>
     </div>

@@ -10,19 +10,51 @@ export type MealRecord = {
   recordedAt: string;
   /** Google Drive file id (App Data `meal-photos/`) for the meal photo. */
   photoFileId?: string;
+  /** Set when this row was logged from a saved combo — not saveable as a single saved meal. */
+  savedComboId?: string;
 };
 
-/** Quick-add snapshot in Drive `saved-meals.json` — not tied to a history meal row. */
-export type SavedMealRecord = {
-  id: string;
+export type MacroSnapshot = {
   food_name: string;
   calories: number;
   protein: number;
   fats: number;
   carbs: number;
-  /** Google Drive App Data image for this saved meal (optional). */
+  /** Google Drive App Data image (optional). */
   photoFileId?: string;
 };
+
+/** Quick-add snapshot in Drive `saved-meals.json` — not tied to a history meal row. */
+export type SavedMealRecord = MacroSnapshot & {
+  id: string;
+  kind?: "meal";
+  /** Hidden from the saved-meals list while referenced by combos. */
+  archived?: boolean;
+};
+
+export type ComboItem =
+  | { source: "saved"; savedMealId: string }
+  | ({ source: "inline" } & MacroSnapshot);
+
+/** Named group of saved meals and/or inline items — logs as one meal. */
+export type SavedComboRecord = {
+  id: string;
+  kind: "combo";
+  name: string;
+  items: ComboItem[];
+  /** Custom combo photo; when unset, UI builds a collage from item photos. */
+  photoFileId?: string;
+};
+
+export type SavedQuickAdd = SavedMealRecord | SavedComboRecord;
+
+export function isSavedCombo(item: SavedQuickAdd): item is SavedComboRecord {
+  return item.kind === "combo";
+}
+
+export function isSavedMeal(item: SavedQuickAdd): item is SavedMealRecord {
+  return !isSavedCombo(item);
+}
 
 export type ProfileGender = "male" | "female";
 

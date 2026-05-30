@@ -4,8 +4,16 @@ import { AddFromHistoryPage } from "@/pages/AddFromHistoryPage";
 import { AddMealPage } from "@/pages/AddMealPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { DriveFilesPage } from "@/pages/DriveFilesPage";
+import { ComboAddInlineItemPage } from "@/pages/ComboAddInlineItemPage";
+import {
+  ComboAddSavedMealsPage,
+  parseComboItemFlowSearch,
+} from "@/pages/ComboAddSavedMealsPage";
+import { SavedComboEditPage } from "@/pages/SavedComboEditPage";
+import { SavedComboNewPage } from "@/pages/SavedComboNewPage";
 import { SavedMealEditPage } from "@/pages/SavedMealEditPage";
 import { SavedMealNewPage } from "@/pages/SavedMealNewPage";
+import { SavedMealsManagePage } from "@/pages/SavedMealsManagePage";
 import { SavedMealsPage } from "@/pages/SavedMealsPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { LoginPage } from "@/pages/LoginPage";
@@ -90,6 +98,12 @@ const savedMealsRoute = createRoute({
   component: SavedMealsPage,
 });
 
+const savedMealsManageRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.add.savedMealsManage,
+  component: SavedMealsManagePage,
+});
+
 const savedMealNewRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: paths.add.savedMealNew,
@@ -99,7 +113,34 @@ const savedMealNewRoute = createRoute({
 const savedMealEditRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: paths.add.savedMealEdit,
+  validateSearch: parseComboItemFlowSearch,
   component: SavedMealEditPage,
+});
+
+const savedComboNewRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.add.savedComboNew,
+  component: SavedComboNewPage,
+});
+
+const savedComboEditRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.add.savedComboEdit,
+  component: SavedComboEditPage,
+});
+
+const comboAddSavedMealsRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.add.comboAddSavedMeals,
+  validateSearch: parseComboItemFlowSearch,
+  component: ComboAddSavedMealsPage,
+});
+
+const comboAddInlineItemRoute = createRoute({
+  getParentRoute: () => appLayoutRoute,
+  path: paths.add.comboAddInlineItem,
+  validateSearch: parseComboItemFlowSearch,
+  component: ComboAddInlineItemPage,
 });
 
 const addFromHistoryRoute = createRoute({
@@ -191,8 +232,13 @@ const routeTree = rootRoute.addChildren([
     mealDetailRoute,
     addMealRoute,
     savedMealsRoute,
+    savedMealsManageRoute,
     savedMealNewRoute,
     savedMealEditRoute,
+    savedComboNewRoute,
+    savedComboEditRoute,
+    comboAddSavedMealsRoute,
+    comboAddInlineItemRoute,
     addFromHistoryRoute,
     describeMealRoute,
     manualMealRoute,

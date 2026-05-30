@@ -1,3 +1,4 @@
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   ButtonPendingContents,
   ButtonSpinner,
@@ -9,6 +10,7 @@ import { useRecords } from "@/hooks/use-records";
 import { toast } from "@/lib/app-toast";
 import { fileToBase64 } from "@/lib/file-to-base64";
 import { paths } from "@/lib/routes";
+import { isArchivedSavedMealMatchError } from "@/lib/saved-quick-add-errors";
 import { useNavigate } from "@tanstack/react-router";
 import { Camera, ImagePlus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -22,8 +24,13 @@ function parseNumber(value: string): number {
 export function SavedMealNewPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { addSavedMeal } = useRecords();
+  const { addSavedMeal, restoreSavedMeal } = useRecords();
   const [savePending, setSavePending] = useState(false);
+  const [restoreOffer, setRestoreOffer] = useState<{
+    mealId: string;
+    foodName: string;
+    comboRefCount: number;
+  } | null>(null);
   const [photoChoice, setPhotoChoice] = useState<{
     file: File;
     previewUrl: string;
@@ -57,10 +64,49 @@ export function SavedMealNewPage() {
 
   return (
     <div className="min-w-0 space-y-6">
+      <ConfirmDialog
+        open={restoreOffer !== null}
+        title={t("meals.restoreSavedMealTitle")}
+        description={
+          restoreOffer ? (
+            <div className="space-y-2">
+              <p>
+                {t("meals.restoreSavedMealBody", {
+                  foodName: restoreOffer.foodName,
+                  count: restoreOffer.comboRefCount,
+                })}
+              </p>
+            </div>
+          ) : null
+        }
+        confirmLabel={t("meals.restoreSavedMealAction")}
+        cancelLabel={t("common.cancel")}
+        pending={savePending}
+        onConfirm={() => {
+          if (!restoreOffer) return;
+          void (async () => {
+            setSavePending(true);
+            try {
+              await restoreSavedMeal(restoreOffer.mealId);
+              toast.success(t("meals.restoredToSavedMeals"));
+              setRestoreOffer(null);
+              await navigate({ to: paths.add.savedMealsManage });
+            } catch (err) {
+              toast.error(
+                err instanceof Error ? err.message : t("errors.couldNotSaveChanges"),
+              );
+            } finally {
+              setSavePending(false);
+            }
+          })();
+        }}
+        onCancel={() => setRestoreOffer(null)}
+      />
+
       <PageHeader
         title={t("meals.addSavedMealPageTitle")}
-        backTo={paths.add.savedMeals}
-        backAriaLabel={t("meals.backToSavedMeals")}
+        backTo={paths.add.savedMealsManage}
+        backAriaLabel={t("meals.backToSavedMealsManage")}
         subtitle={t("meals.addSavedMealSubtitle")}
       />
 
@@ -96,8 +142,16 @@ export function SavedMealNewPage() {
                   photoOpts,
                 );
                 toast.success(t("errors.savedMealAdded"));
-                await navigate({ to: paths.add.savedMeals });
+                await navigate({ to: paths.add.savedMealsManage });
               } catch (err) {
+                if (isArchivedSavedMealMatchError(err)) {
+                  setRestoreOffer({
+                    mealId: err.meal.id,
+                    foodName: err.meal.food_name,
+                    comboRefCount: err.comboRefCount,
+                  });
+                  return;
+                }
                 toast.error(
                   err instanceof Error
                     ? err.message
