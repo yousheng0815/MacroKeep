@@ -9,7 +9,7 @@ import {
 import { BLOCK_PULL_TO_REFRESH_ATTR } from "@/hooks/use-pull-to-refresh";
 import { useRecords } from "@/hooks/use-records";
 import { toast } from "@/lib/app-toast";
-import { endNewComboDraftSession } from "@/lib/combo-draft";
+import { endComboEditDraftSession, endNewComboDraftSession } from "@/lib/combo-draft";
 import { paths } from "@/lib/routes";
 import {
   countComboRefsForSavedMeal,
@@ -78,6 +78,7 @@ export function SavedMealsManagePage() {
 
   useEffect(() => {
     endNewComboDraftSession();
+    endComboEditDraftSession();
   }, []);
 
   useEffect(() => {

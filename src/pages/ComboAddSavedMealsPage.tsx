@@ -12,7 +12,8 @@ import {
 } from "@/lib/combo-draft";
 import { paths } from "@/lib/routes";
 import { activeSavedMeals } from "@/lib/saved-combo-utils";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { exitSubflow } from "@/lib/subflow-nav";
+import { useRouter, useSearch } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -36,7 +37,7 @@ export { parseComboItemFlowSearch };
 
 export function ComboAddSavedMealsPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const search = useSearch({ strict: false }) as ComboItemFlowSearch;
   const { savedQuickAdds } = useRecords();
 
@@ -73,14 +74,15 @@ export function ComboAddSavedMealsPage() {
       items: appendSavedMealToComboItems(draft.items, mealId),
       returnTo,
     });
-    void navigate({ to: returnTo }).finally(() => setPendingId(null));
+    exitSubflow(router, returnTo);
+    setPendingId(null);
   };
 
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
         title={t("meals.addSavedMealToComboPageTitle")}
-        backTo={returnTo}
+        onBack={() => exitSubflow(router, returnTo)}
         backAriaLabel={t("meals.backToComboEditor")}
         subtitle={t("meals.addSavedMealToComboSubtitle")}
       />

@@ -10,7 +10,8 @@ import {
   isNewComboDraftSessionActive,
 } from "@/lib/combo-draft";
 import { paths } from "@/lib/routes";
-import { useNavigate } from "@tanstack/react-router";
+import { exitSubflow } from "@/lib/subflow-nav";
+import { useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -18,7 +19,7 @@ const DRAFT_KEY = comboDraftKey({ context: "new" });
 
 export function SavedComboNewPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { addSavedCombo } = useRecords();
   const [savePending, setSavePending] = useState(false);
 
@@ -31,8 +32,8 @@ export function SavedComboNewPage() {
 
   const leaveNewCombo = useCallback(() => {
     endNewComboDraftSession();
-    void navigate({ to: paths.add.savedMealsManage });
-  }, [navigate]);
+    exitSubflow(router, paths.add.savedMealsManage);
+  }, [router]);
 
   return (
     <div className="min-w-0 space-y-6">
@@ -62,7 +63,8 @@ export function SavedComboNewPage() {
             });
             void id;
             toast.success(t("errors.savedComboAdded"));
-            await navigate({ to: paths.add.savedMealsManage });
+            endNewComboDraftSession();
+            exitSubflow(router, paths.add.savedMealsManage);
           } catch (err) {
             toast.error(
               err instanceof Error ? err.message : t("errors.couldNotAddCombo"),

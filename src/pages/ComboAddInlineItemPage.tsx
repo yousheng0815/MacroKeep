@@ -12,8 +12,9 @@ import {
   writeComboDraft,
 } from "@/lib/combo-draft";
 import { paths } from "@/lib/routes";
+import { exitSubflow } from "@/lib/subflow-nav";
 import type { ComboItem } from "@/types/records";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useRouter, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ComboItemFlowSearch } from "@/pages/ComboAddSavedMealsPage";
@@ -25,7 +26,7 @@ function parseNumber(value: string): number {
 
 export function ComboAddInlineItemPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const search = useSearch({ strict: false }) as ComboItemFlowSearch;
   const [pending, setPending] = useState(false);
 
@@ -52,7 +53,7 @@ export function ComboAddInlineItemPage() {
     <div className="min-w-0 space-y-6">
       <PageHeader
         title={t("meals.addInlineItemToComboPageTitle")}
-        backTo={returnTo}
+        onBack={() => exitSubflow(router, returnTo)}
         backAriaLabel={t("meals.backToComboEditor")}
         subtitle={t("meals.addInlineItemToComboSubtitle")}
       />
@@ -84,7 +85,7 @@ export function ComboAddInlineItemPage() {
                   items: [...draft.items, inlineItem],
                   returnTo,
                 });
-                await navigate({ to: returnTo });
+                exitSubflow(router, returnTo);
               } finally {
                 setPending(false);
               }

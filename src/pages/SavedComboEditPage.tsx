@@ -8,13 +8,17 @@ import { PageHeader } from "@/components/PageHeader";
 import { useRecords } from "@/hooks/use-records";
 import { toast } from "@/lib/app-toast";
 import {
+  beginComboEditDraftSession,
   clearComboDraft,
   comboDraftKey,
   comboEditorReturnTo,
+  endComboEditDraftSession,
+  isComboEditDraftSessionActive,
 } from "@/lib/combo-draft";
 import { paths } from "@/lib/routes";
+import { exitSubflow } from "@/lib/subflow-nav";
 import { isSavedCombo } from "@/types/records";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { Link, useParams, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,7 +26,7 @@ import { useTranslation } from "react-i18next";
 export function SavedComboEditPage() {
   const { t } = useTranslation();
   const { comboId } = useParams({ strict: false });
-  const navigate = useNavigate();
+  const router = useRouter();
   const {
     savedQuickAdds,
     isSavedMealsLoading,
@@ -37,6 +41,14 @@ export function SavedComboEditPage() {
   );
 
   useEffect(() => {
+    if (!comboId) return;
+    if (!isComboEditDraftSessionActive(comboId)) {
+      clearComboDraft(comboDraftKey({ comboId }));
+      beginComboEditDraftSession(comboId);
+    }
+  }, [comboId]);
+
+  useEffect(() => {
     if (!savedMealsError) return;
     toast.error(
       savedMealsError instanceof Error
@@ -46,9 +58,9 @@ export function SavedComboEditPage() {
   }, [savedMealsError, t]);
 
   const goBackToList = useCallback(() => {
-    if (comboId) clearComboDraft(comboDraftKey({ comboId }));
-    void navigate({ to: paths.add.savedMealsManage });
-  }, [navigate, comboId]);
+    endComboEditDraftSession();
+    exitSubflow(router, paths.add.savedMealsManage);
+  }, [router]);
 
   if (!comboId) {
     return (
@@ -113,7 +125,7 @@ export function SavedComboEditPage() {
         initialItems={combo.items}
         initialPhotoFileId={combo.photoFileId}
         savePending={savePending}
-        onSaved={() => clearComboDraft(comboDraftKey({ comboId: combo.id }))}
+        onSaved={() => endComboEditDraftSession()}
         onSave={async ({ name, items, photo, photoFileId }) => {
           setSavePending(true);
           const oldPhotoId = combo.photoFileId;

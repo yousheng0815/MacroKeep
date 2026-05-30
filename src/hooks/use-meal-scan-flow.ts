@@ -112,6 +112,7 @@ export function useMealScanFlow() {
           to: paths.mealDetail,
           params: { mealId: nextMealId },
           state: { navFrom: paths.add.root },
+          replace: true,
         });
       }
     },
@@ -227,6 +228,7 @@ export function useMealScanFlow() {
           to: paths.mealDetail,
           params: { mealId: nextMealId },
           state: { navFrom: paths.add.root },
+          replace: true,
         });
       }
     },

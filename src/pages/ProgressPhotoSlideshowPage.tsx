@@ -3,14 +3,15 @@ import { PageHeader } from "@/components/PageHeader";
 import { ProgressPhotoSlideshowViewer } from "@/components/progress-photos/ProgressPhotoSlideshowViewer";
 import { useProgressPhotos } from "@/hooks/use-progress-photos";
 import { paths } from "@/lib/routes";
-import { useNavigate } from "@tanstack/react-router";
+import { exitSubflow } from "@/lib/subflow-nav";
+import { useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@/lib/app-toast";
 
 export function ProgressPhotoSlideshowPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { photos, loading, allBlobsLoaded, error } = useProgressPhotos({
     continuousBlobFetch: true,
   });
@@ -21,7 +22,7 @@ export function ProgressPhotoSlideshowPage() {
   }, [error]);
 
   const goBack = () => {
-    void navigate({ to: paths.progress.root });
+    exitSubflow(router, paths.progress.root);
   };
 
   if (loading) {

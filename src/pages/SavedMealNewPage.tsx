@@ -11,7 +11,8 @@ import { toast } from "@/lib/app-toast";
 import { fileToBase64 } from "@/lib/file-to-base64";
 import { paths } from "@/lib/routes";
 import { isArchivedSavedMealMatchError } from "@/lib/saved-quick-add-errors";
-import { useNavigate } from "@tanstack/react-router";
+import { exitSubflow } from "@/lib/subflow-nav";
+import { useRouter } from "@tanstack/react-router";
 import { Camera, ImagePlus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,7 +24,7 @@ function parseNumber(value: string): number {
 
 export function SavedMealNewPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { addSavedMeal, restoreSavedMeal } = useRecords();
   const [savePending, setSavePending] = useState(false);
   const [restoreOffer, setRestoreOffer] = useState<{
@@ -90,7 +91,7 @@ export function SavedMealNewPage() {
               await restoreSavedMeal(restoreOffer.mealId);
               toast.success(t("meals.restoredToSavedMeals"));
               setRestoreOffer(null);
-              await navigate({ to: paths.add.savedMealsManage });
+              exitSubflow(router, paths.add.savedMealsManage);
             } catch (err) {
               toast.error(
                 err instanceof Error ? err.message : t("errors.couldNotSaveChanges"),
@@ -105,7 +106,7 @@ export function SavedMealNewPage() {
 
       <PageHeader
         title={t("meals.addSavedMealPageTitle")}
-        backTo={paths.add.savedMealsManage}
+        onBack={() => exitSubflow(router, paths.add.savedMealsManage)}
         backAriaLabel={t("meals.backToSavedMealsManage")}
         subtitle={t("meals.addSavedMealSubtitle")}
       />
@@ -142,7 +143,7 @@ export function SavedMealNewPage() {
                   photoOpts,
                 );
                 toast.success(t("errors.savedMealAdded"));
-                await navigate({ to: paths.add.savedMealsManage });
+                exitSubflow(router, paths.add.savedMealsManage);
               } catch (err) {
                 if (isArchivedSavedMealMatchError(err)) {
                   setRestoreOffer({

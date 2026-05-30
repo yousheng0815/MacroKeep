@@ -14,10 +14,11 @@ import { prepareMealPhotoForUpload } from "@/lib/meal-photo-compress";
 import { paths } from "@/lib/routes";
 import { comboEditorReturnTo } from "@/lib/combo-draft";
 import { countComboRefsForSavedMeal } from "@/lib/saved-combo-utils";
+import { exitSubflow } from "@/lib/subflow-nav";
 import type { SavedMealRecord } from "@/types/records";
 import { isSavedMeal } from "@/types/records";
 import type { ComboItemFlowSearch } from "@/pages/ComboAddSavedMealsPage";
-import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { Link, useParams, useRouter, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Camera, ImagePlus, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -365,7 +366,7 @@ export function SavedMealEditPage() {
   const { t } = useTranslation();
   const { savedMealId } = useParams({ strict: false });
   const search = useSearch({ strict: false }) as ComboItemFlowSearch;
-  const navigate = useNavigate();
+  const router = useRouter();
   const {
     savedQuickAdds,
     isSavedMealsLoading,
@@ -405,8 +406,8 @@ export function SavedMealEditPage() {
   }, [savedMealsError]);
 
   const goBack = useCallback(() => {
-    void navigate({ to: returnTo });
-  }, [navigate, returnTo]);
+    exitSubflow(router, returnTo);
+  }, [returnTo, router]);
 
   if (!savedMealId) {
     return (

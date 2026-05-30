@@ -75,6 +75,34 @@ export function isNewComboDraftSessionActive(): boolean {
   }
 }
 
+const COMBO_EDIT_SESSION_KEY = "combo-draft-edit-session-id";
+
+export function beginComboEditDraftSession(comboId: string): void {
+  try {
+    sessionStorage.setItem(COMBO_EDIT_SESSION_KEY, comboId);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function endComboEditDraftSession(): void {
+  try {
+    const comboId = sessionStorage.getItem(COMBO_EDIT_SESSION_KEY);
+    sessionStorage.removeItem(COMBO_EDIT_SESSION_KEY);
+    if (comboId) clearComboDraft(comboDraftKey({ comboId }));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isComboEditDraftSessionActive(comboId: string): boolean {
+  try {
+    return sessionStorage.getItem(COMBO_EDIT_SESSION_KEY) === comboId;
+  } catch {
+    return false;
+  }
+}
+
 export function clearComboDraft(key: string): void {
   try {
     sessionStorage.removeItem(key);
